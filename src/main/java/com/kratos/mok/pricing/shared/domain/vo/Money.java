@@ -15,6 +15,7 @@ public record Money(BigDecimal amount) implements Comparable<Money> {
         if (amount.scale() > 2) {
             throw new IllegalArgumentException("Maximum precision exceeded (2 decimal places)");
         }
+        amount = amount.setScale(2, RoundingMode.HALF_EVEN);
     }
 
     public static Money of(long value) {
