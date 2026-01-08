@@ -11,7 +11,8 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = FixedFee.class, name = "FIXED"),
-        @JsonSubTypes.Type(value = ProportionalFee.class, name = "PROPORTIONAL")
+        @JsonSubTypes.Type(value = ProportionalFee.class, name = "PROPORTIONAL"),
+        @JsonSubTypes.Type(value = TieredFee.class, name = "TIERED")
 })
 public sealed interface FeeStrategy permits FixedFee, ProportionalFee, TieredFee {
     Money apply(Money transactionAmount);

@@ -1,5 +1,7 @@
 package com.kratos.mok.pricing.shared.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -34,7 +36,7 @@ public record Money(BigDecimal amount) implements Comparable<Money> {
         // Arrondi bancaire (HALF_EVEN) pour minimiser les erreurs cumulées
         return new Money(this.amount.multiply(factor).setScale(2, RoundingMode.HALF_EVEN));
     }
-
+    @JsonIgnore
     public boolean isPositive() {
         return this.amount.compareTo(BigDecimal.ZERO) > 0;
     }

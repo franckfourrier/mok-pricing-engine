@@ -1,3 +1,5 @@
 spring:
   application:
     name: mok-pricing-engine
+  profiles:
+    active: local

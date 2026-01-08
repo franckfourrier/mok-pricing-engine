@@ -2,16 +2,15 @@ server:
   port: 8080
   servlet:
     context-path: /api
-
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/db_pricing_engine
+    url: jdbc:postgresql://localhost:5432/db_pricing_engine_test
     username: postgres
     password: 7429867
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: create
     show-sql: false
     properties:
       hibernate:
