@@ -10,4 +10,10 @@ public record ProportionalFee(BigDecimal percentage) implements FeeStrategy {
     public Money apply(Money transactionAmount) {
         return transactionAmount.multiply(percentage);
     }
+
+    @Override
+    public FeeStrategyType type() {
+        return FeeStrategyType.PROPORTIONAL;
+    }
+
 }

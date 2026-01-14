@@ -15,6 +15,12 @@ public record TieredFee(List<Tier> tiers) implements FeeStrategy {
         validateTiersCoherence(tiers);
     }
 
+    @Override
+    public FeeStrategyType type() {
+        return FeeStrategyType.TIERED;
+    }
+
+
     private static void validateTiersCoherence(List<Tier> tiers) {
         List<Tier> sortedTiers = tiers.stream()
                 .sorted(Comparator.comparing(Tier::min))

@@ -19,4 +19,9 @@ public record FixedFee(Money feeAmount) implements FeeStrategy {
     public Money apply(Money transactionAmount) {
         return feeAmount;
     }
+
+    @Override
+    public FeeStrategyType type() {
+        return FeeStrategyType.FIXED;
+    }
 }

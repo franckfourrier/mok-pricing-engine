@@ -1,5 +1,7 @@
 package com.kratos.mok.pricing.fees.application.command.createFeePolicy;
 
+import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
+import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryGatekeeper;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class CreateFeePolicyHandler {
 
-    /*private final FeePolicyRepository repository;
+    private final FeePolicyRepository repository;
     private final RegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -30,17 +32,19 @@ public class CreateFeePolicyHandler {
                 cmd.kycRequired(), cmd.authorId()
         );
 
-        // 2. Domaine : Vérification de chevauchement (Conflit)
+        // 2. Domaine : Vérification de chevauchement (Barrier 2)
         if (repository.existsConflictingPolicy(policy)) {
             throw new IllegalArgumentException("Une politique active existe déjà pour ce périmètre.");
         }
 
-        // 3. Contrôle : Vérification BEAC (Gatekeeper)
+        // 3. Contrôle : Vérification BEAC (Barrier 3)
+        FeePolicyComplianceData complianceData = policy.toComplianceData();
         try {
-            controlService.validatePolicyCompliance(policy);
+            regulatoryGatekeeper.validate(complianceData); // Appel Synchrone
         } catch (RegulatoryViolationException e) {
+            // "Le process bifurque immédiatement vers Blocage automatique + Alerte"
             publishAudit(policy, "BLOCAGE_BEAC", command.authorId(), e.getMessage());
-            throw e;
+            throw e; // Arrêt du traitement (La transaction n'est pas sauvée)
         }
 
         // 4. Persistance (Write Model)
@@ -58,5 +62,5 @@ public class CreateFeePolicyHandler {
 
         repository.save(policy);
         return new CreateFeePolicyResponse(policy.snapshot().id(), true);
-}*/
+}
 }

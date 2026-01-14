@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.fees.domain;
 
+import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
 import com.kratos.mok.pricing.fees.domain.enums.PolicyStatus;
 import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.snapshot.FeePolicySnapshot;
@@ -150,4 +151,18 @@ public class FeePolicy {
     public FeePolicyId id() {
         return id;
     }
+
+    public FeePolicyComplianceData toComplianceData() {
+        return new FeePolicyComplianceData(
+                transactionType,
+                feeTarget,
+                strategy.type(),
+                limits.minAmount(),
+                limits.maxAmount(),
+                activationThreshold,
+                kycRequired
+        );
+    }
+
+
 }
