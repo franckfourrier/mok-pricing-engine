@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: mok-pricing-engine
+
+  jackson:
+    serialization:
+      INDENT_OUTPUT: false

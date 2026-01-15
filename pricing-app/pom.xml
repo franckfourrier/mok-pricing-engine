@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kratos.mok.pricing</groupId>
+        <artifactId>pricing-engine</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pricing-app</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-fees</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-control</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-taxes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-commissions</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-simulation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-audit-notification</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

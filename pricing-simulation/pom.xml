@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kratos.mok.pricing</groupId>
+        <artifactId>pricing-engine</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pricing-simulation</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-fees</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-taxes</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-commissions</artifactId>
+        </dependency>
+    </dependencies>
+</project>
