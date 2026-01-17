@@ -6,5 +6,6 @@ public enum FeePolicyStatus {
     ACTIVE,
     SUSPENDED,
     REJECTED,
-    ARCHIVED
+    ARCHIVED,
+    BLOCKED
 }

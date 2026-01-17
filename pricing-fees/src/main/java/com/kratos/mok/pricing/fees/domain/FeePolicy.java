@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.fees.domain;
 
 
+import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
 import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
 import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
@@ -54,6 +55,7 @@ public class FeePolicy {
     private AuditInfo created;
     private AuditInfo lastModified;
     private AuditInfo approvedOrRejected;    // dernier acte de validation
+    private String blockReason;
 
     private FeePolicy(
             FeePolicyId id,
@@ -121,6 +123,13 @@ public class FeePolicy {
                 null
         );
     }
+
+    public void block(String code, String reason, String actor) {
+        this.status = FeePolicyStatus.BLOCKED;
+        this.lastModified = new AuditInfo(actor, LocalDateTime.now(), reason);
+        this.blockReason = code;
+    }
+
 
     /**
      * Reconstitution depuis la persistence.
@@ -261,7 +270,7 @@ public class FeePolicy {
         ensureApplicable(at, ctx);
 
         // seuil gratuit
-        if (rules.activationThreshold() != null && transactionAmount.compareTo(rules.activationThreshold()) < 0) {
+        if (rules.activationThreshold() != null && transactionAmount.compareTo(rules.activationThreshold()) <= 0) {
             return FeeComputation.free(
                     id,
                     transactionAmount,
@@ -329,10 +338,12 @@ public class FeePolicy {
         }
 
         // Condition volume
-        if (rules.minMonthlyTxCount().isPresent()
-                && ctx.monthlyTransactionCount() < rules.minMonthlyTxCount().get()) {
-            throw new IllegalStateException("Monthly tx count requirement not met");
-        }
+        rules.minMonthlyTxCountOpt().ifPresent(minTx -> {
+            if (ctx.monthlyTransactionCount() < minTx) {
+                throw new IllegalStateException("Monthly tx count requirement not met");
+            }
+        });
+
     }
 
     private void ensureEditable() {
@@ -394,4 +405,17 @@ public class FeePolicy {
     public Optional<AuditInfo> lastModified() { return Optional.ofNullable(lastModified); }
 
     public Optional<AuditInfo> approvedOrRejected() { return Optional.ofNullable(approvedOrRejected); }
+
+    public FeePolicyComplianceData toComplianceData() {
+        return new FeePolicyComplianceData(
+                this.transactionType,
+                this.target,
+                this.strategy.type(),
+                this.rules.activationThreshold(),
+                this.rules.minFee(),
+                this.rules.maxFee(),
+                this.kycRequirement == KycRequirement.REQUIRED
+        );
+    }
+
 }

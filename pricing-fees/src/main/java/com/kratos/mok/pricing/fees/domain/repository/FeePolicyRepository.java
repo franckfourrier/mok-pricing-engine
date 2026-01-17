@@ -14,4 +14,6 @@ public interface FeePolicyRepository {
     Optional<FeePolicy> findById(FeePolicyId id);
 
     List<FeePolicy> findCandidates(TransactionType type, String accountId, String profile);
+
+    boolean existsConflictingPolicy(FeePolicy policy);
 }

@@ -1,6 +1,8 @@
 package com.kratos.mok.pricing.audit.application;
 
 import com.kratos.mok.pricing.audit.domain.Notification;
+import com.kratos.mok.pricing.audit.domain.NotificationPolicy;
+import com.kratos.mok.pricing.audit.domain.enums.Priority;
 import com.kratos.mok.pricing.audit.domain.repository.NotificationSender;
 import com.kratos.mok.pricing.shared.domain.event.PricingEvent;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -17,45 +21,69 @@ public class NotificationListener {
 
     private final NotificationSender notificationSender;
 
-    // TODO: Ces emails devraient idéalement venir d'une configuration externe (application.properties)
+    // ⚠️ à externaliser plus tard
     private static final String EMAIL_ADMIN = "admin@kratos.com";
     private static final String EMAIL_SUPER_ADMIN = "super-admin@kratos.com";
+    private static final String EMAIL_OPS = "ops@kratos.com";
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPricingEvent(PricingEvent event) {
 
-        if ("BLOCKING".equals(event.action()) || "CONTROL".equals(event.module())) {
-            sendCriticalAlert(event);
-        }
-        else if ("VALIDATION".equals(event.action())) {
-            sendValidationInfo(event);
-        }
+        Priority priority = NotificationPolicy.resolve(event.action());
+
+        String recipient = resolveRecipient(priority);
+        String subject = buildSubject(event, priority);
+        String body = buildBody(event);
+
+        var notif = Notification.create(recipient, subject, body, priority);
+        notificationSender.send(notif);
+
+        log.info("[NOTIF] Sent priority={} action={} aggregateId={}",
+                priority, event.action(), event.aggregateId());
     }
 
-    private void sendCriticalAlert(PricingEvent event) {
-        log.warn("[NOTIF] Envoi alerte critique pour blocage sur {}", event.aggregateId());
-
-        var notif = Notification.create(
-                EMAIL_ADMIN,
-                "ALERTE CRITIQUE : " + event.module(),
-                String.format("L'objet %s a été bloqué par %s.\nMotif : %s",
-                        event.aggregateId(), event.actor(), event.reason()),
-                Notification.Priority.CRITICAL
-        );
-        notificationSender.send(notif);
+    private String resolveRecipient(Priority priority) {
+        return switch (priority) {
+            case CRITICAL -> EMAIL_SUPER_ADMIN; // ou admin + super admin
+            case WARNING -> EMAIL_ADMIN;
+            case INFO -> EMAIL_OPS;
+        };
     }
 
-    private void sendValidationInfo(PricingEvent event) {
-        log.info("[NOTIF] Envoi info validation pour {}", event.aggregateId());
+    private String buildSubject(PricingEvent event, Priority priority) {
+        return switch (priority) {
+            case CRITICAL -> "ALERTE CRITIQUE: " + event.module() + " / " + event.action();
+            case WARNING -> "Alerte: " + event.module() + " / " + event.action();
+            case INFO -> "Info: " + event.module() + " / " + event.action();
+        };
+    }
 
-        var notif = Notification.create(
-                EMAIL_SUPER_ADMIN,
-                "Validation Effectuée : " + event.module(),
-                String.format("La configuration %s a été validée avec succès par %s.",
-                        event.aggregateId(), event.actor()),
-                Notification.Priority.INFO
+    private String buildBody(PricingEvent event) {
+        String details;
+        try {
+            Map<String, Object> d = event.details();
+            details = (d == null || d.isEmpty()) ? "(no details)" : d.toString();
+        } catch (Exception e) {
+            details = "(details unavailable: " + e.getMessage() + ")";
+        }
+
+        return """
+                Aggregate: %s
+                Module: %s
+                Action: %s
+                Actor: %s
+                Reason: %s
+                OccurredAt: %s
+                Details: %s
+                """.formatted(
+                event.aggregateId(),
+                event.module(),
+                event.action(),
+                event.actor(),
+                event.reason(),
+                event.occurredAt(),
+                details
         );
-        notificationSender.send(notif);
     }
 }

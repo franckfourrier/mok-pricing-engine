@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.fees.domain.strategy;
 
 import com.kratos.mok.pricing.shared.domain.vo.Money;
+
 import java.util.Optional;
 
 public record FeeRules(
@@ -27,12 +28,16 @@ public record FeeRules(
         }
     }
 
+    /**
+     * Applique plancher/plafond.
+     * Important: si fee == 0, on ne force PAS le minFee (cas "gratuit").
+     */
     public Money applyMinMax(Money fee) {
         if (fee == null) throw new IllegalArgumentException("fee cannot be null");
 
         Money result = fee;
 
-        if (minFee != null && result.compareTo(minFee) < 0) {
+        if (minFee != null && !result.isZero() && result.compareTo(minFee) < 0) {
             result = minFee;
         }
         if (maxFee != null && result.compareTo(maxFee) > 0) {
@@ -41,7 +46,11 @@ public record FeeRules(
         return result;
     }
 
-    public Optional<Integer> minMonthlyTxCount() {
+    public Optional<Integer> minMonthlyTxCountOpt() {
         return Optional.ofNullable(minMonthlyTxCount);
+    }
+
+    public Money activationThresholdOrZero() {
+        return activationThreshold == null ? Money.ZERO : activationThreshold;
     }
 }
