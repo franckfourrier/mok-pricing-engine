@@ -4,7 +4,7 @@ import com.kratos.mok.pricing.fees.domain.FeeLimits;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
-import com.kratos.mok.pricing.fees.domain.enums.PolicyStatus;
+import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
 import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FixedFee;
 import com.kratos.mok.pricing.fees.domain.strategy.ProportionalFee;
@@ -65,7 +65,7 @@ public class JpaFeePolicyTest {
         var p = savedPolicy.get();
 
         assertThat(p.snapshot().id()).isEqualTo(policy.snapshot().id());
-        assertThat(p.snapshot().status()).isEqualTo(PolicyStatus.ACTIVE.name());
+        assertThat(p.snapshot().status()).isEqualTo(FeePolicyStatus.ACTIVE.name());
 
         // Le test critique : Est-ce que le JSON a bien été reconverti en objet Java 'ProportionalFee' ?
         assertThat(p.strategy()).isInstanceOf(ProportionalFee.class);
@@ -82,23 +82,23 @@ public class JpaFeePolicyTest {
         // SCENARIO : On peuple la base
 
         // 1. Règle GLOBALE (Active) -> OK
-        var globalPolicy = createPolicy(FeeTarget.global(), PolicyStatus.ACTIVE);
+        var globalPolicy = createPolicy(FeeTarget.global(), FeePolicyStatus.ACTIVE);
         repository.save(globalPolicy);
 
         // 2. Règle PROFILE "PREMIUM" (Active) -> OK pour Premium
-        var premiumPolicy = createPolicy(FeeTarget.profile("PREMIUM"), PolicyStatus.ACTIVE);
+        var premiumPolicy = createPolicy(FeeTarget.profile("PREMIUM"), FeePolicyStatus.ACTIVE);
         repository.save(premiumPolicy);
 
         // 3. Règle INDIVIDUAL "USER-123" (Active) -> OK pour User-123
-        var userPolicy = createPolicy(FeeTarget.individual("USER-123"), PolicyStatus.ACTIVE);
+        var userPolicy = createPolicy(FeeTarget.individual("USER-123"), FeePolicyStatus.ACTIVE);
         repository.save(userPolicy);
 
         // 4. Règle PROFILE "STANDARD" -> Ignore (mauvais profil)
-        var standardPolicy = createPolicy(FeeTarget.profile("STANDARD"), PolicyStatus.ACTIVE);
+        var standardPolicy = createPolicy(FeeTarget.profile("STANDARD"), FeePolicyStatus.ACTIVE);
         repository.save(standardPolicy);
 
         // 5. Règle GLOBALE (Suspendue) -> Ignore (statut)
-        var suspendedPolicy = createPolicy(FeeTarget.global(), PolicyStatus.SUSPENDED);
+        var suspendedPolicy = createPolicy(FeeTarget.global(), FeePolicyStatus.SUSPENDED);
         repository.save(suspendedPolicy);
 
 
@@ -120,13 +120,13 @@ public class JpaFeePolicyTest {
     }
 
     // Helper pour créer rapidement des objets domaine
-    private FeePolicy createPolicy(FeeTarget target, PolicyStatus status) {
+    private FeePolicy createPolicy(FeeTarget target, FeePolicyStatus status) {
         var p = FeePolicy.create(
                 TransactionType.WITHDRAWAL, target, new FixedFee(Money.of(10)),
                 FeeLimits.NONE, Money.ZERO, ValidityPeriod.PERMANENT, false, "setup"
         );
-        if (status == PolicyStatus.ACTIVE) p.activate("setup");
-        if (status == PolicyStatus.SUSPENDED) { p.activate("setup"); p.suspend("setup", "test"); }
+        if (status == FeePolicyStatus.ACTIVE) p.activate("setup");
+        if (status == FeePolicyStatus.SUSPENDED) { p.activate("setup"); p.suspend("setup", "test"); }
         return p;
     }
 }

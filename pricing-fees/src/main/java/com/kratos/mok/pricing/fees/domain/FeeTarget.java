@@ -1,33 +1,49 @@
 package com.kratos.mok.pricing.fees.domain;
 
+import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+
 import java.util.Objects;
 
-public record FeeTarget(Scope scope, String value) {
+public record FeeTarget(TargetScope scope, String value) {
 
-    public enum Scope {
-        GLOBAL(0),      // Priorité basse (ex: Tout le monde)
-        PROFILE(1),     // Priorité moyenne (ex: PREMIUM, AGENT)
-        INDIVIDUAL(2);  // Priorité haute (ex: Compte spécifique)
+    public FeeTarget {
+        Objects.requireNonNull(scope, "scope must not be null");
+        Objects.requireNonNull(value, "value must not be null");
 
-        private final int priority;
-        Scope(int priority) { this.priority = priority; }
-        public int priority() { return priority; }
+        if (value.isBlank()) {
+            throw new IllegalArgumentException("FeeTarget.value cannot be blank");
+        }
+
+        switch (scope) {
+            case GLOBAL -> {
+                if (!"ALL".equals(value)) {
+                    throw new IllegalArgumentException("GLOBAL scope requires value = 'ALL'");
+                }
+            }
+            case ACCOUNT_TYPE -> {
+                if ("ALL".equals(value)) {
+                    throw new IllegalArgumentException("ACCOUNT_TYPE scope cannot use value 'ALL'");
+                }
+            }
+            case ACCOUNT_ID -> {
+                if ("ALL".equals(value)) {
+                    throw new IllegalArgumentException("ACCOUNT_ID scope cannot use value 'ALL'");
+                }
+            }
+        }
     }
 
-    // Factory: Cible Globale (Pour tout le monde)
     public static FeeTarget global() {
-        return new FeeTarget(Scope.GLOBAL, "ALL");
+        return new FeeTarget(TargetScope.GLOBAL, "ALL");
     }
 
-    // Factory: Cible par Catégorie/Profil
-    public static FeeTarget profile(String profileName) {
-        Objects.requireNonNull(profileName);
-        return new FeeTarget(Scope.PROFILE, profileName);
+    public static FeeTarget accountType(String accountType) {
+        Objects.requireNonNull(accountType, "accountType must not be null");
+        return new FeeTarget(TargetScope.ACCOUNT_TYPE, accountType.trim().toUpperCase());
     }
 
-    // Factory: Cible Individuelle
-    public static FeeTarget individual(String accountId) {
-        Objects.requireNonNull(accountId);
-        return new FeeTarget(Scope.INDIVIDUAL, accountId);
+    public static FeeTarget accountId(String accountId) {
+        Objects.requireNonNull(accountId, "accountId must not be null");
+        return new FeeTarget(TargetScope.ACCOUNT_ID, accountId.trim());
     }
 }

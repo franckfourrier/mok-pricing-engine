@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.fees.domain.strategy;
 
+import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.math.BigDecimal;

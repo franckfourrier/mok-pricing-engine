@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.fees.domain.strategy;
 
+import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.util.Comparator;
@@ -11,8 +12,14 @@ public record TieredFee(List<Tier> tiers) implements FeeStrategy {
             throw new IllegalArgumentException("Une stratégie par paliers doit contenir au moins un palier.");
         }
 
+        var sorted = tiers.stream()
+                .sorted(Comparator.comparing(Tier::min))
+                .toList();
+
         // Validation Barrière 1 : Vérification des chevauchements
         validateTiersCoherence(tiers);
+
+        tiers = List.copyOf(sorted);
     }
 
     @Override

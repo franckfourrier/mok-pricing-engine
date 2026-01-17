@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.fees.domain.strategy;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 @JsonTypeInfo(

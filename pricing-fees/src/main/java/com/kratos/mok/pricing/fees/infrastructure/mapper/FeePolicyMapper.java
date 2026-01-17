@@ -4,7 +4,7 @@ import com.kratos.mok.pricing.fees.domain.FeeLimits;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
-import com.kratos.mok.pricing.fees.domain.enums.PolicyStatus;
+import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
 import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.snapshot.FeePolicySnapshot;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
@@ -15,7 +15,6 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Component
 public class FeePolicyMapper {
@@ -26,7 +25,7 @@ public class FeePolicyMapper {
 
         FeePolicyEntity entity = new FeePolicyEntity();
 
-        entity.setId(UUID.fromString(snapshot.id()));
+        entity.setId(snapshot.id());
         entity.setTransactionType(TransactionType.valueOf(snapshot.transactionType()));
         entity.setTargetScope(snapshot.targetScope());
         entity.setTargetValue(snapshot.targetValue());
@@ -60,7 +59,7 @@ public class FeePolicyMapper {
     }
 
     public FeePolicy toDomain(FeePolicyEntity entity) {
-        FeePolicyId id = new FeePolicyId(entity.getId());
+        FeePolicyId id = FeePolicyId.from(entity.getId());
 
         FeeTarget target = new FeeTarget(
                 FeeTarget.Scope.valueOf(entity.getTargetScope()),
@@ -106,7 +105,7 @@ public class FeePolicyMapper {
                 activationThreshold,
                 validity,
                 entity.isKycRequired(),
-                PolicyStatus.valueOf(entity.getStatus()),
+                FeePolicyStatus.valueOf(entity.getStatus()),
                 createdBy,
                 validatedBy
         );

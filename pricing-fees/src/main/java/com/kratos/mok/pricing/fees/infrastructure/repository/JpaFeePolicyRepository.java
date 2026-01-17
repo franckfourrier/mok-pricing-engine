@@ -7,19 +7,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.UUID;
 
-public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, UUID> {
+public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, String> {
 
     @Query("""
-        SELECT f FROM FeePolicyEntity f 
-        WHERE f.transactionType = :type 
-        AND f.status = 'ACTIVE' 
-        AND (
-            f.targetScope = 'GLOBAL' 
-            OR (f.targetScope = 'PROFILE' AND f.targetValue = :profile)
-            OR (f.targetScope = 'INDIVIDUAL' AND f.targetValue = :accountId)
-        )
+        SELECT f FROM FeePolicyEntity f
+        WHERE f.transactionType = :type
+          AND f.status = 'ACTIVE'
+          AND (f.validityStart IS NULL OR f.validityStart <= CURRENT_TIMESTAMP)
+          AND (f.validityEnd IS NULL OR f.validityEnd >= CURRENT_TIMESTAMP)
+          AND (
+              f.targetScope = 'GLOBAL'
+              OR (f.targetScope = 'PROFILE' AND f.targetValue = :profile)
+              OR (f.targetScope = 'INDIVIDUAL' AND f.targetValue = :accountId)
+          )
+        ORDER BY f.priority DESC
     """)
     List<FeePolicyEntity> findActiveCandidates(
             @Param("type") TransactionType type,
@@ -27,3 +29,4 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, U
             @Param("profile") String profile
     );
 }
+
