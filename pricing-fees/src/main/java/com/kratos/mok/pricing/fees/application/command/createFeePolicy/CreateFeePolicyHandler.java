@@ -13,6 +13,8 @@ import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
 import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
+import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
+import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -71,53 +75,22 @@ public class CreateFeePolicyHandler {
 
         // 🔴 Barrière 2 — Conflit = BLOCAGE
         if (repository.existsConflictingPolicy(policy)) {
-
-            policy.block(
-                    "CONFLICTING_POLICY",
-                    "Une politique active existe déjà pour ce périmètre",
-                    authorId
-            );
-
-            repository.save(policy);
-
-            eventPublisher.publishEvent(
-                    new ConfigurationBlockedEvent(
-                            policy.id().value(),
-                            "FEE_POLICY",
-                            authorId,
-                            "CONFLICTING_POLICY",
-                            "Conflit avec une politique existante",
-                            java.util.Map.of(
-                                    "transactionType", cmd.type().name(),
-                                    "scope", cmd.targetScope().name(),
-                                    "value", cmd.targetValue()
-                            )
-                    )
-            );
-
-            return new CreateFeePolicyResponse(policy.id().value(), false, policy.status());
+            block(policy, authorId, "CONFLICTING_POLICY", "Policy conflict", cmd);
+            //return blocked(policy);
+            throw new ConflictException("Une politique active existe déjà pour ce périmètre");
         }
 
         // 🔴 Barrière 3 — Non conformité BEAC = BLOCAGE
         try {
             regulatoryGatekeeper.validate(policy.toComplianceData());
         } catch (RegulatoryViolationException e) {
-            policy.block("BEAC_NON_COMPLIANT", e.getMessage(), authorId);
-            repository.save(policy);
-
-            eventPublisher.publishEvent(
-                    new ConfigurationBlockedEvent(
-                            policy.id().value(),
-                            "FEE_POLICY",
-                            authorId,
-                            e.regulationCode(),
-                            e.getMessage(),
-                            java.util.Map.of("regulationCode", e.regulationCode()
-                            )
-                    )
+            block(policy, authorId, e.regulationCode(), e.getMessage(), cmd);
+            //return blocked(policy);
+            throw new DomainValidationException(
+                    "BEAC_NON_COMPLIANT",
+                    e.getMessage(),
+                    Map.of("regulationCode", e.regulationCode())
             );
-
-            return new CreateFeePolicyResponse(policy.id().value(), false, policy.status());
         }
 
         // ✅ Création valide → en attente de validation
@@ -125,16 +98,32 @@ public class CreateFeePolicyHandler {
 
         repository.save(policy);
 
-        eventPublisher.publishEvent(
-                new FeePolicyCreatedEvent(
-                        policy.id().value(),
-                        authorId,
-                        LocalDateTime.now()
-                )
-        );
+        eventPublisher.publishEvent(new FeePolicyCreatedEvent(
+                policy.id().value(), authorId, LocalDateTime.now()));
 
-        return new CreateFeePolicyResponse(policy.id().value(), true, policy.status()
-        );
+        return new CreateFeePolicyResponse(policy.id().value(), true, policy.status());
+    }
+
+    private void block(FeePolicy p, String actor, String code, String reason, CreateFeePolicyCommand cmd) {
+        p.block(code, reason, actor);
+        repository.save(p);
+
+        eventPublisher.publishEvent(new ConfigurationBlockedEvent(
+                p.id().value(),
+                "FEE_POLICY",
+                actor,
+                code,
+                reason,
+                Map.of(
+                        "transactionType", cmd.type().name(),
+                        "scope", cmd.targetScope().name(),
+                        "value", cmd.targetValue()
+                )
+        ));
+    }
+
+    private CreateFeePolicyResponse blocked(FeePolicy p) {
+        return new CreateFeePolicyResponse(p.id().value(), false, p.status());
     }
 
     private FeeTarget toTarget(TargetScope scope, String value) {
@@ -148,16 +137,41 @@ public class CreateFeePolicyHandler {
 
     private FeeStrategy toStrategy(CreateFeePolicyCommand cmd) {
         return switch (cmd.strategyType()) {
-            case FIXED -> new FixedFee(Money.of(required(cmd.fixedAmount(), "fixedAmount is required for FIXED")));
+            case FIXED -> {
+                if (cmd.fixedAmount() == null || cmd.fixedAmount().isBlank()) {
+                    throw new DomainValidationException(
+                            "FIXED_AMOUNT_REQUIRED",
+                            "fixedAmount is required for FIXED strategy",
+                            java.util.Map.of("strategyType", "FIXED")
+                    );
+                }
+                yield new FixedFee(Money.of(cmd.fixedAmount()));
+            }
             case PROPORTIONAL -> {
-                BigDecimal percent = new BigDecimal(required(cmd.percentage(), "percentage is required for PROPORTIONAL"));
+                if (cmd.percentage() == null || cmd.percentage().isBlank()) {
+                    throw new DomainValidationException(
+                            "PERCENTAGE_REQUIRED",
+                            "percentage is required for PROPORTIONAL strategy",
+                            java.util.Map.of("strategyType", "PROPORTIONAL")
+                    );
+                }
+                BigDecimal percent = new BigDecimal(cmd.percentage());
                 yield new ProportionalFee(new FeePercentage(percent));
             }
-            case TIERED -> new TieredFee(toTiers(cmd.tiers()));
+            case TIERED -> {
+                if (cmd.tiers() == null || cmd.tiers().isEmpty()) {
+                    throw new DomainValidationException(
+                            "TIERS_REQUIRED",
+                            "tiers are required for TIERED strategy",
+                            java.util.Map.of("strategyType", "TIERED")
+                    );
+                }
+                yield new TieredFee(toTiers(cmd.tiers()));
+            }
         };
     }
 
-    private java.util.List<Tier> toTiers(java.util.List<CreateFeePolicyCommand.TierCommand> tiers) {
+    private List<Tier> toTiers(java.util.List<CreateFeePolicyCommand.TierCommand> tiers) {
         if (tiers == null || tiers.isEmpty()) {
             throw new IllegalArgumentException("tiers are required for TIERED");
         }
