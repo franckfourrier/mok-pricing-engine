@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.control.infrastructure;
 
 import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
 import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryGatekeeper;
-import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
 import org.springframework.stereotype.Component;
 
 

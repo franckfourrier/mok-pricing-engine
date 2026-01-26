@@ -148,9 +148,10 @@ public class FeePolicy {
             SuspensionWindow suspension,
             AuditInfo created,
             AuditInfo lastModified,
-            AuditInfo approvedOrRejected
+            AuditInfo approvedOrRejected,
+            String blockReason
     ) {
-        return new FeePolicy(
+        var p = new FeePolicy(
                 id,
                 transactionType,
                 target,
@@ -165,8 +166,14 @@ public class FeePolicy {
                 lastModified,
                 approvedOrRejected
         );
-    }
 
+        p.blockReason = blockReason ;
+
+        return p;
+    }
+    public String blockReason() {
+        return blockReason;
+    }
     // -------------------------
     // Commands (business methods)
     // -------------------------
@@ -415,6 +422,42 @@ public class FeePolicy {
                 this.rules.minFee(),
                 this.rules.maxFee(),
                 this.kycRequirement == KycRequirement.REQUIRED
+        );
+    }
+
+    public static FeePolicy bootstrapActive(
+            TransactionType transactionType,
+            FeeTarget target,
+            FeeStrategy strategy,
+            FeeRules rules,
+            KycRequirement kycRequirement,
+            ValidityPeriod validity,
+            PolicyPriority priority,
+            String systemActor,
+            LocalDateTime when
+    ) {
+        var id = FeePolicyId.generate();
+
+        var audit = new AuditInfo(
+                systemActor,
+                when,
+                "SYSTEM_BOOTSTRAP"
+        );
+
+        return new FeePolicy(
+                id,
+                transactionType,
+                target,
+                strategy,
+                rules,
+                kycRequirement,
+                validity,
+                priority,
+                FeePolicyStatus.ACTIVE,   // ✅ direct ACTIVE
+                null,                     // suspension
+                audit,                    // created
+                audit,                    // lastModified
+                audit                     // approvedOrRejected (optionnel, mais cohérent: “validé par système”)
         );
     }
 

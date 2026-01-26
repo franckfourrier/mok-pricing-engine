@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.domain.gateway;
+package com.kratos.mok.pricing.shared.domain.exception;
 
 public class RegulatoryViolationException extends RuntimeException {
 

@@ -11,7 +11,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
         "com.kratos.mok.pricing.app",
         "com.kratos.mok.pricing.fees",
         "com.kratos.mok.pricing.control",
-        "com.kratos.mok.pricing.audit"
+        "com.kratos.mok.pricing.audit",
+        "com.kratos.mok.pricing.shared"
 })
 public class MoKPricingEngineApplication {
 

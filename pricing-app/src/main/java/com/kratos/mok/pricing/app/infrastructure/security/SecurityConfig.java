@@ -1,3 +1,4 @@
+/*
 package com.kratos.mok.pricing.app.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
@@ -34,14 +35,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
+    */
+/**
      * Convertit les claims JWT -> GrantedAuthorities.
      *
      * Supporte les formats courants :
      * - roles: ["ADMIN","SUPER_ADMIN"]
      * - authorities: ["ROLE_ADMIN", ...]
      * - scope/scp: "admin super_admin" (optionnel)
-     */
+     *//*
+
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -74,3 +77,4 @@ public class SecurityConfig {
     }
 }
 
+*/

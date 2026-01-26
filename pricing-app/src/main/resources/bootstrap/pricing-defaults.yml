@@ -1,0 +1,30 @@
+bootstrap:
+  version: 1
+  fees:
+    - transactionType: DEPOSIT
+      target:
+        scope: GLOBAL
+        value: "ALL"
+
+      strategyType: FIXED
+      fixedAmount: "100"
+      activationThreshold: "0"
+      minFee: "0"
+      maxFee: "500"
+      minMonthlyTxCount: null
+      kycRequirement: NONE
+
+    - transactionType: WITHDRAWAL
+      target:
+        scope: GLOBAL
+        value: "ALL"
+
+      strategyType: PROPORTIONAL
+      percentage: "0.01"
+      activationThreshold: "5000"
+      minFee: "50"
+      maxFee: "2000"
+      minMonthlyTxCount: 3
+      kycRequirement: REQUIRED
+
+

@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.infrastructure.config;
+package com.kratos.mok.pricing.app.infrastructure.config.fees;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;

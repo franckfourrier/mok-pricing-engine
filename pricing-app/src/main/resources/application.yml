@@ -5,3 +5,5 @@ spring:
   jackson:
     serialization:
       INDENT_OUTPUT: false
+  config:
+    import: "classpath:bootstrap/pricing-defaults.yml"

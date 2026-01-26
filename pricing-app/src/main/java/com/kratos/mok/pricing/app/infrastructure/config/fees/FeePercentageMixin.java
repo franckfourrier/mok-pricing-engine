@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.infrastructure.config;
+package com.kratos.mok.pricing.app.infrastructure.config.fees;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.math.BigDecimal;

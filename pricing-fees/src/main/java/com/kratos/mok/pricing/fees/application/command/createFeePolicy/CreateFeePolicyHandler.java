@@ -1,7 +1,7 @@
 package com.kratos.mok.pricing.fees.application.command.createFeePolicy;
 
-import com.kratos.mok.pricing.control.domain.event.ConfigurationBlockedEvent;
-import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
+import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;

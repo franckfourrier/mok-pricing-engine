@@ -12,6 +12,11 @@
     <dependencies>
         <dependency>
             <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-shared</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
             <artifactId>pricing-fees</artifactId>
         </dependency>
 

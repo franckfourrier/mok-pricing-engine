@@ -31,11 +31,5 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.kratos.mok.pricing</groupId>
-            <artifactId>pricing-control</artifactId>
-        </dependency>
-
-
     </dependencies>
 </project>

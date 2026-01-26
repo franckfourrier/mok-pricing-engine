@@ -1,6 +1,4 @@
-package com.kratos.mok.pricing.control.domain.event;
-
-import com.kratos.mok.pricing.shared.domain.event.PricingEvent;
+package com.kratos.mok.pricing.shared.domain.event;
 
 import java.time.LocalDateTime;
 import java.util.Map;
