@@ -17,12 +17,20 @@ spring:
       driver-class-name: org.postgresql.Driver
 
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
+
+pricing:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+audit:
+  jpa:
+    hibernate:
+      ddl-auto: validate
 
 server:
   port: 8080

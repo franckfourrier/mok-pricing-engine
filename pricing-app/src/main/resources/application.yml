@@ -7,3 +7,9 @@ spring:
       INDENT_OUTPUT: false
   config:
     import: "classpath:bootstrap/pricing-defaults.yml"
+  jpa:
+    open-in-view: false
+
+server:
+  servlet:
+    context-path: /api

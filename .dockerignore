@@ -1,0 +1,9 @@
+**/target/*
+!pricing-app/target/*.jar
+
+**/.idea
+**/.git
+**/*.iml
+**/.classpath
+**/.project
+.DS_Store

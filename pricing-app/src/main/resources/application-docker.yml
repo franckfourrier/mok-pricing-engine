@@ -1,0 +1,36 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    pricing:
+      url: jdbc:postgresql://pricing-db:5432/pricing_db
+      username: ${PRICING_DB_USER:postgres}
+      password: ${PRICING_DB_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+
+    audit:
+      url: jdbc:postgresql://audit-db:5432/audit_db
+      username: ${AUDIT_DB_USER:postgres}
+      password: ${AUDIT_DB_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+pricing:
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+audit:
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  port: 8080
