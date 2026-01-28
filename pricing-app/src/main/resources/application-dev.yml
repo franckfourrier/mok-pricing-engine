@@ -34,3 +34,16 @@ audit:
 
 server:
   port: 8080
+
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always
+
+logging:
+  level:
+    com.kratos: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+
+

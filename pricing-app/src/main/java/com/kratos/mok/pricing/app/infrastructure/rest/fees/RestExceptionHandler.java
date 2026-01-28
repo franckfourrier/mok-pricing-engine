@@ -3,6 +3,8 @@ package com.kratos.mok.pricing.app.infrastructure.rest.fees;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,9 +15,15 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class RestExceptionHandler {
+    // (optionnel) si tu veux conditionner l’affichage en dev
+    private final Environment env;
 
+    public RestExceptionHandler(Environment env) {
+        this.env = env;
+    }
     // -----------------------------
     // 400 — BAD REQUEST
     // -----------------------------
@@ -106,10 +114,16 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleFatal(Exception ex) {
+        String traceId = java.util.UUID.randomUUID().toString();
+        log.error("traceId={} Unhandled exception", traceId, ex);
+
+
+        boolean isDev = java.util.Arrays.asList(env.getActiveProfiles()).contains("dev");
+
         return ResponseEntity.status(500).body(problem(
                 "INTERNAL_ERROR",
-                "Unexpected technical error",
-                Map.of()
+                isDev ? ex.getClass().getSimpleName() + ": " + ex.getMessage() : "Unexpected technical error",
+                Map.of("traceId", traceId)
         ));
     }
 

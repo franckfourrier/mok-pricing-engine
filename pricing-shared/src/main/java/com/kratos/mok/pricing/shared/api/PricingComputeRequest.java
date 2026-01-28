@@ -4,8 +4,7 @@ import java.time.OffsetDateTime;
 
 public record PricingComputeRequest(
         String transactionType,
-        String amount,
-        String currency,
+        MoneyDto amount,
         String accountId,
         String accountType,
         boolean kycValidated,

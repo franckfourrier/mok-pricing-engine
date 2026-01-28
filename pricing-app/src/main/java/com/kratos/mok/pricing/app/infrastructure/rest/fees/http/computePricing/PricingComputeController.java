@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,12 +25,12 @@ public class PricingComputeController {
     }
 
     @PostMapping("/compute")
-    public PricingBreakdownResponse compute(@RequestBody PricingComputeRequest req) {
+    public PricingBreakdownResponse compute(@RequestBody @Valid PricingComputeRequest req) {
 
         TransactionType txType = TransactionType.valueOf(req.transactionType().trim().toUpperCase());
         AccountType accType = AccountType.valueOf(req.accountType().trim().toUpperCase());
 
-        Money amount = Money.of(req.amount(), req.currency());
+        Money amount = Money.of(req.amount().amount(), req.amount().currency());
 
         var ctx = new PricingRequestContext(
                 txType,
