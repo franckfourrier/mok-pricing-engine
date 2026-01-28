@@ -2,7 +2,7 @@
 package com.kratos.mok.pricing.app.fees.tests.unit;
 
 import com.kratos.mok.pricing.fees.domain.*;
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.snapshot.FeePolicySnapshot;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.fees.domain.strategy.FixedFee;

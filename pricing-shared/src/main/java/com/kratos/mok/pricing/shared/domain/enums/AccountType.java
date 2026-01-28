@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.domain.enums;
+package com.kratos.mok.pricing.shared.domain.enums;
 
 public enum AccountType {
     STANDARD,

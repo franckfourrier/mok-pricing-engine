@@ -8,6 +8,7 @@ import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
 import com.kratos.mok.pricing.fees.infrastructure.model.AuditEmbeddable;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import org.springframework.stereotype.Component;

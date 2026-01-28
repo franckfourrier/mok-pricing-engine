@@ -6,7 +6,7 @@ import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
 import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FixedFee;
 import com.kratos.mok.pricing.fees.domain.strategy.ProportionalFee;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;

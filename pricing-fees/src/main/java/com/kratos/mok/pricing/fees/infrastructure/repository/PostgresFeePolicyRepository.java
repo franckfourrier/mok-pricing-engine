@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.fees.infrastructure.repository;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.fees.infrastructure.mapper.FeePolicyEntityMapper;

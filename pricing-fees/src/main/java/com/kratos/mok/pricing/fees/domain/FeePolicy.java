@@ -4,7 +4,7 @@ package com.kratos.mok.pricing.fees.domain;
 import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
 import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeRules;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;

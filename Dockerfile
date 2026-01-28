@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY pricing-app/target/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8017
 
 ENV SPRING_PROFILES_ACTIVE=docker
 

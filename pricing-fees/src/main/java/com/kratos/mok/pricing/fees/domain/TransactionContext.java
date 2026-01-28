@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.fees.domain;
 
-import com.kratos.mok.pricing.fees.domain.enums.AccountType;
+import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.LocalDateTime;

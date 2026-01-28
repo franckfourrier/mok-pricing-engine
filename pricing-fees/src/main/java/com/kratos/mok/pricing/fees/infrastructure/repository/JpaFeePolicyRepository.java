@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.fees.infrastructure.repository;
 
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

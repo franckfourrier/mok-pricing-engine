@@ -2,94 +2,113 @@ package com.kratos.mok.pricing.shared.domain.vo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
 
-public record Money(BigDecimal amount) implements Comparable<Money> {
+public record Money(BigDecimal amount, String currency) implements Comparable<Money> {
 
-    public static final Money ZERO = new Money(BigDecimal.ZERO);
+    public static final String DEFAULT_CURRENCY = "XAF";
+    public static final Money ZERO = new Money(BigDecimal.ZERO, DEFAULT_CURRENCY);
 
     public Money {
-        if (amount == null) {
-            throw new IllegalArgumentException("The amount cannot be null");
+        Objects.requireNonNull(amount, "amount cannot be null");
+        Objects.requireNonNull(currency, "currency cannot be null");
+
+        if (currency.isBlank()) {
+            throw new IllegalArgumentException("currency cannot be blank");
         }
 
-        // Validation : On refuse une précision excessive en entrée (ex: 10.555)
-        // Cela force le développeur à choisir explicitement sa stratégie d'arrondi AVANT de créer l'objet.
         if (amount.scale() > 2) {
-            throw new IllegalArgumentException("Maximum precision exceeded (2 decimal places) for value: " + amount);
+            throw new IllegalArgumentException(
+                    "Maximum precision exceeded (2 decimal places) for value: " + amount
+            );
         }
 
-        // Normalisation : On force toujours 2 décimales (ex: 10 devient 10.00)
-        // Le "amount =" modifie la valeur qui sera réellement stockée dans le record
         amount = amount.setScale(2, RoundingMode.HALF_EVEN);
+        currency = currency.toUpperCase();
     }
 
-    // --- Factory Methods ---
-    public static Money of(long value) {
-        return new Money(BigDecimal.valueOf(value));
+    // ---------- Factories ----------
+    public static Money of(String value) {
+        return new Money(new BigDecimal(value), DEFAULT_CURRENCY);
+    }
+
+    public static Money of(String value, String currency) {
+        return new Money(new BigDecimal(value), currency);
     }
 
     public static Money of(double value) {
-        // Attention aux doubles, on passe par String pour la précision
-        return new Money(BigDecimal.valueOf(value));
+        return new Money(BigDecimal.valueOf(value), DEFAULT_CURRENCY);
     }
 
-    public static Money of(String value) {
-        return new Money(new BigDecimal(value));
+    public static Money of(double value, String currency) {
+        return new Money(BigDecimal.valueOf(value), currency);
     }
 
     public static Money of(BigDecimal value) {
-        return new Money(value);
+        return new Money(value, DEFAULT_CURRENCY);
     }
 
-    // --- Opérations Mathématiques ---
+    public static Money of(BigDecimal value, String currency) {
+        return new Money(value, currency);
+    }
 
+
+    // ---------- Operations ----------
     public Money add(Money other) {
-        return new Money(this.amount.add(other.amount));
+        ensureSameCurrency(other);
+        return new Money(this.amount.add(other.amount), currency);
     }
 
     public Money subtract(Money other) {
-        return new Money(this.amount.subtract(other.amount));
+        ensureSameCurrency(other);
+        return new Money(this.amount.subtract(other.amount), currency);
     }
 
     public Money multiply(BigDecimal factor) {
-        // Critique : On doit arrondir AVANT de recréer l'objet Money,
-        // sinon le constructeur lancera une exception "Maximum precision exceeded".
-        BigDecimal result = this.amount.multiply(factor)
+        BigDecimal result = this.amount
+                .multiply(factor)
                 .setScale(2, RoundingMode.HALF_EVEN);
-        return new Money(result);
+        return new Money(result, currency);
     }
 
-    // --- Helpers Logiques ---
+    // ---------- Guards ----------
+    private void ensureSameCurrency(Money other) {
+        if (!this.currency.equals(other.currency)) {
+            throw new IllegalArgumentException(
+                    "Currency mismatch: " + this.currency + " vs " + other.currency
+            );
+        }
+    }
 
+    // ---------- Helpers ----------
     public boolean isPositive() {
-        return this.amount.compareTo(BigDecimal.ZERO) > 0;
+        return amount.compareTo(BigDecimal.ZERO) > 0;
     }
 
     public boolean isNegative() {
-        return this.amount.compareTo(BigDecimal.ZERO) < 0;
+        return amount.compareTo(BigDecimal.ZERO) < 0;
     }
 
     public boolean isZero() {
-        return this.amount.compareTo(BigDecimal.ZERO) == 0;
+        return amount.compareTo(BigDecimal.ZERO) == 0;
     }
 
     @Override
     public int compareTo(Money o) {
-        return this.amount.compareTo(o.amount);
+        ensureSameCurrency(o);
+        return amount.compareTo(o.amount);
     }
 
     @Override
     public String toString() {
-        // On garde le format simple pour le débug
-        return amount.toPlainString() + " XAF";
+        return amount.toPlainString() + " " + currency;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Money money = (Money) o;
-        // Comparaison par valeur numérique (10.00 == 10.0) et non par structure stricte
-        return amount.compareTo(money.amount) == 0;
+        if (!(o instanceof Money other)) return false;
+        return amount.compareTo(other.amount) == 0
+                && currency.equals(other.currency);
     }
 }

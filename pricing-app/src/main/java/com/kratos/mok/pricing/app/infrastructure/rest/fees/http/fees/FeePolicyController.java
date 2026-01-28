@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http;
+package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.fees;
 
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyCommandMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyRequest;

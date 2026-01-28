@@ -3,7 +3,7 @@ package com.kratos.mok.pricing.app.bootstrap;
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
 import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
-import com.kratos.mok.pricing.fees.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
