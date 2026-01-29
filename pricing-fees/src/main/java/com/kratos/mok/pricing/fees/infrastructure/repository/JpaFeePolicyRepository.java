@@ -35,8 +35,8 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
     """)
     List<FeePolicyEntity> findActiveCandidates(
             @Param("type") TransactionType type,
-            @Param("accountId") String accountId,
             @Param("accountType") String accountType,
+            @Param("accountId") String accountId,
             @Param("at") LocalDateTime at
     );
 

@@ -1,27 +1,23 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.computePricing;
+package com.kratos.mok.pricing.app.infrastructure.rest.computePricing;
 
-import com.kratos.mok.pricing.app.application.command.computePricing.ComputePricingBreakdownService;
+import com.kratos.mok.pricing.app.application.query.computePricingBreakdown.ComputePricingBreakdownQuery;
+import com.kratos.mok.pricing.app.application.query.computePricingBreakdown.PricingBreakdownResult;
 import com.kratos.mok.pricing.shared.api.*;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/pricing")
-public class PricingComputeController {
+public class ComputePricingController {
 
-    private final ComputePricingBreakdownService service;
+    private final ComputePricingBreakdownQuery query;
 
-    public PricingComputeController(ComputePricingBreakdownService service) {
-        this.service = service;
+    public ComputePricingController(ComputePricingBreakdownQuery query) {
+        this.query = query;
     }
 
     @PostMapping("/compute")
@@ -42,16 +38,15 @@ public class PricingComputeController {
                 req.occurredAt()
         );
 
-        var out = service.compute(ctx);
+        PricingBreakdownResult out = query.compute(ctx);
 
         return new PricingBreakdownResponse(
                 out.transactionType(),
-                out.currency(),
-                out.amount(),
-                out.fee(),
+                toDto(out.amount()),
+                toDto(out.fee()),
                 null,
                 null,
-                out.totalDebited(),
+                toDto(out.totalDebited()),
                 null,
                 new SelectedPoliciesDto(out.feePolicyId(), out.taxPolicyId(), out.commissionPolicyId())
         );

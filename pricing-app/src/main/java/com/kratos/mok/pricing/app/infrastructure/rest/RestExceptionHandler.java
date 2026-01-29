@@ -1,7 +1,8 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees;
+package com.kratos.mok.pricing.app.infrastructure.rest;
 
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
+import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -67,6 +68,21 @@ public class RestExceptionHandler {
     }
 
     // -----------------------------
+    // 404 — NOT FOUND
+    // -----------------------------
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(
+            NotFoundException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem(
+                ex.code(),
+                ex.getMessage(),
+                ex.details()
+        ));
+    }
+
+
+    // -----------------------------
     // 422 — UNPROCESSABLE ENTITY
     // -----------------------------
 
@@ -85,6 +101,14 @@ public class RestExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex
     ) {
+        // cas classique Enum.valueOf(...)
+        if (ex.getMessage() != null && ex.getMessage().startsWith("No enum constant")) {
+            return ResponseEntity.badRequest().body(problem(
+                    "INVALID_ENUM",
+                    ex.getMessage(),
+                    Map.of()
+            ));
+        }
         // fallback métier (quand on n’a pas encore refactoré en DomainValidationException)
         return ResponseEntity.status(422).body(problem(
                 "DOMAIN_RULE_VIOLATION",

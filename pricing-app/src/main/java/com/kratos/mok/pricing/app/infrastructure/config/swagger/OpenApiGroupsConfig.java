@@ -12,8 +12,8 @@ public class OpenApiGroupsConfig {
         return GroupedOpenApi.builder()
                 .group("fees")
                 .pathsToMatch(
-                        "/api/v1/fees/**",
-                        "/api/v1/fee-policies/**"
+                        "/v1/fees/**",
+                        "/v1/fee-policies/**"
                 )
                 .build();
     }
@@ -23,8 +23,8 @@ public class OpenApiGroupsConfig {
         return GroupedOpenApi.builder()
                 .group("taxes")
                 .pathsToMatch(
-                        "/api/v1/taxes/**",
-                        "/api/v1/tax-policies/**"
+                        "/v1/taxes/**",
+                        "/v1/tax-policies/**"
                 )
                 .build();
     }
@@ -34,8 +34,8 @@ public class OpenApiGroupsConfig {
         return GroupedOpenApi.builder()
                 .group("commissions")
                 .pathsToMatch(
-                        "/api/v1/commissions/**",
-                        "/api/v1/commission-policies/**"
+                        "/v1/commissions/**",
+                        "/v1/commission-policies/**"
                 )
                 .build();
     }
@@ -44,7 +44,7 @@ public class OpenApiGroupsConfig {
     GroupedOpenApi pricingApi() {
         return GroupedOpenApi.builder()
                 .group("pricing")
-                .pathsToMatch("/api/v1/pricing/**")
+                .pathsToMatch("/v1/pricing/**")
                 .build();
     }
 }

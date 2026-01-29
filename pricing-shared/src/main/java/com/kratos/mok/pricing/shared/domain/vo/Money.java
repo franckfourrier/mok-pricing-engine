@@ -11,10 +11,14 @@ public record Money(BigDecimal amount, String currency) implements Comparable<Mo
 
     public Money {
         Objects.requireNonNull(amount, "amount cannot be null");
-        Objects.requireNonNull(currency, "currency cannot be null");
+        //Objects.requireNonNull(currency, "currency cannot be null");
 
-        if (currency.isBlank()) {
+        /*if (currency.isBlank()) {
             throw new IllegalArgumentException("currency cannot be blank");
+        }*/
+
+        if (currency == null || currency.isBlank()) {
+            currency = DEFAULT_CURRENCY;
         }
 
         if (amount.scale() > 2) {

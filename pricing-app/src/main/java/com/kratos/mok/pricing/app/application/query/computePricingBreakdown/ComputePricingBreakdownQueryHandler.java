@@ -1,30 +1,32 @@
-package com.kratos.mok.pricing.app.application.command.computePricing;
+package com.kratos.mok.pricing.app.application.query.computePricingBreakdown;
 
-import com.kratos.mok.pricing.fees.application.port.FeeComputationPort;
+import com.kratos.mok.pricing.fees.application.port.ComputeFeeQuery;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class ComputePricingBreakdownService {
+@Transactional(readOnly = true)
+public class ComputePricingBreakdownQueryHandler implements ComputePricingBreakdownQuery {
 
-    private final FeeComputationPort feePort;
+    private final ComputeFeeQuery feeQuery;
     //private final TaxComputationPort taxPort;
     //private final CommissionComputationPort commissionPort;
 
-    public ComputePricingBreakdownService(
-            FeeComputationPort feePort
+    public ComputePricingBreakdownQueryHandler(
+            ComputeFeeQuery feeQuery
             //TaxComputationPort taxPort,
             //CommissionComputationPort commissionPort
     ) {
-        this.feePort = feePort;
+        this.feeQuery = feeQuery;
         //this.taxPort = taxPort;
         //this.commissionPort = commissionPort;
     }
 
-    public PricingBreakdown compute(PricingRequestContext ctx) {
+    public PricingBreakdownResult compute(PricingRequestContext ctx) {
 
-        var feeComputationResult = feePort.computeFee(ctx);
+        var feeComputationResult = feeQuery.computeFee(ctx);
         //var tax = taxPort.computeTax(ctx);
         //var commission = commissionPort.computeCommission(ctx);
 
@@ -45,14 +47,13 @@ public class ComputePricingBreakdownService {
                 commission.policyId()
         );*/
 
-        return new PricingBreakdown(
+        return new PricingBreakdownResult(
                 ctx.transactionType().name(),
-                ctx.amount().currency(),
-                ctx.amount().amount().toPlainString(),
-                feeComputationResult.fee().amount().toPlainString(),
+                ctx.amount(),
+                feeComputationResult.fee(),
                 null,
                 null,
-                totalDebited.amount().toPlainString(),
+                totalDebited,
                 null,
                 feeComputationResult.feePolicyId(),
                 null,

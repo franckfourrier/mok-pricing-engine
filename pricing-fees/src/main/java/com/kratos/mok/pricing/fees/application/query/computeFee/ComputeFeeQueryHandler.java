@@ -1,7 +1,7 @@
-package com.kratos.mok.pricing.fees.application;
+package com.kratos.mok.pricing.fees.application.query.computeFee;
 
 import com.kratos.mok.pricing.fees.application.adapter.FeeTransactionContextAdapter;
-import com.kratos.mok.pricing.fees.application.port.FeeComputationPort;
+import com.kratos.mok.pricing.fees.application.port.ComputeFeeQuery;
 import com.kratos.mok.pricing.fees.application.port.FeeComputationResult;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
@@ -13,12 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 @Service
-public class FeeComputationService implements FeeComputationPort {
+@Transactional(readOnly = true)
+public class ComputeFeeQueryHandler implements ComputeFeeQuery {
 
     private final FeePolicyRepository repository;
     private final FeePolicyResolver resolver;
 
-    public FeeComputationService(FeePolicyRepository repository, FeePolicyResolver resolver) {
+    public ComputeFeeQueryHandler(FeePolicyRepository repository, FeePolicyResolver resolver) {
         this.repository = repository;
         this.resolver = resolver;
     }

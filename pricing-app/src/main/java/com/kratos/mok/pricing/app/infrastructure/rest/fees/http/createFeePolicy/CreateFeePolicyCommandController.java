@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.fees;
+package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.createFeePolicy;
 
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyCommandMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyRequest;
@@ -6,7 +6,6 @@ import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFee
 import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -16,9 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/api/v1/fee-policies")
+@RequestMapping("/v1/fee-policies")
 @RequiredArgsConstructor
-public class FeePolicyController {
+public class CreateFeePolicyCommandController {
 
     private final CreateFeePolicyHandler handler;
 

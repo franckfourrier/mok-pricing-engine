@@ -44,7 +44,7 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
                 ? null
                 : accountId.trim();
 
-        return jpaRepository.findActiveCandidates(type, normalizedAccountId, normalizedAccountType, at)
+        return jpaRepository.findActiveCandidates(type, normalizedAccountType, normalizedAccountId, at)
                 .stream()
                 .map(mapper::toDomain)
                 .toList();

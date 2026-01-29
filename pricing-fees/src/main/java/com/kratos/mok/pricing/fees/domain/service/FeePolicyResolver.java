@@ -2,16 +2,26 @@ package com.kratos.mok.pricing.fees.domain.service;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.TransactionContext;
+import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class FeePolicyResolver {
 
     public FeePolicy resolveBestPolicy(List<FeePolicy> candidates, TransactionContext ctx, LocalDateTime now) {
         if (candidates == null || candidates.isEmpty()) {
-            throw new IllegalStateException("No fee policy candidates found");
+            throw new NotFoundException(
+                    "FEE_POLICY_NOT_FOUND",
+                    "No fee policy configured for this transaction type / scope",
+                    Map.of(
+                            //"transactionType", ctx.transactionType().name(),
+                            //"accountType", ctx.accountType(),
+                            //"accountId", ctx.accountId()
+                    )
+            );
         }
 
         var at = (now == null) ? LocalDateTime.now() : now;
@@ -23,6 +33,17 @@ public class FeePolicyResolver {
                         .thenComparing(p -> p.created().timestamp(), Comparator.nullsLast(Comparator.reverseOrder()))
                 )
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No applicable fee policy found"));
+                .orElseThrow(() -> new NotFoundException(
+                        "FEE_POLICY_NOT_APPLICABLE",
+                        "No fee policy applicable for the provided context",
+                        Map.of(
+                                //"transactionType", ctx.transactionType().name(),
+                                //"accountType", ctx.accountType(),
+                                //"accountId", ctx.accountId(),
+                                //"kycValidated", ctx.kycValidated(),
+                                //"monthlyTxCount", ctx.monthlyTxCount(),
+                                //"occurredAt", at.toString()
+                        )
+                ));
     }
 }
