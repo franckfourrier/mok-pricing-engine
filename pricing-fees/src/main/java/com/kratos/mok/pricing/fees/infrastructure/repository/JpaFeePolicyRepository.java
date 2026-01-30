@@ -1,15 +1,17 @@
 package com.kratos.mok.pricing.fees.infrastructure.repository;
 
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, String> {
+public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, String>, JpaSpecificationExecutor<FeePolicyEntity> {
 
     /**
      * Retourne les policies candidates applicables pour une transaction à l'instant "at".
@@ -45,7 +47,7 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
      */
     boolean existsByTransactionTypeAndTargetScopeAndTargetValue(
             TransactionType transactionType,
-            String targetScope,
+            TargetScope targetScope,
             String targetValue
     );
 

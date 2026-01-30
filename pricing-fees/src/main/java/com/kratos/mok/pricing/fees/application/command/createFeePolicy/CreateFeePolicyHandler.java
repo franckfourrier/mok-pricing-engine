@@ -5,7 +5,7 @@ import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationExcepti
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.fees.domain.event.FeePolicyCreatedEvent;
 import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryGatekeeper;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;

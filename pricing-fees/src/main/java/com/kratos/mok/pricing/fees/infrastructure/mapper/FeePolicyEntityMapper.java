@@ -8,6 +8,7 @@ import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
 import com.kratos.mok.pricing.fees.infrastructure.model.AuditEmbeddable;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
@@ -24,7 +25,7 @@ public class FeePolicyEntityMapper {
         e.setId(p.id().value());
         e.setTransactionType(p.transactionType());
 
-        e.setTargetScope(p.target().scope().name());
+        e.setTargetScope(p.target().scope());
         e.setTargetValue(p.target().value());
 
         e.setPriority(p.priority().value());
@@ -79,7 +80,7 @@ public class FeePolicyEntityMapper {
         FeePolicyId id = FeePolicyId.from(e.getId());
 
         TransactionType txType = e.getTransactionType();
-        TargetScope scope = TargetScope.valueOf(e.getTargetScope());
+        TargetScope scope = e.getTargetScope();
         FeeTarget target = new FeeTarget(scope, e.getTargetValue());
 
         PolicyPriority priority = PolicyPriority.of(e.getPriority());

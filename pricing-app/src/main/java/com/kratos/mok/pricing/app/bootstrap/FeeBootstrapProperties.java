@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.app.bootstrap;
 
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -17,13 +17,14 @@ import java.util.List;
 @ConfigurationProperties(prefix = "bootstrap")
 public record FeeBootstrapProperties(
         @NotNull Integer version,
+
+        String currency,
+
         @NotEmpty @Valid List<FeePolicyYaml> fees
 ) {
     public record FeePolicyYaml(
             @NotNull TransactionType transactionType,
-
             @NotNull @Valid TargetYaml target,
-
             @NotNull FeeStrategyType strategyType,
 
             // FIXED
@@ -40,7 +41,6 @@ public record FeeBootstrapProperties(
             String maxFee,
 
             @Min(0) Integer minMonthlyTxCount,
-
             @NotNull KycRequirement kycRequirement
     ) {}
 
@@ -52,7 +52,7 @@ public record FeeBootstrapProperties(
     public record TierYaml(
             @NotNull String min,
             @NotNull String max,
-            @NotNull FeeStrategyType tierStrategyType,
-            @NotNull String tierValue
+            @NotNull FeeStrategyType tierStrategyType, // FIXED ou PROPORTIONAL (pas TIERED)
+            @NotNull String tierValue                 // soit montant, soit pourcentage
     ) {}
 }

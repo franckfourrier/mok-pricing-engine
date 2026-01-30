@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.fees.infrastructure.model;
 
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import jakarta.persistence.*;
@@ -33,8 +34,12 @@ public class FeePolicyEntity {
     @Column(name = "transaction_type", nullable = false, length = 40)
     private TransactionType transactionType;
 
+    /*@Column(name = "target_scope", nullable = false, length = 30)
+    private String targetScope; // TargetScope.name()*/
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_scope", nullable = false, length = 30)
-    private String targetScope; // TargetScope.name()
+    private TargetScope targetScope;
 
     @Column(name = "target_value", nullable = false, length = 80)
     private String targetValue;

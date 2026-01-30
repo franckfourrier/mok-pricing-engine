@@ -3,7 +3,7 @@ package com.kratos.mok.pricing.app.bootstrap;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
 import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
@@ -24,7 +24,6 @@ import java.util.List;
 public class FeePolicyBootstrapService {
 
     public static final String SYSTEM_ACTOR = "SYSTEM_BOOTSTRAP";
-
     private final FeePolicyRepository repository;
 
     @Transactional
@@ -33,6 +32,11 @@ public class FeePolicyBootstrapService {
         if (props.version() == null) {
             throw new IllegalArgumentException("bootstrap version is required");
         }
+
+        // ✅ devise du bootstrap (fallback)
+        final String ccy = (props.currency() == null || props.currency().isBlank())
+                ? Money.DEFAULT_CURRENCY
+                : props.currency().trim().toUpperCase();
 
         var now = LocalDateTime.now();
 
@@ -46,8 +50,8 @@ public class FeePolicyBootstrapService {
                 continue;
             }
 
-            FeeStrategy strategy = toStrategy(y);
-            FeeRules rules = toRules(y);
+            FeeStrategy strategy = toStrategy(y, ccy);
+            FeeRules rules = toRules(y, ccy);
             var priority = PolicyPriority.defaultFor(target.scope());
 
             FeePolicy policy = FeePolicy.bootstrapActive(
@@ -73,56 +77,65 @@ public class FeePolicyBootstrapService {
         String v = required(value, "target.value is required").trim();
         return switch (scope) {
             case GLOBAL -> FeeTarget.global();
-            case ACCOUNT_TYPE -> FeeTarget.accountType(v);
+            case ACCOUNT_TYPE -> FeeTarget.accountType(v.toUpperCase()); // ✅ normalisation
             case ACCOUNT_ID -> FeeTarget.accountId(v);
         };
     }
 
-    private FeeRules toRules(FeeBootstrapProperties.FeePolicyYaml y) {
-        Money threshold = Money.of(required(y.activationThreshold(), "activationThreshold is required"));
-        Money min = optionalMoney(y.minFee());
-        Money max = optionalMoney(y.maxFee());
-
+    private FeeRules toRules(FeeBootstrapProperties.FeePolicyYaml y, String ccy) {
+        Money threshold = money(required(y.activationThreshold(), "activationThreshold is required"), ccy);
+        Money min = optionalMoney(y.minFee(), ccy);
+        Money max = optionalMoney(y.maxFee(), ccy);
         return new FeeRules(threshold, min, max, y.minMonthlyTxCount());
     }
 
-    private FeeStrategy toStrategy(FeeBootstrapProperties.FeePolicyYaml y) {
+    private FeeStrategy toStrategy(FeeBootstrapProperties.FeePolicyYaml y, String ccy) {
         return switch (y.strategyType()) {
-            case FIXED -> new FixedFee(Money.of(required(y.fixedAmount(), "fixedAmount is required for FIXED")));
+            case FIXED -> new FixedFee(money(required(y.fixedAmount(), "fixedAmount is required for FIXED"), ccy));
+
             case PROPORTIONAL -> {
                 BigDecimal p = new BigDecimal(required(y.percentage(), "percentage is required for PROPORTIONAL"));
                 yield new ProportionalFee(new FeePercentage(p));
             }
-            case TIERED -> new TieredFee(toTiers(y.tiers()));
+
+            case TIERED -> new TieredFee(toTiers(y.tiers(), ccy));
         };
     }
 
-    private List<Tier> toTiers(List<FeeBootstrapProperties.TierYaml> tiers) {
+    private List<Tier> toTiers(List<FeeBootstrapProperties.TierYaml> tiers, String ccy) {
         if (tiers == null || tiers.isEmpty()) {
             throw new IllegalArgumentException("tiers are required for TIERED");
         }
         return tiers.stream()
                 .map(t -> new Tier(
-                        Money.of(required(t.min(), "tier.min required")),
-                        Money.of(required(t.max(), "tier.max required")),
-                        toTierStrategy(t)
+                        money(required(t.min(), "tier.min required"), ccy),
+                        money(required(t.max(), "tier.max required"), ccy),
+                        toTierStrategy(t, ccy)
                 ))
                 .toList();
     }
 
-    private FeeStrategy toTierStrategy(FeeBootstrapProperties.TierYaml t) {
+    private FeeStrategy toTierStrategy(FeeBootstrapProperties.TierYaml t, String ccy) {
         return switch (t.tierStrategyType()) {
-            case FIXED -> new FixedFee(Money.of(required(t.tierValue(), "tierValue required for tier FIXED")));
+            case FIXED -> new FixedFee(money(required(t.tierValue(), "tierValue required for tier FIXED"), ccy));
+
             case PROPORTIONAL -> {
                 BigDecimal p = new BigDecimal(required(t.tierValue(), "tierValue required for tier PROPORTIONAL"));
                 yield new ProportionalFee(new FeePercentage(p));
             }
+
             case TIERED -> throw new IllegalArgumentException("Nested TIERED not allowed");
         };
     }
 
-    private Money optionalMoney(String v) {
-        return (v == null || v.isBlank()) ? null : Money.of(v);
+    // ---------------- helpers ----------------
+
+    private Money money(String value, String ccy) {
+        return Money.of(value, ccy);
+    }
+
+    private Money optionalMoney(String v, String ccy) {
+        return (v == null || v.isBlank()) ? null : Money.of(v, ccy);
     }
 
     private String required(String v, String msg) {

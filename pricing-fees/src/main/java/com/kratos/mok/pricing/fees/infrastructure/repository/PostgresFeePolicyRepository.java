@@ -1,7 +1,7 @@
 package com.kratos.mok.pricing.fees.infrastructure.repository;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
@@ -65,7 +65,7 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
     public boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value) {
         return jpaRepository.existsByTransactionTypeAndTargetScopeAndTargetValue(
                 transactionType,
-                scope.name(),
+                scope,
                 normalize(scope, value)
         );
     }

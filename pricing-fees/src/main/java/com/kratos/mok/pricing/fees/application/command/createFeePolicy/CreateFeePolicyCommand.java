@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.fees.application.command.createFeePolicy;
 
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import java.time.LocalDateTime;
 import java.util.List;

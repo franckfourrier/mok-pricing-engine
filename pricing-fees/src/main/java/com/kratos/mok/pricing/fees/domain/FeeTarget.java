@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.fees.domain;
 
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 
 import java.util.Objects;
 

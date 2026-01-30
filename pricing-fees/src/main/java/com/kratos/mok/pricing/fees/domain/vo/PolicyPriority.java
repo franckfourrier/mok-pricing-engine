@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.fees.domain.vo;
 
-import com.kratos.mok.pricing.fees.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 
 public record PolicyPriority(int value) {
 
