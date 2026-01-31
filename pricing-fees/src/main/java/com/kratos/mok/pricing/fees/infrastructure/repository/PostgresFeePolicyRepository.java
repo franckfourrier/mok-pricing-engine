@@ -52,14 +52,24 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
 
     @Override
     public boolean existsConflictingPolicy(FeePolicy policy) {
-        String scope = policy.target().scope().name();
-        String value = normalize(policy.target().scope(), policy.target().value());
+        TargetScope scope = policy.target().scope();
+        String value = normalize(scope, policy.target().value());
 
         LocalDateTime start = policy.validity().start();
         LocalDateTime end = policy.validity().end();
 
-        return jpaRepository.existsConflict(policy.transactionType(), scope, value, start, end);
+        LocalDateTime startBound = (start == null) ? LocalDateTime.of(1900, 1, 1, 0, 0) : start;
+        LocalDateTime endBound   = (end == null)   ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
+
+        return jpaRepository.existsConflict(
+                policy.transactionType(),
+                scope,
+                value,
+                startBound,
+                endBound
+        );
     }
+
 
     @Override
     public boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value) {

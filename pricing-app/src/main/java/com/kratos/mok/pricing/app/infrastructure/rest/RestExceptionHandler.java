@@ -6,9 +6,12 @@ import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -67,6 +70,27 @@ public class RestExceptionHandler {
         ));
     }
 
+    // -----------------------------
+    // 401/403 — SECURITE
+    // -----------------------------
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuth(AuthenticationException ex) {
+        return ResponseEntity.status(401).body(problem(
+                "UNAUTHORIZED",
+                "Authentication required",
+                Map.of()
+        ));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(403).body(problem(
+                "FORBIDDEN",
+                "Access denied",
+                Map.of()
+        ));
+    }
     // -----------------------------
     // 404 — NOT FOUND
     // -----------------------------
@@ -150,6 +174,18 @@ public class RestExceptionHandler {
                 Map.of("traceId", traceId)
         ));
     }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<Map<String, Object>> handleJpaUsage(
+            InvalidDataAccessApiUsageException ex
+    ) {
+        return ResponseEntity.status(500).body(problem(
+                "DATA_ACCESS_ERROR",
+                "Invalid query parameter type (internal configuration error)",
+                Map.of()
+        ));
+    }
+
 
     // -----------------------------
     // Helper

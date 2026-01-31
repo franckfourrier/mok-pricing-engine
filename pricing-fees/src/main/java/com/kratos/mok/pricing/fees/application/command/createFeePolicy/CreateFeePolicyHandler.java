@@ -43,9 +43,11 @@ public class CreateFeePolicyHandler {
         FeeTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
         FeeStrategy strategy = toStrategy(cmd);
 
-        Money threshold = Money.of(required(cmd.activationThreshold(), "activationThreshold is required"));
-        Money min = toOptionalMoney(cmd.minFee());
-        Money max = toOptionalMoney(cmd.maxFee());
+        String currency = required(cmd.currency(), "currency is required");
+
+        Money threshold = Money.of(required(cmd.activationThreshold(), "activationThreshold is required"), currency);
+        Money min = toOptionalMoney(cmd.minFee(), currency);
+        Money max = toOptionalMoney(cmd.maxFee(), currency);
 
         FeeRules rules = new FeeRules(threshold, min, max, cmd.minMonthlyTxCount());
 
@@ -195,8 +197,8 @@ public class CreateFeePolicyHandler {
         };
     }
 
-    private Money toOptionalMoney(String v) {
-        return (v == null || v.isBlank()) ? null : Money.of(v);
+    private Money toOptionalMoney(String v, String currency) {
+        return (v == null || v.isBlank()) ? null : Money.of(v, currency);
     }
 
     private String required(String v, String msg) {

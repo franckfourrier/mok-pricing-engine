@@ -11,6 +11,7 @@ public record CreateFeePolicyCommand(
         TransactionType type,
         TargetScope targetScope,
         String targetValue,
+        String currency,
         FeeStrategyType strategyType,
         String fixedAmount,
         String percentage,

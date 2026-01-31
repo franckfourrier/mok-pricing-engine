@@ -29,7 +29,7 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
           AND (f.validityStart IS NULL OR f.validityStart <= :at)
           AND (f.validityEnd IS NULL OR f.validityEnd >= :at)
           AND (
-              f.targetScope = 'GLOBAL'
+              f.targetScope = com.kratos.mok.pricing.shared.domain.enums.TargetScope.GLOBAL
               OR (f.targetScope = 'ACCOUNT_TYPE' AND f.targetValue = :accountType)
               OR (f.targetScope = 'ACCOUNT_ID' AND f.targetValue = :accountId)
           )
@@ -68,13 +68,13 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
           AND f.targetValue = :value
           AND f.status IN ('ACTIVE','PENDING_APPROVAL','SUSPENDED')
           AND (
-               (f.validityStart IS NULL OR :end IS NULL OR f.validityStart <= :end)
-           AND (f.validityEnd IS NULL OR :start IS NULL OR f.validityEnd >= :start)
+               (f.validityStart IS NULL OR f.validityStart <= :end)
+           AND (f.validityEnd   IS NULL OR f.validityEnd   >= :start)
           )
     """)
     boolean existsConflict(
             @Param("type") TransactionType type,
-            @Param("scope") String scope,
+            @Param("scope") TargetScope scope,
             @Param("value") String value,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

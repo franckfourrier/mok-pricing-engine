@@ -19,6 +19,8 @@ public record CreateFeePolicyRequest(
 
         @NotBlank String targetValue,
 
+        @NotBlank String currency,
+
         @NotNull FeeStrategyType strategyType,
 
         // FIXED

@@ -11,6 +11,7 @@ public final class CreateFeePolicyCommandMapper {
                 req.type(),
                 req.targetScope(),
                 req.targetValue(),
+                req.currency(),
                 req.strategyType(),
                 req.fixedAmount(),
                 req.percentage(),

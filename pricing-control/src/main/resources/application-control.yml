@@ -1,0 +1,34 @@
+spring:
+  config:
+    activate:
+      on-profile: control
+
+control:
+  beac:
+    currency: XAF
+
+    valueLimits:
+      instrumentCeiling: "5000000"
+      cashLoadingDaily: "2000000"
+      bankLoadingDaily: "5000000"
+
+      perOperation:
+        WITHDRAWAL: "500000"
+        MERCHANT_PAYMENT: "400000"
+        P2P_TRANSFER: "1000000"
+
+      daily:
+        WITHDRAWAL: "750000"
+        MERCHANT_PAYMENT: "2500000"
+        P2P_TRANSFER: "1500000"
+
+      combined:
+        daily: "3000000"
+        weekly: "5000000"
+        monthly: "10000000"
+
+    volumeMonthly:
+      WITHDRAWAL: 30
+      P2P_TRANSFER: 40
+      SERVICE_PAYMENT: 30
+      MERCHANT_PAYMENT: 100

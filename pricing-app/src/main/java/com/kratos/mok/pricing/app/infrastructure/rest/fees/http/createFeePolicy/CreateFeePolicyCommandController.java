@@ -25,20 +25,24 @@ public class CreateFeePolicyCommandController {
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
     public ResponseEntity<CreateFeePolicyResponse> create(
             @Valid @RequestBody CreateFeePolicyRequest request,
-            @AuthenticationPrincipal Jwt jwt
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Actor-Id", required = false) String actorId
     ) {
-        String authorId = resolveAuthorId(jwt);
+        String authorId = (actorId != null && !actorId.isBlank())
+                ? actorId.trim()
+                : resolveAuthorId(jwt);
 
         var cmd = CreateFeePolicyCommandMapper.toCommand(request);
         var res = handler.handle(cmd, authorId);
 
         return ResponseEntity
-                .created(URI.create("/api/v1/fee-policies/" + res.policyId()))
+                .created(URI.create("/v1/fee-policies/" + res.policyId()))
                 .body(res);
     }
 
     private String resolveAuthorId(Jwt jwt) {
-        // tu peux choisir sub, preferred_username, email...
+        if (jwt == null) return "UNKNOWN";
+
         String sub = jwt.getSubject();
         if (sub != null && !sub.isBlank()) return sub;
 
@@ -50,5 +54,6 @@ public class CreateFeePolicyCommandController {
 
         return "UNKNOWN";
     }
+
 }
 
