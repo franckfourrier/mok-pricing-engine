@@ -10,10 +10,13 @@ import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
+import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -124,11 +127,27 @@ public class FeePolicy {
         );
     }
 
-    public void block(String code, String reason, String actor) {
+    public void block(String code, String reason, String actor, LocalDateTime when) {
+        if (code == null || code.isBlank()) {
+            throw new DomainValidationException("BLOCK_CODE_REQUIRED", "block code is required", Map.of());
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new DomainValidationException("BLOCK_REASON_REQUIRED", "block reason is required", Map.of());
+        }
+
+        if (status == FeePolicyStatus.ARCHIVED) {
+            throw new InvalidStateException(
+                    "INVALID_STATUS_TRANSITION",
+                    "ARCHIVED policy cannot be blocked",
+                    Map.of("currentStatus", status.name())
+            );
+        }
+
         this.status = FeePolicyStatus.BLOCKED;
-        this.lastModified = new AuditInfo(actor, LocalDateTime.now(), reason);
         this.blockReason = code;
+        this.lastModified = new AuditInfo(actor, when, reason);
     }
+
 
 
     /**
@@ -202,15 +221,23 @@ public class FeePolicy {
 
     public void submitForApproval(String authorId, LocalDateTime when, String reason) {
         if (status != FeePolicyStatus.DRAFT) {
-            throw new IllegalStateException("Only DRAFT policies can be submitted for approval.");
+            throw new InvalidStateException(
+                    "INVALID_STATUS_TRANSITION",
+                    "Only DRAFT policy can be submitted for approval",
+                    Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.DRAFT.name())
+            );
         }
         this.status = FeePolicyStatus.PENDING_APPROVAL;
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
     public void approve(String superAdminId, LocalDateTime when, String justification) {
-        if (status != FeePolicyStatus.PENDING_APPROVAL) {
-            throw new IllegalStateException("Only PENDING_APPROVAL policies can be approved.");
+        if (this.status != FeePolicyStatus.PENDING_APPROVAL) {
+            throw new InvalidStateException(
+                    "FEE_POLICY_NOT_APPROVABLE",
+                    "Only PENDING_APPROVAL policies can be approved",
+                    Map.of("currentStatus", this.status.name())
+            );
         }
         this.status = FeePolicyStatus.ACTIVE;
         this.suspension = null;
@@ -220,7 +247,11 @@ public class FeePolicy {
 
     public void reject(String superAdminId, LocalDateTime when, String justification) {
         if (status != FeePolicyStatus.PENDING_APPROVAL) {
-            throw new IllegalStateException("Only PENDING_APPROVAL policies can be rejected.");
+            throw new InvalidStateException(
+                    "INVALID_STATUS_TRANSITION",
+                    "Only PENDING_APPROVAL policy can be rejected",
+                    Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.PENDING_APPROVAL.name())
+            );
         }
         this.status = FeePolicyStatus.REJECTED;
         this.approvedOrRejected = new AuditInfo(superAdminId, when, justification == null ? "REJECTED" : justification);
@@ -233,12 +264,25 @@ public class FeePolicy {
      */
     public void suspend(LocalDateTime from, LocalDateTime to, String actorId, LocalDateTime when, String reason) {
         if (status != FeePolicyStatus.ACTIVE) {
-            throw new IllegalStateException("Only ACTIVE policies can be suspended.");
+            throw new InvalidStateException(
+                    "INVALID_STATUS_TRANSITION",
+                    "Only ACTIVE policy can be suspended",
+                    Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.ACTIVE.name())
+            );
         }
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new DomainValidationException(
+                    "INVALID_SUSPENSION_PERIOD",
+                    "suspensionFrom must be <= suspensionTo",
+                    Map.of("from", from, "to", to)
+            );
+        }
+
         this.status = FeePolicyStatus.SUSPENDED;
         this.suspension = new SuspensionWindow(from, to);
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "SUSPEND" : reason);
     }
+
 
     /**
      * Reprise manuelle.
@@ -418,12 +462,13 @@ public class FeePolicy {
                 this.transactionType,
                 this.target,
                 this.strategy.type(),
-                this.rules.activationThreshold(),
                 this.rules.minFee(),
                 this.rules.maxFee(),
+                this.rules.activationThreshold(),
                 this.kycRequirement == KycRequirement.REQUIRED
         );
     }
+
 
     public static FeePolicy bootstrapActive(
             TransactionType transactionType,

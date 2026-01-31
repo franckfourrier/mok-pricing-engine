@@ -1,0 +1,55 @@
+package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.approveFeePolicy;
+
+import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommand;
+import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyHandler;
+import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/v1/fee-policies")
+@RequiredArgsConstructor
+public class ApproveFeePolicyCommandController {
+
+    private final ApproveFeePolicyHandler handler;
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    public ResponseEntity<ApproveFeePolicyResponse> approve(
+            @PathVariable String id,
+            @Valid @RequestBody(required = false) ApproveFeePolicyRequest body,
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Actor-Id", required = false) String actorId
+    ) {
+        String actor = (actorId != null && !actorId.isBlank())
+                ? actorId.trim()
+                : resolveAuthorId(jwt);
+
+        String reason = (body == null) ? null : body.reason();
+
+        var cmd = new ApproveFeePolicyCommand(id, reason);
+        return ResponseEntity.ok(handler.handle(cmd, actor));
+    }
+
+    public record ApproveFeePolicyRequest(String reason) {}
+
+    private String resolveAuthorId(Jwt jwt) {
+        if (jwt == null) return "UNKNOWN";
+
+        String sub = jwt.getSubject();
+        if (sub != null && !sub.isBlank()) return sub;
+
+        String username = jwt.getClaimAsString("preferred_username");
+        if (username != null && !username.isBlank()) return username;
+
+        String email = jwt.getClaimAsString("email");
+        if (email != null && !email.isBlank()) return email;
+
+        return "UNKNOWN";
+    }
+}

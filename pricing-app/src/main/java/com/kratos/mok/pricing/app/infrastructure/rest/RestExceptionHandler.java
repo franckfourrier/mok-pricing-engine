@@ -121,6 +121,22 @@ public class RestExceptionHandler {
         ));
     }
 
+    // -----------------------------
+    // 409 — CONFLIT
+    // -----------------------------
+
+    @ExceptionHandler(com.kratos.mok.pricing.shared.domain.exception.InvalidStateException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidState(
+            com.kratos.mok.pricing.shared.domain.exception.InvalidStateException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem(
+                ex.code(),
+                ex.getMessage(),
+                ex.details()
+        ));
+    }
+
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex

@@ -95,7 +95,6 @@ public class CreateFeePolicyHandler {
             );
         }
 
-        // ✅ Création valide → en attente de validation
         policy.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
 
         repository.save(policy);
@@ -107,7 +106,7 @@ public class CreateFeePolicyHandler {
     }
 
     private void block(FeePolicy p, String actor, String code, String reason, CreateFeePolicyCommand cmd) {
-        p.block(code, reason, actor);
+        p.block(code, reason, actor, LocalDateTime.now());
         repository.save(p);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(

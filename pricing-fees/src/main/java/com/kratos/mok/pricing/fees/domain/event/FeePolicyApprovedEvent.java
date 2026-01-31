@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
-public record FeePolicyActivatedEvent(
+public record FeePolicyApprovedEvent(
         String feePolicyId,
-        String adminUser,
+        String superAdminUser,
         String justification,
         LocalDateTime when
 ) implements PricingEvent {
@@ -25,17 +25,17 @@ public record FeePolicyActivatedEvent(
 
     @Override
     public String module() {
-        return "FRAIS";
+        return "FEES";
     }
 
     @Override
     public String action() {
-        return "VALIDATION";
+        return "APPROVED";
     }
 
     @Override
     public String actor() {
-        return adminUser;
+        return superAdminUser;
     }
 
     @Override

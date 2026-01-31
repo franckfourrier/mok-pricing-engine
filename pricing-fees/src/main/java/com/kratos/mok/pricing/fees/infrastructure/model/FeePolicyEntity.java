@@ -154,4 +154,7 @@ public class FeePolicyEntity {
             @AttributeOverride(name = "reason", column = @Column(name = "approved_reason"))
     })
     private AuditEmbeddable approvedOrRejectedBy;
+
+    @Version
+    private long version;
 }
