@@ -1,15 +1,44 @@
-# Règle globale
-* text=auto
+# Règle globale : tous les fichiers texte → conversion automatique
+* text=auto eol=lf
 
-# Scripts
-/mvnw        text eol=lf
-*.cmd        text eol=crlf
+# Forcer explicitement LF sur les fichiers sources et config
+*.java          text eol=lf
+*.kt            text eol=lf
+*.groovy        text eol=lf
+*.xml           text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.properties    text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.txt           text eol=lf
+*.sql           text eol=lf
+*.sh            text eol=lf
+*.gradle        text eol=lf
+*.gradle.kts    text eol=lf
+pom.xml         text eol=lf
+build.gradle    text eol=lf
 
-# Sources
-*.java       text eol=lf
-*.xml        text eol=lf
-*.yml        text eol=lf
-*.yaml       text eol=lf
-*.properties text eol=lf
+# Scripts Windows → CRLF
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
 
+# Maven wrapper → LF
+mvnw            text eol=lf
+mvnw.cmd        text eol=crlf
 
+# Binaires : ne pas convertir les fins de ligne
+*.jar           binary
+*.war           binary
+*.ear           binary
+*.zip           binary
+*.tar.gz        binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.pdf           binary
+*.docx          binary
+*.xlsx          binary
