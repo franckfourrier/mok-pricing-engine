@@ -15,11 +15,7 @@ public class CreateTaxPolicyCommandMapper {
                 r.rate(),
                 r.fixedAmount(),
                 r.fluxIntensity(),
-                r.activationThreshold(),
-                r.minTax(),
-                r.maxTax(),
-                r.validityStart(),
-                r.validityEnd()
+                Boolean.TRUE.equals(r.exempted()) // défaut false si null
         );
     }
 }

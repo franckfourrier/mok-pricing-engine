@@ -1,9 +1,9 @@
-package com.kratos.mok.pricing.fees.application.command.approveFeePolicy;
+package com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy;
 
-import com.kratos.mok.pricing.fees.domain.event.FeePolicyApprovedEvent;
-import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
-import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.taxes.domain.event.TaxPolicyApprovedEvent;
+import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
+import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,18 +16,18 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ApproveFeePolicyHandler {
+public class ApproveTaxPolicyCommandHandler {
 
-    private final FeePolicyRepository repository;
+    private final TaxPolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public ApproveFeePolicyResponse handle(ApproveFeePolicyCommand cmd, String actor) {
+    public ApproveTaxPolicyResponse handle(ApproveTaxPolicyCommand cmd, String actor) {
 
-        var policy = repository.findById(FeePolicyId.from(cmd.policyId()))
+        var policy = repository.findById(TaxPolicyId.from(cmd.policyId()))
                 .orElseThrow(() -> new NotFoundException(
-                        "FEE_POLICY_NOT_FOUND",
-                        "FeePolicy not found",
+                        "TAX_POLICY_NOT_FOUND",
+                        "TaxPolicy not found",
                         Map.of("id", cmd.policyId())
                 ));
 
@@ -41,13 +41,14 @@ public class ApproveFeePolicyHandler {
 
         repository.save(policy);
 
-        eventPublisher.publishEvent(new FeePolicyApprovedEvent(
+        eventPublisher.publishEvent(new TaxPolicyApprovedEvent(
                 policy.id().value(),
                 actor,
                 justification,
                 now
         ));
 
-        return new ApproveFeePolicyResponse(policy.id().value(), true, policy.status().name());
+        return new ApproveTaxPolicyResponse(policy.id().value(), true, policy.status().name());
     }
 }
+

@@ -7,6 +7,7 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
 import com.kratos.mok.pricing.taxes.domain.TaxTarget;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
+import com.kratos.mok.pricing.taxes.domain.event.TaxPolicyCreatedEvent;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.strategy.ElectronicRateTax;
 import com.kratos.mok.pricing.taxes.domain.strategy.FixedAmountTax;
@@ -16,6 +17,7 @@ import com.kratos.mok.pricing.taxes.domain.vo.FluxIntensity;
 import com.kratos.mok.pricing.taxes.domain.vo.TaxRate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +31,10 @@ import java.util.Map;
 public class CreateTaxPolicyCommandHandler {
 
     private final TaxPolicyRepository repository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public CreateTaxPolicyResponse handle(CreateTaxPolicyCommand cmd, String actor) {
+    public CreateTaxPolicyResponse handle(CreateTaxPolicyCommand cmd, String authorId) {
 
         TaxTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
 
@@ -53,7 +56,7 @@ public class CreateTaxPolicyCommandHandler {
                 mode,
                 strategy,
                 rules,
-                actor,
+                authorId,
                 LocalDateTime.now()
         );
 
@@ -62,7 +65,12 @@ public class CreateTaxPolicyCommandHandler {
             throw new ConflictException("Un barème de taxe existe déjà pour ce périmètre.");
         }
 
+        policy.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
+
         repository.save(policy);
+
+        eventPublisher.publishEvent(new TaxPolicyCreatedEvent(
+                policy.id().value(), authorId, LocalDateTime.now()));
 
         return new CreateTaxPolicyResponse(policy.id().value(), true, policy.status().name());
     }

@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.createFeePolicy
 
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyCommandMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyRequest;
-import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyHandler;
+import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyCommandHandler;
 import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class CreateFeePolicyCommandController {
 
-    private final CreateFeePolicyHandler handler;
+    private final CreateFeePolicyCommandHandler handler;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")

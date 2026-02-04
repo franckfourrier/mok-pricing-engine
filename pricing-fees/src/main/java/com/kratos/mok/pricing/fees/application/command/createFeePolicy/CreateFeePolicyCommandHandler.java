@@ -29,7 +29,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CreateFeePolicyHandler {
+public class CreateFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final RegulatoryGatekeeper regulatoryGatekeeper;
@@ -60,8 +60,6 @@ public class CreateFeePolicyHandler {
         // priorité par défaut basée sur scope
         var priority = PolicyPriority.defaultFor(target.scope());
 
-
-        // ✅ 2) Création domaine
         FeePolicy policy = FeePolicy.draft(
                 cmd.type(),
                 target,

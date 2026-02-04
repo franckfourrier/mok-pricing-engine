@@ -1,28 +1,28 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.approveFeePolicy;
+package com.kratos.mok.pricing.app.infrastructure.rest.taxes.http.approveTaxPolicy;
 
-import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommand;
-import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommandHandler;
-import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyResponse;
+import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommand;
+import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommandHandler;
+import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/fee-policies")
+@RequestMapping("/v1/tax-policies")
 @RequiredArgsConstructor
-public class ApproveFeePolicyCommandController {
+public class ApproveTaxPolicyCommandController {
 
-    private final ApproveFeePolicyCommandHandler handler;
+    private final ApproveTaxPolicyCommandHandler handler;
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
-    public ResponseEntity<ApproveFeePolicyResponse> approve(
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApproveTaxPolicyResponse> approve(
             @PathVariable String id,
-            @Valid @RequestBody(required = false) ApproveFeePolicyRequest body,
+            @Valid @RequestBody ApproveTaxPolicyRequest request,
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Actor-Id", required = false) String actorId
     ) {
@@ -30,13 +30,13 @@ public class ApproveFeePolicyCommandController {
                 ? actorId.trim()
                 : resolveAuthorId(jwt);
 
-        String reason = (body == null) ? null : body.reason();
-
-        var cmd = new ApproveFeePolicyCommand(id, reason);
+        String reason = (request == null) ? null : request.reason();
+        var cmd = new ApproveTaxPolicyCommand(id, reason);
         return ResponseEntity.ok(handler.handle(cmd, actor));
+
     }
 
-    public record ApproveFeePolicyRequest(String reason) {}
+    public record ApproveTaxPolicyRequest(String reason) {}
 
     private String resolveAuthorId(Jwt jwt) {
         if (jwt == null) return "UNKNOWN";

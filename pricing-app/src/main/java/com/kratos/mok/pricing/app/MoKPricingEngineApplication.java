@@ -10,6 +10,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan(basePackages = {
         "com.kratos.mok.pricing.app",
         "com.kratos.mok.pricing.fees",
+        "com.kratos.mok.pricing.taxes",
+        "com.kratos.mok.pricing.commissions",
         "com.kratos.mok.pricing.control",
         "com.kratos.mok.pricing.audit",
         "com.kratos.mok.pricing.shared"
