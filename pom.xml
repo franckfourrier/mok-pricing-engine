@@ -35,6 +35,7 @@
         <module>pricing-taxes</module>
         <module>pricing-commissions</module>
         <module>pricing-app</module>
+        <module>pricing-ledger</module>
     </modules>
 
     <dependencyManagement>
@@ -62,6 +63,12 @@
             <dependency>
                 <groupId>com.kratos.mok.pricing</groupId>
                 <artifactId>pricing-taxes</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.kratos.mok.pricing</groupId>
+                <artifactId>pricing-ledger</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

@@ -46,4 +46,11 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: INFO
 
+ledger:
+  accounts:
+    cantonnement: "ACC-CANT"
+    exploitation: "ACC-EXP"
+    taxRate: "ACC-TAX-RATE"
+    taxFixed: "ACC-TAX-FIXED"
+    currency: "XAF"
 
