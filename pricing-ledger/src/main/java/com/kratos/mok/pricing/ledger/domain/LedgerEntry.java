@@ -5,11 +5,13 @@ import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 public record LedgerEntry(
         String externalTxId,
-        LocalDateTime occurredAt,
+        int lineNo,
+        OffsetDateTime occurredAt,
         String accountCode,
         EntryDirection direction,
         Money amount,

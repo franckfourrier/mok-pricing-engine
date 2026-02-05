@@ -5,10 +5,12 @@ import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
+@Getter
+@Setter
 @Entity
 @Table(
         name = "ledger_entries",
@@ -17,12 +19,9 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_ledger_entries_external_tx", columnList = "external_tx_id")
         },
         uniqueConstraints = {
-                // V1: un externalTxId ne doit être enregistré qu'une seule fois
-                @UniqueConstraint(name = "uk_ledger_external_tx", columnNames = {"external_tx_id"})
+                @UniqueConstraint(name = "uk_ledger_external_tx_line", columnNames = {"external_tx_id", "line_no"})
         }
 )
-@Getter
-@Setter
 public class LedgerEntryEntity {
 
     @Id
@@ -32,8 +31,11 @@ public class LedgerEntryEntity {
     @Column(name = "external_tx_id", nullable = false, length = 80)
     private String externalTxId;
 
+    @Column(name = "line_no", nullable = false)
+    private int lineNo;
+
     @Column(name = "occurred_at", nullable = false)
-    private LocalDateTime occurredAt;
+    private OffsetDateTime occurredAt;
 
     @Column(name = "account_code", nullable = false, length = 40)
     private String accountCode;

@@ -23,6 +23,7 @@ public class LedgerMapper {
     public LedgerEntry toDomain(LedgerEntryEntity e) {
         return new LedgerEntry(
                 e.getExternalTxId(),
+                e.getLineNo(),
                 e.getOccurredAt(),
                 e.getAccountCode(),
                 e.getDirection(),
@@ -38,6 +39,7 @@ public class LedgerMapper {
     public LedgerEntryEntity toEntity(LedgerEntry d) {
         LedgerEntryEntity e = new LedgerEntryEntity();
         e.setExternalTxId(d.externalTxId());
+        e.setLineNo(d.lineNo());
         e.setOccurredAt(d.occurredAt());
         e.setAccountCode(d.accountCode());
         e.setDirection(d.direction());

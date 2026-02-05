@@ -2,5 +2,6 @@ package com.kratos.mok.pricing.ledger.domain.enums;
 
 public enum LedgerEntryKind {
     FEE,
-    TAX
+    TAX_FIXED,
+    TAX_RATE
 }

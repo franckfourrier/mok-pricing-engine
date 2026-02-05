@@ -17,6 +17,8 @@ public record Money(BigDecimal amount, String currency) implements Comparable<Mo
             throw new IllegalArgumentException("currency cannot be blank");
         }*/
 
+        amount = amount.setScale(2, RoundingMode.HALF_EVEN);
+
         if (currency == null || currency.isBlank()) {
             currency = DEFAULT_CURRENCY;
         }

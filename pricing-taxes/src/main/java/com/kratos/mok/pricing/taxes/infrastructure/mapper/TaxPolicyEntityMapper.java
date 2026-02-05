@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.taxes.infrastructure.repository;
+package com.kratos.mok.pricing.taxes.infrastructure.mapper;
 
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;

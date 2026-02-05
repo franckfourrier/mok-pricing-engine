@@ -35,6 +35,10 @@
             <groupId>com.kratos.mok.pricing</groupId>
             <artifactId>pricing-audit-notification</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.kratos.mok.pricing</groupId>
+            <artifactId>pricing-ledger</artifactId>
+        </dependency>
 
         <!-- REST -->
         <dependency>

@@ -1,9 +1,13 @@
 package com.kratos.mok.pricing.app.application.command.applyPricingToTransaction;
 
-
 import com.kratos.mok.pricing.fees.application.port.ComputeFeeQuery;
 import com.kratos.mok.pricing.fees.application.port.FeeComputationResult;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionCommand;
+import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionResponse;
+import com.kratos.mok.pricing.ledger.application.port.LedgerWriter;
+import com.kratos.mok.pricing.ledger.domain.Posting;
+import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
+import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
@@ -17,7 +21,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +28,11 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ApplyPricingToTransactionHandler {
+public class ApplyPricingToTransactionCommandHandler {
 
     private final ComputeFeeQuery computeFeeQuery;
     private final ComputeTaxQuery computeTaxQuery;
-
-    private final RecordLedgerTransactionHandler ledgerHandler;
+    private final LedgerWriter ledgerWriter;
 
     @Value("${ledger.accounts.cantonnement:ACC-CANT}")
     private String accCant;
@@ -48,8 +50,7 @@ public class ApplyPricingToTransactionHandler {
     public ApplyPricingToTransactionResponse handle(ApplyPricingToTransactionCommand cmd, String actor) {
         validate(cmd);
 
-        // 1) Contexte commun de pricing (tu l'as déjà dans shared)
-        PricingRequestContext ctx = PricingRequestContext.builder()
+        /*PricingRequestContext ctx = PricingRequestContext.builder()
                 .externalTransactionId(cmd.externalTxId())
                 .transactionType(cmd.type())
                 .amount(cmd.amount())
@@ -57,51 +58,62 @@ public class ApplyPricingToTransactionHandler {
                 .payerAccountId(cmd.payerAccountId())
                 .payerAccountType(cmd.payerAccountType())
                 .occurredAt(cmd.occurredAt())
-                .build();
+                .build();*/
 
-        // 2) Compute fee
+        PricingRequestContext ctx = new PricingRequestContext(
+                cmd.type(),
+                cmd.amount(),
+                cmd.payerAccountId(),
+                cmd.payerAccountType(),
+                cmd.kycValidated(),
+                cmd.monthlyTxCount(),
+                cmd.occurredAt()
+        );
+
+        // 1) Fee
         FeeComputationResult feeRes = computeFeeQuery.computeFee(ctx);
         Money fee = feeRes.fee();
 
-        // 3) Compute tax
+        // 2) Tax
         TaxComputationResult taxRes = computeTaxQuery.computeTax(ctx);
         Money tax = taxRes.tax();
 
-        // 4) Build ledger postings (NO debit user account; ONLY internal accounts)
-        List<RecordLedgerTransactionCommand.Posting> postings = new ArrayList<>();
+        // 3) Ledger postings (internal accounts only)
+        List<Posting> postings = new ArrayList<>();
 
-        // ---- Fees: debit cantonnement, credit exploitation
+        // ---- Fees: cantonnement (DEBIT) -> exploitation (CREDIT)
         if (fee != null && !fee.isZero()) {
-            postings.add(RecordLedgerTransactionCommand.Posting.debit(accCant, fee));
-            postings.add(RecordLedgerTransactionCommand.Posting.credit(accExp, fee));
+            postings.add(debit(accCant, fee, LedgerEntryKind.FEE, feeRes.feePolicyId(),
+                    "FEE applied for tx=" + cmd.externalTxId()));
+            postings.add(credit(accExp, fee, LedgerEntryKind.FEE, feeRes.feePolicyId(),
+                    "FEE collected for tx=" + cmd.externalTxId()));
         }
 
-        // ---- Taxes: debit (cantonnement|exploitation) depending on mode, credit to tax sub-account depending on strategy
+        // ---- Taxes:
+        // debit from (cantonnement|exploitation) depending on mode
+        // credit to (taxRate|taxFixed) depending on strategy
         if (tax != null && !tax.isZero()) {
-            TaxMode taxMode = taxRes.taxMode();                 // <-- à exposer dans TaxComputationResult
-            TaxStrategyType taxStrategy = taxRes.strategyType(); // <-- à exposer dans TaxComputationResult
+            TaxMode taxMode = taxRes.taxMode();
+            TaxStrategyType strategyType = taxRes.strategyType();
 
             String debitAccount = (taxMode == TaxMode.EXPLOITATION) ? accExp : accCant;
-            String creditAccount = (taxStrategy == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
+            String creditAccount = (strategyType == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
 
-            postings.add(RecordLedgerTransactionCommand.Posting.debit(debitAccount, tax));
-            postings.add(RecordLedgerTransactionCommand.Posting.credit(creditAccount, tax));
+            LedgerEntryKind kind = (strategyType == TaxStrategyType.FIXED_AMOUNT)
+                    ? LedgerEntryKind.TAX_FIXED
+                    : LedgerEntryKind.TAX_RATE;
+
+            postings.add(debit(debitAccount, tax, kind, taxRes.taxPolicyId(),
+                    "TAX debit (" + taxMode + ") for tx=" + cmd.externalTxId()));
+            postings.add(credit(creditAccount, tax, kind, taxRes.taxPolicyId(),
+                    "TAX credited to sub-account for tx=" + cmd.externalTxId()));
         }
 
-        // 5) Persist in ledger (idempotent by externalTxId)
-        RecordLedgerTransactionCommand ledgerCmd = new RecordLedgerTransactionCommand(
-                cmd.externalTxId(),
-                cmd.type(),
-                cmd.occurredAt(),
-                actor,
-                postings,
-                Map.of(
-                        "feePolicyId", feeRes.feePolicyId(),
-                        "taxPolicyId", taxRes.taxPolicyId()
-                )
-        );
+        // 4) record ledger transaction (idempotent by externalTxId côté ledger)
+        RecordLedgerTransactionCommand ledgerCmd =
+                new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings);
 
-        RecordLedgerTransactionResponse ledgerRes = ledgerHandler.handle(ledgerCmd);
+        RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(ledgerCmd, actor);
 
         return new ApplyPricingToTransactionResponse(
                 cmd.externalTxId(),
@@ -109,9 +121,20 @@ public class ApplyPricingToTransactionHandler {
                 fee,
                 taxRes.taxPolicyId(),
                 tax,
-                ledgerRes.ledgerTransactionId(),
+                ledgerRes.externalTxId(),
                 ledgerRes.recorded()
         );
+    }
+
+    // -------------------------
+    // Posting helpers
+    // -------------------------
+    private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
+        return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
+    }
+
+    private Posting credit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
+        return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
     }
 
     private void validate(ApplyPricingToTransactionCommand cmd) {
@@ -126,12 +149,13 @@ public class ApplyPricingToTransactionHandler {
             throw new DomainValidationException("AMOUNT_REQUIRED", "amount is required", Map.of());
         }
         if (cmd.amount().isNegative() || cmd.amount().isZero()) {
-            throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0", Map.of("amount", cmd.amount().toString()));
+            throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0",
+                    Map.of("amount", cmd.amount().toString()));
         }
         if (cmd.currency() == null || cmd.currency().isBlank()) {
             throw new DomainValidationException("CURRENCY_REQUIRED", "currency is required", Map.of());
         }
-        if (cmd.payerAccountType() == null || cmd.payerAccountType().isBlank()) {
+        if (cmd.payerAccountType() == null) {
             throw new DomainValidationException("PAYER_ACCOUNT_TYPE_REQUIRED", "payerAccountType is required", Map.of());
         }
         if (cmd.payerAccountId() == null || cmd.payerAccountId().isBlank()) {
@@ -141,31 +165,4 @@ public class ApplyPricingToTransactionHandler {
             throw new DomainValidationException("OCCURRED_AT_REQUIRED", "occurredAt is required", Map.of());
         }
     }
-
-    // -------------------------
-    // DTOs (command/response)
-    // -------------------------
-
-    public record ApplyPricingToTransactionCommand(
-            String externalTxId,
-            TransactionType type,
-            Money amount,
-            String currency,
-            String payerAccountId,
-            String payerAccountType,
-            LocalDateTime occurredAt
-    ) {}
-
-    public record ApplyPricingToTransactionResponse(
-            String externalTxId,
-
-            String feePolicyId,
-            Money fee,
-
-            String taxPolicyId,
-            Money tax,
-
-            String ledgerTransactionId,
-            boolean recorded
-    ) {}
 }

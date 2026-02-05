@@ -26,7 +26,8 @@ import java.util.Map;
         basePackages = {
                 "com.kratos.mok.pricing.fees.infrastructure.repository",
                 "com.kratos.mok.pricing.taxes.infrastructure.repository",
-                "com.kratos.mok.pricing.commissions.infrastructure.repository"
+                "com.kratos.mok.pricing.commissions.infrastructure.repository",
+                "com.kratos.mok.pricing.ledger.infrastructure.repository"
         },
         entityManagerFactoryRef = "pricingEntityManagerFactory",
         transactionManagerRef = "pricingTransactionManager"
@@ -62,7 +63,8 @@ public class PricingDataSourceConfig {
                 .packages(
                         "com.kratos.mok.pricing.fees",
                         "com.kratos.mok.pricing.taxes",
-                        "com.kratos.mok.pricing.commissions"
+                        "com.kratos.mok.pricing.commissions",
+                        "com.kratos.mok.pricing.ledger"
                 )
                 .persistenceUnit("pricing")
                 .properties(pricingHibernateProperties(pricingJpaProperties))

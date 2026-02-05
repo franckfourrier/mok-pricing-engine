@@ -3,11 +3,14 @@ package com.kratos.mok.pricing.taxes.infrastructure.repository;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
+import com.kratos.mok.pricing.taxes.infrastructure.mapper.TaxPolicyEntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -34,6 +37,23 @@ public class PostgresTaxPolicyRepository implements TaxPolicyRepository {
                 scope,
                 normalize(scope, value)
         );
+    }
+
+    @Override
+    public List<TaxPolicy> findCandidates(TransactionType type, String accountType, String accountId) {
+
+        String normalizedAccountType = (accountType == null || accountType.isBlank())
+                ? null
+                : accountType.trim().toUpperCase();
+
+        String normalizedAccountId = (accountId == null || accountId.isBlank())
+                ? null
+                : accountId.trim();
+
+        return jpaRepository.findActiveCandidates(type, normalizedAccountType, normalizedAccountId, TaxPolicyStatus.ACTIVE)
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
     @Override
