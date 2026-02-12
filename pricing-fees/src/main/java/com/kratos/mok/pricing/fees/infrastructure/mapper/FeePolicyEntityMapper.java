@@ -5,19 +5,17 @@ import com.kratos.mok.pricing.fees.domain.enums.*;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeRules;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
-import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
-import com.kratos.mok.pricing.fees.infrastructure.model.AuditEmbeddable;
+import com.kratos.mok.pricing.shared.domain.vo.*;
+import com.kratos.mok.pricing.shared.infrastructure.config.model.AuditEmbeddable;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
-import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
-import com.kratos.mok.pricing.shared.domain.vo.Money;
 import org.springframework.stereotype.Component;
 
 @Component
 public class FeePolicyEntityMapper {
 
-    public static FeePolicyEntity fromDomain(FeePolicy p) {
+    public static FeePolicyEntity toEntity(FeePolicy p) {
         if (p == null) return null;
 
         FeePolicyEntity e = new FeePolicyEntity();
@@ -83,7 +81,7 @@ public class FeePolicyEntityMapper {
         TargetScope scope = e.getTargetScope();
         FeeTarget target = new FeeTarget(scope, e.getTargetValue());
 
-        PolicyPriority priority = PolicyPriority.of(e.getPriority());
+        Priority priority = Priority.of(e.getPriority());
 
         // Strategy JSON -> déjà matérialisée si Hibernate JSON le fait.
         FeeStrategy strategy = e.getStrategy();

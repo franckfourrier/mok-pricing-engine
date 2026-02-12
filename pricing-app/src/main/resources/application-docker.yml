@@ -41,5 +41,6 @@ ledger:
     exploitation: "ACC-EXP"
     taxRate: "ACC-TAX-RATE"
     taxFixed: "ACC-TAX-FIXED"
+    commissions: "ACC-COMM"
     currency: "XAF"
 

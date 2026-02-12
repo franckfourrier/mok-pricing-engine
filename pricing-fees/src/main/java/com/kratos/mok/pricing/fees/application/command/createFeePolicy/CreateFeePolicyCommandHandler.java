@@ -3,7 +3,7 @@ package com.kratos.mok.pricing.fees.application.command.createFeePolicy;
 import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
-import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
+import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.fees.domain.event.FeePolicyCreatedEvent;
@@ -12,7 +12,7 @@ import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
-import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
+import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
@@ -58,7 +58,7 @@ public class CreateFeePolicyCommandHandler {
         KycRequirement kyc = (cmd.kycRequirement() == null) ? KycRequirement.NONE : cmd.kycRequirement();
 
         // priorité par défaut basée sur scope
-        var priority = PolicyPriority.defaultFor(target.scope());
+        var priority = Priority.defaultFor(target.scope());
 
         FeePolicy policy = FeePolicy.draft(
                 cmd.type(),

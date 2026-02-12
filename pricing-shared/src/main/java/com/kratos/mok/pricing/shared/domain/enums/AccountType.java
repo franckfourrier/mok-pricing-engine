@@ -6,7 +6,7 @@ public enum AccountType {
     SUBSCRIBER,
     AGENT,
     DISTRIBUTOR,
-    SUPE_DISTRIBUTOR,
+    SUPER_DISTRIBUTOR,
     MERCHANT,
     SUPPLIER,
     SPECIFIC_USER

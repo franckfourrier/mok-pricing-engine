@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.infrastructure.model;
+package com.kratos.mok.pricing.shared.infrastructure.config.model;
 
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import jakarta.persistence.Embeddable;

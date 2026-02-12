@@ -2,12 +2,12 @@ package com.kratos.mok.pricing.app.bootstrap;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
-import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
+import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
-import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
+import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +52,7 @@ public class FeePolicyBootstrapService {
 
             FeeStrategy strategy = toStrategy(y, ccy);
             FeeRules rules = toRules(y, ccy);
-            var priority = PolicyPriority.defaultFor(target.scope());
+            var priority = Priority.defaultFor(target.scope());
 
             FeePolicy policy = FeePolicy.bootstrapActive(
                     y.transactionType(),

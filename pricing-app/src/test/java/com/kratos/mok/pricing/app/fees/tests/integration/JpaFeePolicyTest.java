@@ -4,7 +4,7 @@ package com.kratos.mok.pricing.app.fees.tests.integration;
 import com.kratos.mok.pricing.fees.domain.FeeLimits;
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
-import com.kratos.mok.pricing.fees.domain.ValidityPeriod;
+import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FixedFee;

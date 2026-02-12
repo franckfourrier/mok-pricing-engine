@@ -9,11 +9,9 @@ import com.kratos.mok.pricing.fees.domain.strategy.FeeRules;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
-import com.kratos.mok.pricing.fees.domain.vo.PolicyPriority;
+import com.kratos.mok.pricing.shared.domain.vo.*;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
-import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
-import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -50,7 +48,7 @@ public class FeePolicy {
     private KycRequirement kycRequirement;
 
     private ValidityPeriod validity;         // start/end optionnel (null = permanent)
-    private PolicyPriority priority;         // tie-breaker explicite
+    private Priority priority;         // tie-breaker explicite
 
     private FeePolicyStatus status;          // DRAFT, PENDING_APPROVAL, ACTIVE, ...
     private SuspensionWindow suspension;     // optionnel
@@ -68,7 +66,7 @@ public class FeePolicy {
             FeeRules rules,
             KycRequirement kycRequirement,
             ValidityPeriod validity,
-            PolicyPriority priority,
+            Priority priority,
             FeePolicyStatus status,
             SuspensionWindow suspension,
             AuditInfo created,
@@ -82,7 +80,7 @@ public class FeePolicy {
         this.rules = requireNonNull(rules, "rules");
         this.kycRequirement = (kycRequirement == null) ? KycRequirement.NONE : kycRequirement;
         this.validity = (validity == null) ? ValidityPeriod.permanent() : validity;
-        this.priority = (priority == null) ? PolicyPriority.defaultFor(target.scope()) : priority;
+        this.priority = (priority == null) ? Priority.defaultFor(target.scope()) : priority;
         this.status = requireNonNull(status, "status");
         this.suspension = suspension; // nullable
         this.created = requireNonNull(created, "created");
@@ -103,7 +101,7 @@ public class FeePolicy {
             FeeRules rules,
             KycRequirement kycRequirement,
             ValidityPeriod validity,
-            PolicyPriority priority,
+            Priority priority,
             String authorId,
             LocalDateTime when
     ) {
@@ -162,7 +160,7 @@ public class FeePolicy {
             FeeRules rules,
             KycRequirement kycRequirement,
             ValidityPeriod validity,
-            PolicyPriority priority,
+            Priority priority,
             FeePolicyStatus status,
             SuspensionWindow suspension,
             AuditInfo created,
@@ -202,7 +200,7 @@ public class FeePolicy {
             FeeRules newRules,
             KycRequirement newKycRequirement,
             ValidityPeriod newValidity,
-            PolicyPriority newPriority,
+            Priority newPriority,
             String authorId,
             LocalDateTime when,
             String reason
@@ -213,7 +211,7 @@ public class FeePolicy {
         this.rules = requireNonNull(newRules, "newRules");
         this.kycRequirement = (newKycRequirement == null) ? KycRequirement.NONE : newKycRequirement;
         this.validity = (newValidity == null) ? ValidityPeriod.permanent() : newValidity;
-        this.priority = (newPriority == null) ? PolicyPriority.defaultFor(target.scope()) : newPriority;
+        this.priority = (newPriority == null) ? Priority.defaultFor(target.scope()) : newPriority;
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "UPDATE" : reason);
 
         validateInvariants();
@@ -445,7 +443,7 @@ public class FeePolicy {
 
     public ValidityPeriod validity() { return validity; }
 
-    public PolicyPriority priority() { return priority; }
+    public Priority priority() { return priority; }
 
     public FeePolicyStatus status() { return status; }
 
@@ -477,7 +475,7 @@ public class FeePolicy {
             FeeRules rules,
             KycRequirement kycRequirement,
             ValidityPeriod validity,
-            PolicyPriority priority,
+            Priority priority,
             String systemActor,
             LocalDateTime when
     ) {
@@ -498,7 +496,7 @@ public class FeePolicy {
                 kycRequirement,
                 validity,
                 priority,
-                FeePolicyStatus.ACTIVE,   // ✅ direct ACTIVE
+                FeePolicyStatus.ACTIVE,
                 null,                     // suspension
                 audit,                    // created
                 audit,                    // lastModified

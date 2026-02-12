@@ -1,8 +1,9 @@
-package com.kratos.mok.pricing.fees.infrastructure.model;
+package com.kratos.mok.pricing.commissions.infrastructure.model;
 
+import com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus;
+import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
-import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
 import com.kratos.mok.pricing.shared.infrastructure.config.model.AuditEmbeddable;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,14 +11,21 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "fee_policies")
+@Table(
+        name = "commission_plans",
+        indexes = {
+                @Index(name = "idx_commission_plans_tt_status", columnList = "transaction_type, status"),
+                @Index(name = "idx_commission_plans_scope_value", columnList = "target_scope, target_value"),
+                @Index(name = "idx_commission_plans_validity", columnList = "validity_start, validity_end"),
+                @Index(name = "idx_commission_plans_priority", columnList = "priority")
+        }
+)
 @Getter
 @Setter
-public class FeePolicyEntity {
+public class CommissionPlanEntity {
 
     // ------------------------------------------------------------------
     // Identity
@@ -35,46 +43,38 @@ public class FeePolicyEntity {
     @Column(name = "transaction_type", nullable = false, length = 40)
     private TransactionType transactionType;
 
-    /*@Column(name = "target_scope", nullable = false, length = 30)
-    private String targetScope; // TargetScope.name()*/
-
     @Enumerated(EnumType.STRING)
     @Column(name = "target_scope", nullable = false, length = 30)
     private TargetScope targetScope;
 
-    @Column(name = "target_value", nullable = false, length = 80)
+    @Column(name = "target_value", nullable = false, length = 120)
     private String targetValue;
 
     @Column(name = "priority", nullable = false)
     private int priority;
 
     // ------------------------------------------------------------------
-    // Strategy
+    // Strategy (JSONB)
     // ------------------------------------------------------------------
 
     /**
-     * FIXED / PROPORTIONAL / TIERED
-     * Persistée en JSONB (structure complète).
+     * DIRECT / DEPOSIT_DEFERRED / WITHDRAWAL_COMPENSATION
+     * Persistée en JSONB, sérialisation Jackson via @JsonTypeInfo.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "strategy_json", columnDefinition = "jsonb", nullable = false)
-    private FeeStrategy strategy;
+    private CommissionStrategy strategy;
 
     // ------------------------------------------------------------------
-    // Rules
+    // Lifecycle
     // ------------------------------------------------------------------
 
-    @Column(name = "activation_threshold", precision = 19, scale = 2)
-    private BigDecimal activationThreshold;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    private CommissionPlanStatus status;
 
-    @Column(name = "min_fee", precision = 19, scale = 2)
-    private BigDecimal minFee;
-
-    @Column(name = "max_fee", precision = 19, scale = 2)
-    private BigDecimal maxFee;
-
-    @Column(name = "min_monthly_tx_count")
-    private Integer minMonthlyTxCount;
+    @Column(name = "block_reason", length = 120)
+    private String blockReason;
 
     // ------------------------------------------------------------------
     // Validity
@@ -85,30 +85,6 @@ public class FeePolicyEntity {
 
     @Column(name = "validity_end")
     private LocalDateTime validityEnd;
-
-    // ------------------------------------------------------------------
-    // KYC (enum côté domaine, boolean en base)
-    // ------------------------------------------------------------------
-
-    /**
-     * true  -> KycRequirement.REQUIRED
-     * false -> KycRequirement.NONE
-     */
-    @Column(name = "kyc_required", nullable = false)
-    private boolean kycRequired;
-
-    // ------------------------------------------------------------------
-    // Lifecycle
-    // ------------------------------------------------------------------
-
-    @Column(name = "status", nullable = false, length = 30)
-    private String status; // FeePolicyStatus.name()
-
-    /**
-     * Code métier de blocage (ex: CONFLICTING_POLICY, BEAC_NON_COMPLIANT)
-     */
-    @Column(name = "block_reason", length = 120)
-    private String blockReason;
 
     // ------------------------------------------------------------------
     // Suspension

@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.domain;
+package com.kratos.mok.pricing.shared.domain.vo;
 
 import java.time.LocalDateTime;
 

@@ -1,12 +1,12 @@
-package com.kratos.mok.pricing.fees.infrastructure.repository;
+package com.kratos.mok.pricing.commissions.infrastructure.repository;
 
-import com.kratos.mok.pricing.fees.domain.FeePolicy;
+import com.kratos.mok.pricing.commissions.domain.CommissionPlan;
+import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
+import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
+import com.kratos.mok.pricing.commissions.infrastructure.mapper.CommissionPlanEntityMapper;
+import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
-import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
-import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
-import com.kratos.mok.pricing.fees.infrastructure.mapper.FeePolicyEntityMapper;
-import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -16,24 +16,24 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class PostgresFeePolicyRepository implements FeePolicyRepository {
+public class PostgresCommissionPlanRepository implements CommissionPlanRepository {
 
-    private final JpaFeePolicyRepository jpaRepository;
-    private final FeePolicyEntityMapper mapper;
+    private final JpaCommissionPlanRepository jpaRepository;
+    private final CommissionPlanEntityMapper mapper;
 
     @Override
-    public void save(FeePolicy policy) {
-        FeePolicyEntity entity = mapper.toEntity(policy);
+    public void save(CommissionPlan plan) {
+        CommissionPlanEntity entity = mapper.toEntity(plan);
         jpaRepository.save(entity);
     }
 
     @Override
-    public Optional<FeePolicy> findById(FeePolicyId id) {
+    public Optional<CommissionPlan> findById(CommissionPlanId id) {
         return jpaRepository.findById(id.value()).map(mapper::toDomain);
     }
 
     @Override
-    public List<FeePolicy> findCandidates(TransactionType type, String accountType, String accountId) {
+    public List<CommissionPlan> findCandidates(TransactionType type, String accountType, String accountId) {
         LocalDateTime at = LocalDateTime.now();
 
         String normalizedAccountType = (accountType == null || accountType.isBlank())
@@ -51,25 +51,29 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
     }
 
     @Override
-    public boolean existsConflictingPolicy(FeePolicy policy) {
-        TargetScope scope = policy.target().scope();
-        String value = normalize(scope, policy.target().value());
+    public boolean existsConflictingPlan(CommissionPlan plan) {
+        TargetScope scope = plan.target().scope();
+        String value = normalize(scope, plan.target().value());
 
-        LocalDateTime start = policy.validity().start();
-        LocalDateTime end = policy.validity().end();
+        LocalDateTime start = plan.validity().start();
+        LocalDateTime end = plan.validity().end();
 
+        // Bornes comme dans Fees
+        /*LocalDateTime startBound = plan.validity().start().orElse(LocalDateTime.of(1900, 1, 1, 0, 0));
+        LocalDateTime endBound = plan.validity().end().orElse(LocalDateTime.of(9999, 12, 31, 23, 59, 59));
+*/
         LocalDateTime startBound = (start == null) ? LocalDateTime.of(1900, 1, 1, 0, 0) : start;
         LocalDateTime endBound   = (end == null)   ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
 
+
         return jpaRepository.existsConflict(
-                policy.transactionType(),
+                plan.transactionType(),
                 scope,
                 value,
                 startBound,
                 endBound
         );
     }
-
 
     @Override
     public boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value) {
