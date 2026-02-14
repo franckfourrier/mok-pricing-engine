@@ -17,7 +17,9 @@ public final class ApplyPricingToTransactionCommandMapper {
                 r.accountType(),
                 r.kycValidated(),
                 r.monthlyTxCount(),
-                r.occurredAt()
+                r.occurredAt(),
+                r.beneficiaryAccounts(),
+                r.creditExternalAccounts()
         );
     }
 }

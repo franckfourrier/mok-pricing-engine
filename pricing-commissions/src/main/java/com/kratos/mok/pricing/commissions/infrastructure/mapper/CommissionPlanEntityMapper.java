@@ -9,7 +9,9 @@ import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.SuspensionWindow;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import com.kratos.mok.pricing.shared.infrastructure.config.model.AuditEmbeddable;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CommissionPlanEntityMapper {
 
     public CommissionPlan toDomain(CommissionPlanEntity e) {

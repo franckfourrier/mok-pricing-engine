@@ -6,6 +6,9 @@ import java.util.Objects;
 
 public record Percentage(BigDecimal value) {
 
+    public static final Percentage ZERO = new Percentage(BigDecimal.ZERO);
+    public static final Percentage ONE  = new Percentage(BigDecimal.ONE);
+
     public Percentage {
         Objects.requireNonNull(value, "percentage value is required");
         value = value.setScale(6, RoundingMode.HALF_EVEN);

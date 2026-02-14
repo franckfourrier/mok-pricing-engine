@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -58,7 +57,7 @@ public class CommissionPlanEntity {
     // ------------------------------------------------------------------
 
     /**
-     * DIRECT / DEPOSIT_DEFERRED / WITHDRAWAL_COMPENSATION
+     * DIRECT / DEPOSIT_DISTRIBUTION / WITHDRAWAL_AGENT_KRATOS
      * Persistée en JSONB, sérialisation Jackson via @JsonTypeInfo.
      */
     @JdbcTypeCode(SqlTypes.JSON)

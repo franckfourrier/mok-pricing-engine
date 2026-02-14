@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.commissions.domain;
 
+import com.kratos.mok.pricing.commissions.domain.compliance.CommissionPlanComplianceData;
 import com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus;
 import com.kratos.mok.pricing.commissions.domain.policy.CommissionPlanValidator;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
@@ -168,7 +169,7 @@ public class CommissionPlan {
     public void approve(String superAdminId, LocalDateTime when, String justification) {
         if (status != CommissionPlanStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
-                    "PLAN_NOT_APPROVABLE",
+                    "COMMISSION_PLAN_NOT_APPROVABLE",
                     "Only PENDING_APPROVAL plans can be approved",
                     Map.of("currentStatus", status.name())
             );
@@ -248,6 +249,15 @@ public class CommissionPlan {
         this.status = CommissionPlanStatus.BLOCKED;
         this.blockReason = code;
         this.lastModified = new AuditInfo(actorId, when, reason);
+    }
+
+    public CommissionPlanComplianceData toComplianceData() {
+        return new CommissionPlanComplianceData(
+                this.transactionType,
+                this.target,
+                this.strategy.type(),
+                CommissionSharesExtractor.extract(this.strategy)
+        );
     }
 
     // -------------------------

@@ -50,16 +50,6 @@ public class ApplyPricingToTransactionCommandHandler {
     public ApplyPricingToTransactionResponse handle(ApplyPricingToTransactionCommand cmd, String actor) {
         validate(cmd);
 
-        /*PricingRequestContext ctx = PricingRequestContext.builder()
-                .externalTransactionId(cmd.externalTxId())
-                .transactionType(cmd.type())
-                .amount(cmd.amount())
-                .currency(cmd.currency())
-                .payerAccountId(cmd.payerAccountId())
-                .payerAccountType(cmd.payerAccountType())
-                .occurredAt(cmd.occurredAt())
-                .build();*/
-
         PricingRequestContext ctx = new PricingRequestContext(
                 cmd.type(),
                 cmd.amount(),

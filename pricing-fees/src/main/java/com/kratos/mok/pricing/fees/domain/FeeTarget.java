@@ -14,6 +14,8 @@ public record FeeTarget(TargetScope scope, String value) {
             throw new IllegalArgumentException("FeeTarget.value cannot be blank");
         }
 
+        value = value.trim();
+
         switch (scope) {
             case GLOBAL -> {
                 if (!"ALL".equals(value)) {

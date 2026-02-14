@@ -5,6 +5,7 @@ import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 
 public record ApplyPricingToTransactionCommand(
         String externalTxId,
@@ -15,5 +16,8 @@ public record ApplyPricingToTransactionCommand(
         AccountType payerAccountType,
         boolean kycValidated,
         int monthlyTxCount,
-        OffsetDateTime occurredAt
+        OffsetDateTime occurredAt,
+
+        Map<String, String> beneficiaryAccounts,
+        boolean creditExternalAccounts
 ) {}
