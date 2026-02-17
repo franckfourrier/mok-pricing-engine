@@ -16,11 +16,14 @@ public interface CommissionPlanRepository {
 
     List<CommissionPlan> findCandidates(TransactionType type, String accountType, String accountId);
 
-
     boolean existsConflictingPlan(CommissionPlan plan);
 
     /**
      * Pour bootstrap: vérifier si un plan existe déjà pour (transactionType + scope + value).
      */
     boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value);
+
+
+
+
 }

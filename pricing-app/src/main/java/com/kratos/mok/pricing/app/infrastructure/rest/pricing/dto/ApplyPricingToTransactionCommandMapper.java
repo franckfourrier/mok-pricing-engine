@@ -4,7 +4,6 @@ import com.kratos.mok.pricing.app.application.command.applyPricingToTransaction.
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 public final class ApplyPricingToTransactionCommandMapper {
-
     private ApplyPricingToTransactionCommandMapper() {}
 
     public static ApplyPricingToTransactionCommand toCommand(ApplyPricingToTransactionRequest r) {
@@ -12,14 +11,14 @@ public final class ApplyPricingToTransactionCommandMapper {
                 r.externalTxId(),
                 r.transactionType(),
                 Money.of(r.amount(), r.currency()),
-                r.currency(),
+                (r.currency() == null || r.currency().isBlank()) ? "XAF" : r.currency(),
                 r.accountId(),
                 r.accountType(),
                 r.kycValidated(),
                 r.monthlyTxCount(),
                 r.occurredAt(),
-                r.beneficiaryAccounts(),
-                r.creditExternalAccounts()
+                r.distributorAccountId(),
+                r.superDistributorAccountId()
         );
     }
 }

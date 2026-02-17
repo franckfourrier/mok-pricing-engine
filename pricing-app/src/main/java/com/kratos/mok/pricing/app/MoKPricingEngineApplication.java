@@ -1,11 +1,14 @@
 package com.kratos.mok.pricing.app;
 
+import com.kratos.mok.pricing.app.infrastructure.external.ExternalAccountsProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
+@EnableConfigurationProperties(ExternalAccountsProperties.class)
 @EnableAsync
 @ComponentScan(basePackages = {
         "com.kratos.mok.pricing.app",
