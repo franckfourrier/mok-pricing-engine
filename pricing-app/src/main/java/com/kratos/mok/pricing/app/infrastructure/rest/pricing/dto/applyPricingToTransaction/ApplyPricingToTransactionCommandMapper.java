@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto;
+package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction;
 
 import com.kratos.mok.pricing.app.application.command.applyPricingToTransaction.ApplyPricingToTransactionCommand;
 import com.kratos.mok.pricing.shared.domain.vo.Money;

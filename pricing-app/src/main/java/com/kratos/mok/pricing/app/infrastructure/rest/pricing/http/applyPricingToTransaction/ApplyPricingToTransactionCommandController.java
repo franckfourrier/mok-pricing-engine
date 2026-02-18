@@ -2,8 +2,8 @@ package com.kratos.mok.pricing.app.infrastructure.rest.pricing.http.applyPricing
 
 import com.kratos.mok.pricing.app.application.command.applyPricingToTransaction.ApplyPricingToTransactionCommandHandler;
 import com.kratos.mok.pricing.app.application.command.applyPricingToTransaction.ApplyPricingToTransactionResponse;
-import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.ApplyPricingToTransactionCommandMapper;
-import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.ApplyPricingToTransactionRequest;
+import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction.ApplyPricingToTransactionCommandMapper;
+import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction.ApplyPricingToTransactionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

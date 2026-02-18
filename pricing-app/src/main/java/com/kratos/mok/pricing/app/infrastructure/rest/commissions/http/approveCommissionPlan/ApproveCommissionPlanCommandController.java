@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/commission-plans")
+@RequestMapping("/v1/commission-policies")
 @RequiredArgsConstructor
 public class ApproveCommissionPlanCommandController {
 

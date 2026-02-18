@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto;
+package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction;
 
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;

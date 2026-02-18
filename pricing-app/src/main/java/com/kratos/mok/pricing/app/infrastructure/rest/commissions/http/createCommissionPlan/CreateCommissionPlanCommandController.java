@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/v1/commission-plans")
+@RequestMapping("/v1/commission-policies")
 @RequiredArgsConstructor
 public class CreateCommissionPlanCommandController {
 
