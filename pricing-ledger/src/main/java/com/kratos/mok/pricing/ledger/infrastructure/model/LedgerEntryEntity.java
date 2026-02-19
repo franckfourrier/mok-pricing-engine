@@ -28,7 +28,7 @@ public class LedgerEntryEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(name = "external_tx_id", nullable = false, length = 80)
+    @Column(name = "external_tx_id", nullable = false, length = 120)
     private String externalTxId;
 
     @Column(name = "line_no", nullable = false)
@@ -37,7 +37,7 @@ public class LedgerEntryEntity {
     @Column(name = "occurred_at", nullable = false)
     private OffsetDateTime occurredAt;
 
-    @Column(name = "account_code", nullable = false, length = 40)
+    @Column(name = "account_code", nullable = false, length = 50)
     private String accountCode;
 
     @Enumerated(EnumType.STRING)
@@ -51,10 +51,10 @@ public class LedgerEntryEntity {
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "kind", nullable = false, length = 10)
+    @Column(name = "kind", nullable = false, length = 50)
     private LedgerEntryKind kind;
 
-    @Column(name = "policy_id", length = 36)
+    @Column(name = "policy_id", length = 120)
     private String policyId;
 
     @Column(name = "description", length = 200)

@@ -43,4 +43,5 @@ ledger:
     taxFixed: "ACC-TAX-FIXED"
     commissions: "ACC-COMM"
     currency: "XAF"
+    bankClearing: "ACC-BANK-CLEAR"
 

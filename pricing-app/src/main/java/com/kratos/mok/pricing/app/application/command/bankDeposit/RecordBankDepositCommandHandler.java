@@ -1,6 +1,9 @@
 package com.kratos.mok.pricing.app.application.command.bankDeposit;
 
+import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.CantonmentCreditEntity;
+import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.JpaCantonmentCreditRepository;
 import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionCommand;
+import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionResponse;
 import com.kratos.mok.pricing.ledger.application.port.LedgerWriter;
 import com.kratos.mok.pricing.ledger.domain.Posting;
 import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
@@ -8,81 +11,129 @@ import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RecordBankDepositCommandHandler {
 
     private final LedgerWriter ledgerWriter;
+    private final JpaCantonmentCreditRepository cantonmentRepo;
 
     @Value("${ledger.accounts.cantonnement:ACC-CANT}")
     private String accCant;
 
-    // compte technique interne pour équilibrer
     @Value("${ledger.accounts.bankClearing:ACC-BANK-CLEAR}")
     private String accBankClearing;
-
-    @Value("${mok.currency.default:XAF}")
-    private String defaultCurrency;
 
     @Transactional
     public RecordBankDepositResponse handle(RecordBankDepositCommand cmd, String actor) {
         validate(cmd);
 
-        // Idempotency key : la référence banque est la clé “métier”
-        String externalTxId = "BANK_DEPOSIT:" + cmd.referenceVersement().trim();
+        String ref = cmd.referencePayment().trim();
+        String externalTxId = "CANTONMENT_CREDIT:" + ref;
 
-        Money amount = Money.of(String.valueOf(cmd.montant()), defaultCurrency);
+        // 1) idempotence DB
+        if (cantonmentRepo.existsByPaymentReference(ref)) {
+            log.info("Duplicate cantonnement credit: ref={}", ref);
+            return new RecordBankDepositResponse(
+                    ref, true, "DUPLICATE", externalTxId, accCant, cmd.amount()
+            );
+        }
 
-        // Ecritures ledger (double-entry)
+        // 2) enregistrer RECEIVED (protège concurrence)
+        var entity = new CantonmentCreditEntity();
+        entity.setId(CantonmentCreditId.generate().value());
+        entity.setPaymentReference(ref);
+        entity.setAmount(cmd.amount().amount().toPlainString());
+        entity.setCurrency(cmd.amount().currency());
+        entity.setSuperDistributorId(cmd.superDistributorId().trim());
+        entity.setOccurredAt(cmd.occurredAt());
+        entity.setStatus("RECEIVED");
+        entity.setReceivedAt(LocalDateTime.now());
+
+        try {
+            cantonmentRepo.save(entity);
+        } catch (DataIntegrityViolationException e) {
+            // Deux requêtes concurrentes => unique constraint
+            log.info("Duplicate cantonnement credit (unique constraint): ref={}", ref);
+            return new RecordBankDepositResponse(
+                    ref, true, "DUPLICATE", externalTxId, accCant, cmd.amount()
+            );
+        }
+
+        // 3) ledger double-entry
+        Money amount = cmd.amount();
+
         List<Posting> postings = List.of(
                 debit(accBankClearing, amount, LedgerEntryKind.BANK_DEPOSIT,
-                        cmd.referenceVersement(), "Bank deposit debit (clearing) ref=" + cmd.referenceVersement()),
+                        ref, "Cantonnement credit (clearing debit) ref=" + ref),
                 credit(accCant, amount, LedgerEntryKind.BANK_DEPOSIT,
-                        cmd.referenceVersement(), "Bank deposit credit to cantonnement ref=" + cmd.referenceVersement())
+                        ref, "Cantonnement credit (cantonnement credit) ref=" + ref)
         );
 
         var ledgerCmd = new RecordLedgerTransactionCommand(
                 externalTxId,
-                OffsetDateTime.now(),
+                cmd.occurredAt(),
                 postings
         );
 
-        var ledgerRes = ledgerWriter.record(ledgerCmd, actor);
+        RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(ledgerCmd, actor);
+
+        // 4) marquer APPLIED
+        entity.setStatus("APPLIED");
+        entity.setLedgerExternalTxId(externalTxId);
+        entity.setAppliedAt(LocalDateTime.now());
+        cantonmentRepo.save(entity);
 
         return new RecordBankDepositResponse(
-                cmd.referenceVersement(),
+                ref,
                 ledgerRes.recorded(),
+                "APPLIED",
+                externalTxId,
                 accCant,
                 amount
         );
     }
 
-    private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
-        return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
+    private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
+        return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
     }
 
-    private Posting credit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
-        return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
+    private Posting credit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
+        return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
     }
 
     private void validate(RecordBankDepositCommand cmd) {
         if (cmd == null) throw new IllegalArgumentException("command is required");
-        if (cmd.referenceVersement() == null || cmd.referenceVersement().isBlank()) {
+
+        if (cmd.referencePayment() == null || cmd.referencePayment().isBlank()) {
             throw new DomainValidationException("REFERENCE_REQUIRED", "referenceVersement is required", Map.of());
         }
-        if (cmd.montant() <= 0) {
-            throw new DomainValidationException("INVALID_AMOUNT", "montant must be > 0", Map.of("montant", cmd.montant()));
+        if (cmd.amount() == null) {
+            throw new DomainValidationException("AMOUNT_REQUIRED", "amount is required", Map.of());
         }
-        if (cmd.superDistributeurId() == null || cmd.superDistributeurId().isBlank()) {
+        if (cmd.amount().isZero() || cmd.amount().isNegative()) {
+            throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0", Map.of("amount", cmd.amount().toString()));
+        }
+        if (cmd.superDistributorId() == null || cmd.superDistributorId().isBlank()) {
             throw new DomainValidationException("SUPER_DISTRIBUTOR_REQUIRED", "superDistributeur is required", Map.of());
+        }
+        if (cmd.occurredAt() == null) {
+            throw new DomainValidationException("OCCURRED_AT_REQUIRED", "occurredAt is required", Map.of());
+        }
+        if (cmd.amount().currency() == null || cmd.amount().currency().isBlank()) {
+            throw new DomainValidationException("CURRENCY_REQUIRED", "currency is required", Map.of());
         }
     }
 }

@@ -9,6 +9,6 @@ public record BankDepositNotificationRequest(
         @NotBlank String referencePayment,
         @NotBlank String amount,
         @NotBlank String currency,
-        @NotBlank String superDistributor,
+        @NotBlank String superDistributorId,
         @NotNull OffsetDateTime occurredAt
 ) {}

@@ -7,6 +7,6 @@ import java.time.OffsetDateTime;
 public record RecordBankDepositCommand(
         String referencePayment,
         Money amount,
-        String superDistributor,
+        String superDistributorId,
         OffsetDateTime occurredAt
 ) {}

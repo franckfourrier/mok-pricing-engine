@@ -12,6 +12,6 @@ public class LedgerAccountsProperties {
     private String exploitation = "ACC-EXP";
     private String taxRate = "ACC-TAX-RATE";
     private String taxFixed = "ACC-TAX-FIXED";
-
+    private String bankClearing = "ACC-BANK-CLEAR";
     private String currency = "XAF";
 }

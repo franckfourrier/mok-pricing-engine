@@ -11,7 +11,7 @@ public final class BankDepositNotificationMapper {
         return new RecordBankDepositCommand(
                 r.referencePayment(),
                 Money.of(r.amount(), r.currency()),
-                r.superDistributor(),
+                r.superDistributorId(),
                 r.occurredAt()
         );
     }
