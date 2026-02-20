@@ -1,3 +1,4 @@
+/*
 package com.kratos.mok.pricing.commissions.application.query.listCommissionPlans;
 
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
@@ -72,3 +73,4 @@ public final class CommissionPlanReadMapper {
         return String.valueOf(lineEntity); // remplace par ton format réel
     }
 }
+*/

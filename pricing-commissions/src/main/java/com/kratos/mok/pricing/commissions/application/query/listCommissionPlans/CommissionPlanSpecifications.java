@@ -1,3 +1,4 @@
+/*
 package com.kratos.mok.pricing.commissions.application.query.listCommissionPlans;
 
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
@@ -29,3 +30,4 @@ public final class CommissionPlanSpecifications {
         };
     }
 }
+*/
