@@ -11,10 +11,10 @@ public record ProportionalFee(FeePercentage percentage) implements FeeStrategy {
 
     @Override
     public Money apply(Money transactionAmount) {
-        BigDecimal factor = percentage.value()
-                .divide(new BigDecimal("100"), 10, RoundingMode.HALF_EVEN);
+        /*BigDecimal factor = percentage.value()
+                .divide(new BigDecimal("100"), 10, RoundingMode.HALF_EVEN);*/
 
-        return transactionAmount.multiply(factor);
+        return transactionAmount.multiply(percentage.value());
     }
 
     @Override
