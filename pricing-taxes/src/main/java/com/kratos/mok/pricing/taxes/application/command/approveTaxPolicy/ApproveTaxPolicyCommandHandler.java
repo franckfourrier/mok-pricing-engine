@@ -31,20 +31,16 @@ public class ApproveTaxPolicyCommandHandler {
                         Map.of("id", cmd.policyId())
                 ));
 
-        String justification = (cmd.reason() == null || cmd.reason().isBlank())
-                ? "APPROVE"
-                : cmd.reason().trim();
-
         var now = LocalDateTime.now();
 
-        policy.approve(actor, now, justification);
+        policy.approve(actor, now);
 
         repository.save(policy);
 
         eventPublisher.publishEvent(new TaxPolicyApprovedEvent(
                 policy.id().value(),
                 actor,
-                justification,
+                "APPROVE",
                 now
         ));
 

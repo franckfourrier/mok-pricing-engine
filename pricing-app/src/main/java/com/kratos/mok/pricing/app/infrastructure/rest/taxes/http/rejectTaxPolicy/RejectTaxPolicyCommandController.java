@@ -3,6 +3,9 @@ package com.kratos.mok.pricing.app.infrastructure.rest.taxes.http.rejectTaxPolic
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommand;
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommandHandler;
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyResponse;
+import com.kratos.mok.pricing.taxes.application.command.rejectTaxPolicy.RejectTaxPolicyCommand;
+import com.kratos.mok.pricing.taxes.application.command.rejectTaxPolicy.RejectTaxPolicyCommandHandler;
+import com.kratos.mok.pricing.taxes.application.command.rejectTaxPolicy.RejectTaxPolicyResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,11 +19,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class RejectTaxPolicyCommandController {
 
-    private final ApproveTaxPolicyCommandHandler handler;
+    private final RejectTaxPolicyCommandHandler handler;
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApproveTaxPolicyResponse> approve(
+    public ResponseEntity<RejectTaxPolicyResponse> approve(
             @PathVariable String id,
             @Valid @RequestBody RejectTaxPolicyRequest request,
             @AuthenticationPrincipal Jwt jwt,

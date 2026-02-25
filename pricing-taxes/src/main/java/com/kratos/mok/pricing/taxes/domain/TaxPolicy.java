@@ -130,7 +130,7 @@ public class TaxPolicy {
         this.lastModified = new AuditInfo(actor, at, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdmin, LocalDateTime at, String justification) {
+    public void approve(String superAdmin, LocalDateTime at) {
         if (status != TaxPolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_APPROVABLE",
@@ -139,7 +139,7 @@ public class TaxPolicy {
             );
         }
         this.status = TaxPolicyStatus.ACTIVE;
-        this.approvedOrRejected = new AuditInfo(superAdmin, at, justification == null ? "APPROVED" : justification);
+        this.approvedOrRejected = new AuditInfo(superAdmin, at, "APPROVED" );
         this.lastModified = this.approvedOrRejected;
     }
 
