@@ -8,9 +8,8 @@ import java.util.List;
 public record CommissionPlanSummary(
         String id,
         TransactionType transactionType,
-        // pour empiler "Super Distributeur / Distributeur / Agent"
+        String transactionTypeLabel,
         List<CommissionLineSummary> lines,
-        // UI "Validé / En attente"
         String statusLabel,
         String statusRaw,
         LocalDateTime createdAt

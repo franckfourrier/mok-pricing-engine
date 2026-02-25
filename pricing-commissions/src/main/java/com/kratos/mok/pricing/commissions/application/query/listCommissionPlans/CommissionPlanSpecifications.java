@@ -1,4 +1,3 @@
-/*
 package com.kratos.mok.pricing.commissions.application.query.listCommissionPlans;
 
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
@@ -21,13 +20,11 @@ public final class CommissionPlanSpecifications {
             if (q.targetValue() != null && !q.targetValue().isBlank()) {
                 predicates = cb.and(predicates, cb.equal(root.get("targetValue"), q.targetValue().trim()));
             }
-            if (q.status() != null && !q.status().isBlank()) {
-                // si status est Enum => adapte cb.equal(root.get("status"), Enum.valueOf(...))
-                predicates = cb.and(predicates, cb.equal(root.get("status"), q.status().trim().toUpperCase()));
+            if (q.status() != null) {
+                predicates = cb.and(predicates, cb.equal(root.get("status"), q.status()));
             }
 
             return predicates;
         };
     }
 }
-*/
