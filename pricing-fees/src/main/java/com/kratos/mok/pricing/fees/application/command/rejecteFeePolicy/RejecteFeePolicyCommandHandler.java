@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.application.command.approveFeePolicy;
+package com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy;
 
 import com.kratos.mok.pricing.fees.domain.event.FeePolicyApprovedEvent;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
@@ -16,13 +16,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ApproveFeePolicyCommandHandler {
+public class RejecteFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public ApproveFeePolicyResponse handle(ApproveFeePolicyCommand cmd, String actor) {
+    public RejecteFeePolicyResponse handle(RejecteFeePolicyCommand cmd, String actor) {
 
         var policy = repository.findById(FeePolicyId.from(cmd.policyId()))
                 .orElseThrow(() -> new NotFoundException(
@@ -31,19 +31,23 @@ public class ApproveFeePolicyCommandHandler {
                         Map.of("id", cmd.policyId())
                 ));
 
+        String justification = (cmd.reason() == null || cmd.reason().isBlank())
+                ? "APPROVE"
+                : cmd.reason().trim();
+
         var now = LocalDateTime.now();
 
-        policy.approve(actor, now);
+        policy.reject(actor, now, justification);
 
         repository.save(policy);
 
         eventPublisher.publishEvent(new FeePolicyApprovedEvent(
                 policy.id().value(),
                 actor,
-                "APPROVED",
+                justification,
                 now
         ));
 
-        return new ApproveFeePolicyResponse(policy.id().value(), true, policy.status().name());
+        return new RejecteFeePolicyResponse(policy.id().value(), true, policy.status().name());
     }
 }

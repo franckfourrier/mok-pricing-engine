@@ -30,9 +30,10 @@ public class ApproveFeePolicyCommandController {
                 ? actorId.trim()
                 : resolveAuthorId(jwt);
 
-        String reason = (body == null) ? null : body.reason();
+    //String reason = (body == null) ? null : body.reason();
 
-        var cmd = new ApproveFeePolicyCommand(id, reason);
+     //   var cmd = new ApproveFeePolicyCommand(id, reason);
+        var cmd = new ApproveFeePolicyCommand(id);
         return ResponseEntity.ok(handler.handle(cmd, actor));
     }
 

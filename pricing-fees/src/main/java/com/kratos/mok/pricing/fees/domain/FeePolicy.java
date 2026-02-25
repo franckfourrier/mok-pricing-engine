@@ -229,7 +229,7 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdminId, LocalDateTime when, String justification) {
+    public void approve(String superAdminId, LocalDateTime when) {
         if (this.status != FeePolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "FEE_POLICY_NOT_APPROVABLE",
@@ -239,7 +239,7 @@ public class FeePolicy {
         }
         this.status = FeePolicyStatus.ACTIVE;
         this.suspension = null;
-        this.approvedOrRejected = new AuditInfo(superAdminId, when, justification == null ? "APPROVED" : justification);
+        this.approvedOrRejected = new AuditInfo(superAdminId, when, "APPROVED");
         this.lastModified = this.approvedOrRejected;
     }
 
