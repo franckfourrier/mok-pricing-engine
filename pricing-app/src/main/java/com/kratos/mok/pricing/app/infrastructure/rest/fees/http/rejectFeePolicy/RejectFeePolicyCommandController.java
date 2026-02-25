@@ -1,7 +1,5 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.approveFeePolicy;
+package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.rejectFeePolicy;
 
-import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommand;
-import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyResponse;
 import com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy.RejectFeePolicyCommand;
 import com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy.RejectFeePolicyCommandHandler;
 import com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy.RejectFeePolicyResponse;
