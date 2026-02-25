@@ -126,15 +126,15 @@ public class TaxPolicy {
                     Map.of("currentStatus", status.name())
             );
         }
-        this.status = TaxPolicyStatus.PENDING;
+        this.status = TaxPolicyStatus.PENDING_APPROVAL;
         this.lastModified = new AuditInfo(actor, at, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
     public void approve(String superAdmin, LocalDateTime at, String justification) {
-        if (status != TaxPolicyStatus.PENDING) {
+        if (status != TaxPolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_APPROVABLE",
-                    "Only PENDING policies can be approved",
+                    "Only PENDING_APPROVAL policies can be approved",
                     Map.of("currentStatus", status.name())
             );
         }
@@ -171,10 +171,10 @@ public class TaxPolicy {
 
 
     public void reject(String superAdmin, LocalDateTime at, String justification) {
-        if (status != TaxPolicyStatus.PENDING) {
+        if (status != TaxPolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_REJECTABLE",
-                    "Only PENDING policies can be rejected",
+                    "Only PENDING_APPROVAL policies can be rejected",
                     Map.of("currentStatus", status.name())
             );
         }

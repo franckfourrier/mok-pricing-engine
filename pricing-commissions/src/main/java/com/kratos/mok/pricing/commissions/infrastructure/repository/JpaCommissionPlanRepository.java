@@ -57,7 +57,7 @@ public interface JpaCommissionPlanRepository
           AND c.targetValue = :value
           AND c.status IN (
               com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus.ACTIVE,
-              com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus.PENDING,
+              com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus.PENDING_APPROVAL,
               com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus.SUSPENDED
           )
           AND (

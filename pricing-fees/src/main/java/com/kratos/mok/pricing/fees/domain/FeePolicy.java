@@ -33,8 +33,8 @@ import java.util.Optional;
  * - condition volume (minMonthlyTxCount) optionnelle
  *
  * Workflow:
- * DRAFT -> PENDING -> ACTIVE -> (SUSPENDED|ARCHIVED)
- * PENDING -> REJECTED
+ * DRAFT -> PENDING_APPROVAL -> ACTIVE -> (SUSPENDED|ARCHIVED)
+ * PENDING_APPROVAL -> REJECTED
  */
 public class FeePolicy {
 
@@ -50,7 +50,7 @@ public class FeePolicy {
     private ValidityPeriod validity;         // start/end optionnel (null = permanent)
     private Priority priority;         // tie-breaker explicite
 
-    private FeePolicyStatus status;          // DRAFT, PENDING, ACTIVE, ...
+    private FeePolicyStatus status;          // DRAFT, PENDING_APPROVAL, ACTIVE, ...
     private SuspensionWindow suspension;     // optionnel
 
     private AuditInfo created;
@@ -225,15 +225,15 @@ public class FeePolicy {
                     Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.DRAFT.name())
             );
         }
-        this.status = FeePolicyStatus.PENDING;
+        this.status = FeePolicyStatus.PENDING_APPROVAL;
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
     public void approve(String superAdminId, LocalDateTime when, String justification) {
-        if (this.status != FeePolicyStatus.PENDING) {
+        if (this.status != FeePolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "FEE_POLICY_NOT_APPROVABLE",
-                    "Only PENDING policies can be approved",
+                    "Only PENDING_APPROVAL policies can be approved",
                     Map.of("currentStatus", this.status.name())
             );
         }
@@ -244,11 +244,11 @@ public class FeePolicy {
     }
 
     public void reject(String superAdminId, LocalDateTime when, String justification) {
-        if (status != FeePolicyStatus.PENDING) {
+        if (status != FeePolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
-                    "Only PENDING policy can be rejected",
-                    Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.PENDING.name())
+                    "Only PENDING_APPROVAL policy can be rejected",
+                    Map.of("currentStatus", status.name(), "expectedStatus", FeePolicyStatus.PENDING_APPROVAL.name())
             );
         }
         this.status = FeePolicyStatus.REJECTED;

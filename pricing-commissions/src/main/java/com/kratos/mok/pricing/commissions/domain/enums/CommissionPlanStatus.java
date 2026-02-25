@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.commissions.domain.enums;
 
 public enum CommissionPlanStatus {
     DRAFT,
-    PENDING,
+    PENDING_APPROVAL,
     ACTIVE,
     SUSPENDED,
     REJECTED,

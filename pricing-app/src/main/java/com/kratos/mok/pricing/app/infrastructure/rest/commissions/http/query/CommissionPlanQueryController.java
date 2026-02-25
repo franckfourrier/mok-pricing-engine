@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/commission-plans")
+@RequestMapping("/v1/commission-policies")
 public class CommissionPlanQueryController {
 
     private final GetCommissionPlansPageQueryHandler handler;

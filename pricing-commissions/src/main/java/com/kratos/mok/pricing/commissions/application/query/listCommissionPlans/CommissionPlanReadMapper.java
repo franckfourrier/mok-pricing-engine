@@ -21,7 +21,7 @@ public final class CommissionPlanReadMapper {
         CommissionPlanStatus st = e.getStatus();
         String statusLabel = switch (st) {
             case ACTIVE -> "Validé";
-            case PENDING, DRAFT -> "En attente";
+            case PENDING_APPROVAL, DRAFT -> "En attente";
             case BLOCKED -> "Bloqué";
             case SUSPENDED -> "Suspendu";
             default -> st.name();
@@ -59,7 +59,7 @@ public final class CommissionPlanReadMapper {
                     .toList();
         }
 
-        // WithdrawalAgentKratosStrategy: agentShare + kratosShare (+ coverageRate, si tu veux l’afficher)
+        // WithdrawalAgentKratosStrategy: agentShare + kratosShare (+ coverageRate)
         if (strategy instanceof WithdrawalAgentKratosStrategy s) {
             var agent = new CommissionShare(BeneficiaryType.AGENT, s.agentShare());
             var kratos = new CommissionShare(BeneficiaryType.KRATOS, s.kratosShare());
