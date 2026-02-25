@@ -1,8 +1,12 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.approveFeePolicy;
 
+import com.kratos.mok.pricing.app.infrastructure.config.swagger.OpenApiConfig;
 import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommand;
 import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyCommandHandler;
 import com.kratos.mok.pricing.fees.application.command.approveFeePolicy.ApproveFeePolicyResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,13 @@ public class ApproveFeePolicyCommandController {
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Approve a fee policy",
+            description = "Requires role: SUPER_ADMIN",
+            security = { @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH) }
+    )
+    @ApiResponse(responseCode = "200", description = "Approve")
+    @ApiResponse(responseCode = "403", description = "Forbidden (missing role SUPER_ADMIN)")
     public ResponseEntity<ApproveFeePolicyResponse> approve(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt,

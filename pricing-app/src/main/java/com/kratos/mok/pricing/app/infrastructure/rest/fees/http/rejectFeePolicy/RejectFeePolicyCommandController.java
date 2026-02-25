@@ -1,8 +1,12 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.rejectFeePolicy;
 
+import com.kratos.mok.pricing.app.infrastructure.config.swagger.OpenApiConfig;
 import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyCommand;
 import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyCommandHandler;
 import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,13 @@ public class RejectFeePolicyCommandController {
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Reject a fee policy",
+            description = "Requires role: SUPER_ADMIN",
+            security = { @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH) }
+    )
+    @ApiResponse(responseCode = "200", description = "Rejected")
+    @ApiResponse(responseCode = "403", description = "Forbidden (missing role SUPER_ADMIN)")
     public ResponseEntity<RejectFeePolicyResponse> approve(
             @PathVariable String id,
             @Valid @RequestBody(required = false) RejectFeePolicyRequest body,
