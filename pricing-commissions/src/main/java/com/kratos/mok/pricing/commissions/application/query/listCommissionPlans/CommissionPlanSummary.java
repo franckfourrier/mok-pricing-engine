@@ -9,8 +9,10 @@ public record CommissionPlanSummary(
         String id,
         TransactionType transactionType,
         String transactionTypeLabel,
+
         List<CommissionLineSummary> lines,
+
+        LocalDateTime date,
         String statusLabel,
-        String statusRaw,
-        LocalDateTime createdAt
+        String statusRaw
 ) {}

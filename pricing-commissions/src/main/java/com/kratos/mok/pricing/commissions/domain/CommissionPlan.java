@@ -30,7 +30,7 @@ public class CommissionPlan {
     private ValidityPeriod validity;         // start/end optionnel
     private Priority priority;         // tie-breaker
 
-    private CommissionPlanStatus status;     // DRAFT, PENDING_APPROVAL, ACTIVE, ...
+    private CommissionPlanStatus status;     // DRAFT, PENDING, ACTIVE, ...
     private SuspensionWindow suspension;     // optionnel
 
     private AuditInfo created;
@@ -162,15 +162,15 @@ public class CommissionPlan {
                     Map.of("currentStatus", status.name(), "expectedStatus", CommissionPlanStatus.DRAFT.name())
             );
         }
-        this.status = CommissionPlanStatus.PENDING_APPROVAL;
+        this.status = CommissionPlanStatus.PENDING;
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
     public void approve(String superAdminId, LocalDateTime when, String justification) {
-        if (status != CommissionPlanStatus.PENDING_APPROVAL) {
+        if (status != CommissionPlanStatus.PENDING) {
             throw new InvalidStateException(
                     "COMMISSION_PLAN_NOT_APPROVABLE",
-                    "Only PENDING_APPROVAL plans can be approved",
+                    "Only PENDING plans can be approved",
                     Map.of("currentStatus", status.name())
             );
         }
@@ -181,11 +181,11 @@ public class CommissionPlan {
     }
 
     public void reject(String superAdminId, LocalDateTime when, String justification) {
-        if (status != CommissionPlanStatus.PENDING_APPROVAL) {
+        if (status != CommissionPlanStatus.PENDING) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
-                    "Only PENDING_APPROVAL plan can be rejected",
-                    Map.of("currentStatus", status.name(), "expectedStatus", CommissionPlanStatus.PENDING_APPROVAL.name())
+                    "Only PENDING plan can be rejected",
+                    Map.of("currentStatus", status.name(), "expectedStatus", CommissionPlanStatus.PENDING.name())
             );
         }
         this.status = CommissionPlanStatus.REJECTED;

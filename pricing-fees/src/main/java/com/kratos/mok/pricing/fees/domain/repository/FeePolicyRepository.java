@@ -24,7 +24,7 @@ public interface FeePolicyRepository {
 
     /**
      * Barrière 2 : détecter chevauchement (même transactionType + même scope/value + fenêtre qui se recouvre)
-     * sur des policies "actives" (ACTIVE, PENDING_APPROVAL, SUSPENDED...) selon ta règle métier.
+     * sur des policies "actives" (ACTIVE, PENDING, SUSPENDED...) selon ta règle métier.
      */
     boolean existsConflictingPolicy(FeePolicy policy);
 

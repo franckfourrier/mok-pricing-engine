@@ -39,7 +39,7 @@ public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, S
         WHERE t.transactionType = :type
           AND t.targetScope = :scope
           AND t.targetValue = :value
-          AND t.status IN ('DRAFT','PENDING_APPROVAL','ACTIVE','BLOCKED')
+          AND t.status IN ('DRAFT','PENDING','ACTIVE','BLOCKED')
     """)
     boolean existsConflictV1(
             @Param("type") TransactionType type,

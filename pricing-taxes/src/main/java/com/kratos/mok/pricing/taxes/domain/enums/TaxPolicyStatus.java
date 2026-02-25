@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.taxes.domain.enums;
 
 public enum TaxPolicyStatus {
     DRAFT,
-    PENDING_APPROVAL,
+    PENDING,
     ACTIVE,
     SUSPENDED,
     REJECTED,

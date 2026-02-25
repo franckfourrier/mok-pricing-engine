@@ -54,7 +54,7 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
     /**
      * Détection de conflit "strict API" :
      * - même transactionType + targetScope + targetValue
-     * - statut déjà présent dans le cycle de vie (ACTIVE/PENDING_APPROVAL/SUSPENDED)
+     * - statut déjà présent dans le cycle de vie (ACTIVE/PENDING/SUSPENDED)
      * - chevauchement de validité (en gérant les NULL = permanent/illimité)
      *
      * Condition de chevauchement:
@@ -66,7 +66,7 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
         WHERE f.transactionType = :type
           AND f.targetScope = :scope
           AND f.targetValue = :value
-          AND f.status IN ('ACTIVE','PENDING_APPROVAL','SUSPENDED')
+          AND f.status IN ('ACTIVE','PENDING','SUSPENDED')
           AND (
                (f.validityStart IS NULL OR f.validityStart <= :end)
            AND (f.validityEnd   IS NULL OR f.validityEnd   >= :start)
