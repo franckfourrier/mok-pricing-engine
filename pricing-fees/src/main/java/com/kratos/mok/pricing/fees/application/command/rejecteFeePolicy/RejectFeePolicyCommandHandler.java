@@ -16,13 +16,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RejecteFeePolicyCommandHandler {
+public class RejectFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public RejecteFeePolicyResponse handle(RejecteFeePolicyCommand cmd, String actor) {
+    public RejectFeePolicyResponse handle(RejectFeePolicyCommand cmd, String actor) {
 
         var policy = repository.findById(FeePolicyId.from(cmd.policyId()))
                 .orElseThrow(() -> new NotFoundException(
@@ -48,6 +48,6 @@ public class RejecteFeePolicyCommandHandler {
                 now
         ));
 
-        return new RejecteFeePolicyResponse(policy.id().value(), true, policy.status().name());
+        return new RejectFeePolicyResponse(policy.id().value(), true, policy.status().name());
     }
 }

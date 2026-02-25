@@ -1,4 +1,4 @@
 package com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy;
 
-public record RejecteFeePolicyCommand(String policyId, String reason) {}
+public record RejectFeePolicyCommand(String policyId, String reason) {}
 
