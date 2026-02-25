@@ -40,7 +40,7 @@ public class ApproveTaxPolicyCommandHandler {
         eventPublisher.publishEvent(new TaxPolicyApprovedEvent(
                 policy.id().value(),
                 actor,
-                "APPROVE",
+                "APPROVED",
                 now
         ));
 

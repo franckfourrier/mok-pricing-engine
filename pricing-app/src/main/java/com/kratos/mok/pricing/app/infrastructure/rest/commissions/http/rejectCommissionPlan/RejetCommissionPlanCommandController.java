@@ -1,8 +1,8 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.rejectFeePolicy;
+package com.kratos.mok.pricing.app.infrastructure.rest.commissions.http.rejectCommissionPlan;
 
-import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyCommand;
-import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyCommandHandler;
-import com.kratos.mok.pricing.fees.application.command.rejectFeePolicy.RejectFeePolicyResponse;
+import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanCommand;
+import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanCommandHandler;
+import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,17 +12,17 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/fee-policies")
+@RequestMapping("/v1/commission-policies")
 @RequiredArgsConstructor
-public class RejectFeePolicyCommandController {
+public class RejetCommissionPlanCommandController {
 
-    private final RejectFeePolicyCommandHandler handler;
+    private final RejectCommissionPlanCommandHandler handler;
 
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
-    public ResponseEntity<RejectFeePolicyResponse> approve(
+    public ResponseEntity<RejectCommissionPlanResponse> Reject(
             @PathVariable String id,
-            @Valid @RequestBody(required = false) RejectFeePolicyRequest body,
+            @Valid @RequestBody(required = false) RejectCommissionPlanRequest body,
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Actor-Id", required = false) String actorId
     ) {
@@ -31,12 +31,12 @@ public class RejectFeePolicyCommandController {
                 : resolveAuthorId(jwt);
 
         String reason = (body == null) ? null : body.reason();
-        var cmd = new RejectFeePolicyCommand(id, reason);
 
+        var cmd = new RejectCommissionPlanCommand(id, reason);
         return ResponseEntity.ok(handler.handle(cmd, actor));
     }
 
-    public record RejectFeePolicyRequest(String reason) {}
+    public record RejectCommissionPlanRequest(String reason) {}
 
     private String resolveAuthorId(Jwt jwt) {
         if (jwt == null) return "UNKNOWN";

@@ -22,7 +22,6 @@ public class ApproveCommissionPlanCommandController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     public ResponseEntity<ApproveCommissionPlanResponse> approve(
             @PathVariable String id,
-            @Valid @RequestBody(required = false) ApproveCommissionPlanRequest body,
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Actor-Id", required = false) String actorId
     ) {
@@ -30,13 +29,9 @@ public class ApproveCommissionPlanCommandController {
                 ? actorId.trim()
                 : resolveAuthorId(jwt);
 
-        String reason = (body == null) ? null : body.reason();
-
-        var cmd = new ApproveCommissionPlanCommand(id, reason);
+        var cmd = new ApproveCommissionPlanCommand(id);
         return ResponseEntity.ok(handler.handle(cmd, actor));
     }
-
-    public record ApproveCommissionPlanRequest(String reason) {}
 
     private String resolveAuthorId(Jwt jwt) {
         if (jwt == null) return "UNKNOWN";

@@ -166,7 +166,7 @@ public class CommissionPlan {
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdminId, LocalDateTime when, String justification) {
+    public void approve(String superAdminId, LocalDateTime when) {
         if (status != CommissionPlanStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "COMMISSION_PLAN_NOT_APPROVABLE",
@@ -176,7 +176,7 @@ public class CommissionPlan {
         }
         this.status = CommissionPlanStatus.ACTIVE;
         this.suspension = null;
-        this.approvedOrRejected = new AuditInfo(superAdminId, when, justification == null ? "APPROVED" : justification);
+        this.approvedOrRejected = new AuditInfo(superAdminId, when,  "APPROVED");
         this.lastModified = this.approvedOrRejected;
     }
 

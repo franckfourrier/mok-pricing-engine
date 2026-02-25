@@ -32,7 +32,7 @@ public class RejectTaxPolicyCommandHandler {
                 ));
 
         String justification = (cmd.reason() == null || cmd.reason().isBlank())
-                ? "APPROVE"
+                ? "REJECTED"
                 : cmd.reason().trim();
 
         var now = LocalDateTime.now();

@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.commissions.application.command.approveCommissionPlan;
+package com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan;
 
 import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanApprovedEvent;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
@@ -16,13 +16,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ApproveCommissionPlanCommandHandler {
+public class RejectCommissionPlanCommandHandler {
 
     private final CommissionPlanRepository repository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public ApproveCommissionPlanResponse handle(ApproveCommissionPlanCommand cmd, String actor) {
+    public RejectCommissionPlanResponse handle(RejectCommissionPlanCommand cmd, String actor) {
 
         var plan = repository.findById(CommissionPlanId.from(cmd.planId()))
                 .orElseThrow(() -> new NotFoundException(
@@ -31,19 +31,23 @@ public class ApproveCommissionPlanCommandHandler {
                         Map.of("id", cmd.planId())
                 ));
 
+        String justification = (cmd.reason() == null || cmd.reason().isBlank())
+                ? "REJECTED"
+                : cmd.reason().trim();
+
         var now = LocalDateTime.now();
 
-        plan.approve(actor, now);
+        plan.reject(actor, now, justification);
 
         repository.save(plan);
 
         eventPublisher.publishEvent(new CommissionPlanApprovedEvent(
                 plan.id().value(),
                 actor,
-                "APPROVED",
+                justification,
                 now
         ));
 
-        return new ApproveCommissionPlanResponse(plan.id().value(), true, plan.status().name());
+        return new RejectCommissionPlanResponse(plan.id().value(), true, plan.status().name());
     }
 }

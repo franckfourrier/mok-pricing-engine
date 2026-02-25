@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.fees.application.command.rejecteFeePolicy;
+package com.kratos.mok.pricing.fees.application.command.rejectFeePolicy;
 
 import com.kratos.mok.pricing.fees.domain.event.FeePolicyApprovedEvent;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
