@@ -31,6 +31,13 @@ public final class TaxPolicyUiMapper {
         };
     }
 
+    public static String name(TaxPolicyEntity e) {
+        return switch (e.getStrategyType()) {
+            case FIXED_AMOUNT -> "Forfaitaire";
+            case ELECTRONIC_RATE -> "Electronique";
+        };
+    }
+
     public static String value(TaxPolicyEntity e) {
         return switch (e.getStrategyType()) {
             case FIXED_AMOUNT ->

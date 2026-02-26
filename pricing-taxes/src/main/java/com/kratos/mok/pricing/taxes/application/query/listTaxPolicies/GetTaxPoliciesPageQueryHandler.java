@@ -44,15 +44,17 @@ public class GetTaxPoliciesPageQueryHandler {
         ));*/
 
          Page<TaxPolicySummary> mapped = p.map(e -> new TaxPolicySummary(
-                e.getId(),
-                TaxPolicyUiMapper.appliedTransaction(e.getTransactionType()),
-                TaxPolicyUiMapper.type(e),
-                TaxPolicyUiMapper.value(e),
-                e.getTransactionType(),
-                e.getTargetScope(),
-                e.getTargetValue(),
-                TaxPolicyStatusMapper.toLabel(e.getStatus()),
-                TaxPolicyUiMapper.createdAt(e)
+                 e.getId(),
+                 TaxPolicyUiMapper.name(e),
+                 TaxPolicyUiMapper.appliedTransaction(e.getTransactionType()),
+                 TaxPolicyUiMapper.type(e),
+                 TaxPolicyUiMapper.value(e),
+                 e.getTransactionType(),
+                 e.getTargetScope(),
+                 e.getTargetValue(),
+                 e.getStatus().name(),
+                 TaxPolicyStatusMapper.toLabel(e.getStatus()),
+                 TaxPolicyUiMapper.createdAt(e)
         ));
 
 

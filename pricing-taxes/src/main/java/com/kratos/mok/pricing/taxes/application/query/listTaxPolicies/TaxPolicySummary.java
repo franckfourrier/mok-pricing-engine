@@ -18,20 +18,14 @@ public record TaxPolicySummary(
         LocalDateTime createdAt*/
 
        String id,
-
-        // Affichage métier
-        String appliedTransaction,   // "Retrait", "Transfert", etc.
-        String type,                 // "Fixe" | "Variable"
-        String value,                // "0.05 %" | "500 XAF"
-
-        // Périmètre
-        TransactionType transactionType,
-        TargetScope targetScope,
-        String targetValue,
-
-        // Statut affichable
-        String status,               // "Validé", "En attente", ...
-
-        // Date formatée pour UI
-        String createdAt
+       String name,
+       String appliedTransaction,
+       String type,
+       String value,
+       TransactionType transactionType,
+       TargetScope targetScope,
+       String targetValue,
+       String status,
+       String statusLabel,
+       String createdAt
 ) {}
