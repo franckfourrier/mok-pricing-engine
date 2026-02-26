@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.taxes.http.approveTaxPoli
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommand;
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyCommandHandler;
 import com.kratos.mok.pricing.taxes.application.command.approveTaxPolicy.ApproveTaxPolicyResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,10 @@ public class ApproveTaxPolicyCommandController {
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Approve a tax policy",
+            description = "Requires role: SUPER_ADMIN"
+    )
     public ResponseEntity<ApproveTaxPolicyResponse> approve(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt,

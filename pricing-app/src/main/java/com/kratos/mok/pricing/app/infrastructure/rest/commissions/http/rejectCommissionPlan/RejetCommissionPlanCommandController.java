@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.commissions.http.rejectCo
 import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanCommand;
 import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanCommandHandler;
 import com.kratos.mok.pricing.commissions.application.command.rejectCommissionPlan.RejectCommissionPlanResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,12 @@ public class RejetCommissionPlanCommandController {
 
     private final RejectCommissionPlanCommandHandler handler;
 
-    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Reject a commission plan",
+            description = "Requires role: SUPER_ADMIN"
+    )
     public ResponseEntity<RejectCommissionPlanResponse> Reject(
             @PathVariable String id,
             @Valid @RequestBody(required = false) RejectCommissionPlanRequest body,

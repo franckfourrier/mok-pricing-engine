@@ -28,10 +28,9 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                ))
+                ));
 
-                // Optionnel: applique l'auth par défaut à toute l'API
-                // Si tu veux garder Swagger ouvert sans token, COMMMENTE cette ligne.
-                .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
+                // applique l'auth par défaut à toute l'API
+                //.addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH));
     }
 }

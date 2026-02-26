@@ -26,8 +26,7 @@ public class RejectFeePolicyCommandController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
     @Operation(
             summary = "Reject a fee policy",
-            description = "Requires role: SUPER_ADMIN",
-            security = { @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH) }
+            description = "Requires role: SUPER_ADMIN"
     )
     @ApiResponse(responseCode = "200", description = "Rejected")
     @ApiResponse(responseCode = "403", description = "Forbidden (missing role SUPER_ADMIN)")

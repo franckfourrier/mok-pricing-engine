@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.commissions.http.approveC
 import com.kratos.mok.pricing.commissions.application.command.approveCommissionPlan.ApproveCommissionPlanCommand;
 import com.kratos.mok.pricing.commissions.application.command.approveCommissionPlan.ApproveCommissionPlanCommandHandler;
 import com.kratos.mok.pricing.commissions.application.command.approveCommissionPlan.ApproveCommissionPlanResponse;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,10 @@ public class ApproveCommissionPlanCommandController {
 
     @PostMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN')")
+    @Operation(
+            summary = "Approve a commission plan",
+            description = "Requires role: SUPER_ADMIN"
+    )
     public ResponseEntity<ApproveCommissionPlanResponse> approve(
             @PathVariable String id,
             @AuthenticationPrincipal Jwt jwt,
