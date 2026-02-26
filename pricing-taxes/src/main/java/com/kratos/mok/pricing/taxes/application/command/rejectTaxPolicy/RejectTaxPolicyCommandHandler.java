@@ -37,7 +37,7 @@ public class RejectTaxPolicyCommandHandler {
 
         var now = LocalDateTime.now();
 
-        policy.approve(actor, now);
+        policy.reject(actor, now, justification);
 
         repository.save(policy);
 
