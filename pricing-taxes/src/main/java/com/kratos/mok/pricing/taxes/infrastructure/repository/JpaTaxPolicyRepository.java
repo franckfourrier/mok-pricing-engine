@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, String> {
+public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, String>, JpaSpecificationExecutor<TaxPolicyEntity> {
 
     boolean existsByTransactionTypeAndTargetScopeAndTargetValue(
             TransactionType transactionType,
