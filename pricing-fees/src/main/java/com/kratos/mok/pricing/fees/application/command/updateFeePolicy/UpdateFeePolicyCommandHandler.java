@@ -1,17 +1,18 @@
-package com.kratos.mok.pricing.fees.application.command.createFeePolicy;
+package com.kratos.mok.pricing.fees.application.command.updateFeePolicy;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
-import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.fees.domain.event.FeePolicyCreatedEvent;
+import com.kratos.mok.pricing.fees.domain.event.FeePolicyUpdatedEvent;
 import com.kratos.mok.pricing.fees.domain.gateway.RegulatoryGatekeeper;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
+import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.Priority;
@@ -30,19 +31,27 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CreateFeePolicyCommandHandler {
+public class UpdateFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final RegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public CreateFeePolicyResponse handle(CreateFeePolicyCommand cmd, String authorId) {
-        log.info("CreateFeePolicy: code={}, type={}, scope={}, value={}",
+    public UpdateFeePolicyResponse handle(UpdateFeePolicyCommand cmd, String actor) {
+        log.info("UpdateFeePolicy: id={}, code={}, type={}, scope={}, value={}",
+                cmd.policyId(),
                 cmd.transactionCode(),
                 cmd.transactionCode().transactionType(),
                 cmd.targetScope(),
                 cmd.targetValue());
+
+        FeePolicy policy = repository.findById(FeePolicyId.from(cmd.policyId()))
+                .orElseThrow(() -> new NotFoundException(
+                        "FEE_POLICY_NOT_FOUND",
+                        "FeePolicy not found",
+                        Map.of("id", cmd.policyId())
+                ));
 
         FeeTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
         FeeStrategy strategy = toStrategy(cmd);
@@ -59,11 +68,14 @@ public class CreateFeePolicyCommandHandler {
                 ? ValidityPeriod.PERMANENT
                 : new ValidityPeriod(cmd.validityStart(), cmd.validityEnd());
 
-        KycRequirement kyc = (cmd.kycRequirement() == null) ? KycRequirement.NONE : cmd.kycRequirement();
+        var kyc = (cmd.kycRequirement() == null)
+                ? com.kratos.mok.pricing.fees.domain.enums.KycRequirement.NONE
+                : cmd.kycRequirement();
 
         var priority = Priority.defaultFor(target.scope());
+        var now = LocalDateTime.now();
 
-        FeePolicy policy = FeePolicy.draft(
+        policy.updatePolicy(
                 cmd.transactionCode(),
                 cmd.transactionCode().transactionType(),
                 target,
@@ -72,19 +84,20 @@ public class CreateFeePolicyCommandHandler {
                 kyc,
                 validity,
                 priority,
-                authorId,
-                LocalDateTime.now()
+                actor,
+                now,
+                "UPDATE_AND_RESUBMIT"
         );
 
         if (repository.existsConflictingPolicy(policy)) {
-            block(policy, authorId, "CONFLICTING_POLICY", "Policy conflict", cmd);
+            block(policy, actor, "CONFLICTING_POLICY", "Policy conflict after update");
             throw new ConflictException("Une politique active existe déjà pour ce périmètre");
         }
 
         try {
             regulatoryGatekeeper.validate(policy.toComplianceData());
         } catch (RegulatoryViolationException e) {
-            block(policy, authorId, e.regulationCode(), e.getMessage(), cmd);
+            block(policy, actor, e.regulationCode(), e.getMessage());
             throw new DomainValidationException(
                     "BEAC_NON_COMPLIANT",
                     e.getMessage(),
@@ -92,31 +105,38 @@ public class CreateFeePolicyCommandHandler {
             );
         }
 
-        policy.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
-
         repository.save(policy);
 
-        eventPublisher.publishEvent(new FeePolicyCreatedEvent(
-                policy.id().value(), authorId, LocalDateTime.now()));
+        eventPublisher.publishEvent(new FeePolicyUpdatedEvent(
+                policy.id().value(),
+                actor,
+                policy.status().name(),
+                now
+        ));
 
-        return new CreateFeePolicyResponse(policy.id().value(), true, policy.status());
+        return new UpdateFeePolicyResponse(
+                policy.id().value(),
+                true,
+                policy.status()
+        );
     }
 
-    private void block(FeePolicy p, String actor, String code, String reason, CreateFeePolicyCommand cmd) {
-        p.block(code, reason, actor, LocalDateTime.now());
-        repository.save(p);
+    private void block(FeePolicy policy, String actor, String code, String reason) {
+        policy.block(code, reason, actor, LocalDateTime.now());
+        repository.save(policy);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
-                p.id().value(),
+                policy.id().value(),
                 "FEE_POLICY",
                 actor,
                 code,
                 reason,
                 Map.of(
-                        "transactionCode", cmd.transactionCode().name(),
-                        "transactionType", cmd.transactionCode().transactionType().name(),
-                        "scope", cmd.targetScope().name(),
-                        "value", cmd.targetValue()
+                        "policyId", policy.id().value(),
+                        "transactionCode", policy.transactionCode().name(),
+                        "transactionType", policy.transactionType().name(),
+                        "scope", policy.target().scope().name(),
+                        "value", policy.target().value()
                 )
         ));
     }
@@ -130,7 +150,7 @@ public class CreateFeePolicyCommandHandler {
         };
     }
 
-    private FeeStrategy toStrategy(CreateFeePolicyCommand cmd) {
+    private FeeStrategy toStrategy(UpdateFeePolicyCommand cmd) {
         return switch (cmd.strategyType()) {
             case FIXED -> {
                 if (cmd.fixedAmount() == null || cmd.fixedAmount().isBlank()) {
@@ -166,10 +186,11 @@ public class CreateFeePolicyCommandHandler {
         };
     }
 
-    private List<Tier> toTiers(List<CreateFeePolicyCommand.TierCommand> tiers, String currency) {
+    private List<Tier> toTiers(List<UpdateFeePolicyCommand.TierCommand> tiers, String currency) {
         if (tiers == null || tiers.isEmpty()) {
             throw new IllegalArgumentException("tiers are required for TIERED");
         }
+
         return tiers.stream()
                 .map(t -> new Tier(
                         Money.of(required(t.min(), "tier.min required"), currency),
@@ -179,7 +200,7 @@ public class CreateFeePolicyCommandHandler {
                 .toList();
     }
 
-    private FeeStrategy toTierStrategy(CreateFeePolicyCommand.TierCommand t, String currency) {
+    private FeeStrategy toTierStrategy(UpdateFeePolicyCommand.TierCommand t, String currency) {
         return switch (t.tierStrategyType()) {
             case FIXED -> new FixedFee(Money.of(required(t.tierValue(), "tierValue required for tier FIXED"), currency));
             case PROPORTIONAL -> {

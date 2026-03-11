@@ -1,65 +1,49 @@
 package com.kratos.mok.pricing.fees.domain;
 
-
 import com.kratos.mok.pricing.fees.domain.compliance.FeePolicyComplianceData;
 import com.kratos.mok.pricing.fees.domain.enums.FeePolicyStatus;
+import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeRules;
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
-import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
-import com.kratos.mok.pricing.shared.domain.vo.*;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
+import com.kratos.mok.pricing.shared.domain.vo.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Aggregate Root: FeePolicy
- *
- * Concerne un type de transaction + une cible (GLOBAL / ACCOUNT_TYPE / ACCOUNT_ID).
- *
- * Règles de calcul appliquées:
- * - statut (ACTIVE, et non suspendu dans sa fenêtre)
- * - validité temporelle
- * - exigence KYC
- * - seuil d'activation (gratuit sous seuil)
- * - stratégie (FIXED / PERCENTAGE / TIERED)
- * - bornes min/max (plancher/plafond)
- * - condition volume (minMonthlyTxCount) optionnelle
- *
- * Workflow:
- * DRAFT -> PENDING_APPROVAL -> ACTIVE -> (SUSPENDED|ARCHIVED)
- * PENDING_APPROVAL -> REJECTED
- */
 public class FeePolicy {
 
     private final FeePolicyId id;
 
-    private final TransactionType transactionType;
-    private final FeeTarget target;
+    private TransactionCode transactionCode;
+    private TransactionType transactionType;
+    private FeeTarget target;
 
-    private FeeStrategy strategy;            // FIXED | PROPORTIONAL | TIERED
-    private FeeRules rules;                  // threshold + min/max + volume condition
+    private FeeStrategy strategy;
+    private FeeRules rules;
     private KycRequirement kycRequirement;
 
-    private ValidityPeriod validity;         // start/end optionnel (null = permanent)
-    private Priority priority;         // tie-breaker explicite
+    private ValidityPeriod validity;
+    private Priority priority;
 
-    private FeePolicyStatus status;          // DRAFT, PENDING_APPROVAL, ACTIVE, ...
-    private SuspensionWindow suspension;     // optionnel
+    private FeePolicyStatus status;
+    private SuspensionWindow suspension;
 
     private AuditInfo created;
     private AuditInfo lastModified;
-    private AuditInfo approvedOrRejected;    // dernier acte de validation
+    private AuditInfo approvedOrRejected;
     private String blockReason;
 
     private FeePolicy(
             FeePolicyId id,
+            TransactionCode transactionCode,
             TransactionType transactionType,
             FeeTarget target,
             FeeStrategy strategy,
@@ -74,6 +58,7 @@ public class FeePolicy {
             AuditInfo approvedOrRejected
     ) {
         this.id = requireNonNull(id, "id");
+        this.transactionCode = requireNonNull(transactionCode, "transactionCode");
         this.transactionType = requireNonNull(transactionType, "transactionType");
         this.target = requireNonNull(target, "target");
         this.strategy = requireNonNull(strategy, "strategy");
@@ -82,7 +67,7 @@ public class FeePolicy {
         this.validity = (validity == null) ? ValidityPeriod.permanent() : validity;
         this.priority = (priority == null) ? Priority.defaultFor(target.scope()) : priority;
         this.status = requireNonNull(status, "status");
-        this.suspension = suspension; // nullable
+        this.suspension = suspension;
         this.created = requireNonNull(created, "created");
         this.lastModified = lastModified;
         this.approvedOrRejected = approvedOrRejected;
@@ -90,11 +75,8 @@ public class FeePolicy {
         validateInvariants();
     }
 
-    // -------------------------
-    // Factories
-    // -------------------------
-
     public static FeePolicy draft(
+            TransactionCode transactionCode,
             TransactionType transactionType,
             FeeTarget target,
             FeeStrategy strategy,
@@ -110,6 +92,7 @@ public class FeePolicy {
 
         return new FeePolicy(
                 id,
+                transactionCode,
                 transactionType,
                 target,
                 strategy,
@@ -125,35 +108,9 @@ public class FeePolicy {
         );
     }
 
-    public void block(String code, String reason, String actor, LocalDateTime when) {
-        if (code == null || code.isBlank()) {
-            throw new DomainValidationException("BLOCK_CODE_REQUIRED", "block code is required", Map.of());
-        }
-        if (reason == null || reason.isBlank()) {
-            throw new DomainValidationException("BLOCK_REASON_REQUIRED", "block reason is required", Map.of());
-        }
-
-        if (status == FeePolicyStatus.ARCHIVED) {
-            throw new InvalidStateException(
-                    "INVALID_STATUS_TRANSITION",
-                    "ARCHIVED policy cannot be blocked",
-                    Map.of("currentStatus", status.name())
-            );
-        }
-
-        this.status = FeePolicyStatus.BLOCKED;
-        this.blockReason = code;
-        this.lastModified = new AuditInfo(actor, when, reason);
-    }
-
-
-
-    /**
-     * Reconstitution depuis la persistence.
-     * (On vérifie les invariants, mais pas les règles de transition.)
-     */
     public static FeePolicy reconstitute(
             FeePolicyId id,
+            TransactionCode transactionCode,
             TransactionType transactionType,
             FeeTarget target,
             FeeStrategy strategy,
@@ -170,6 +127,7 @@ public class FeePolicy {
     ) {
         var p = new FeePolicy(
                 id,
+                transactionCode,
                 transactionType,
                 target,
                 strategy,
@@ -184,18 +142,47 @@ public class FeePolicy {
                 approvedOrRejected
         );
 
-        p.blockReason = blockReason ;
-
+        p.blockReason = blockReason;
         return p;
     }
-    public String blockReason() {
-        return blockReason;
-    }
-    // -------------------------
-    // Commands (business methods)
-    // -------------------------
 
-    public void updateConfiguration(
+    public static FeePolicy bootstrapActive(
+            TransactionCode transactionCode,
+            TransactionType transactionType,
+            FeeTarget target,
+            FeeStrategy strategy,
+            FeeRules rules,
+            KycRequirement kycRequirement,
+            ValidityPeriod validity,
+            Priority priority,
+            String systemActor,
+            LocalDateTime when
+    ) {
+        var id = FeePolicyId.generate();
+        var audit = new AuditInfo(systemActor, when, "SYSTEM_BOOTSTRAP");
+
+        return new FeePolicy(
+                id,
+                transactionCode,
+                transactionType,
+                target,
+                strategy,
+                rules,
+                kycRequirement,
+                validity,
+                priority,
+                FeePolicyStatus.ACTIVE,
+                null,
+                audit,
+                audit,
+                audit
+        );
+    }
+
+    public void updatePolicy(
+            TransactionCode newTransactionCode,
+            TransactionType newTransactionType,
+            FeeTarget newTarget,
             FeeStrategy newStrategy,
             FeeRules newRules,
             KycRequirement newKycRequirement,
@@ -207,14 +194,44 @@ public class FeePolicy {
     ) {
         ensureEditable();
 
+        this.transactionCode = requireNonNull(newTransactionCode, "newTransactionCode");
+        this.transactionType = requireNonNull(newTransactionType, "newTransactionType");
+        this.target = requireNonNull(newTarget, "newTarget");
         this.strategy = requireNonNull(newStrategy, "newStrategy");
         this.rules = requireNonNull(newRules, "newRules");
         this.kycRequirement = (newKycRequirement == null) ? KycRequirement.NONE : newKycRequirement;
         this.validity = (newValidity == null) ? ValidityPeriod.permanent() : newValidity;
-        this.priority = (newPriority == null) ? Priority.defaultFor(target.scope()) : newPriority;
-        this.lastModified = new AuditInfo(authorId, when, reason == null ? "UPDATE" : reason);
+        this.priority = (newPriority == null) ? Priority.defaultFor(newTarget.scope()) : newPriority;
+
+        this.status = FeePolicyStatus.PENDING_APPROVAL;
+        this.suspension = null;
+        this.lastModified = new AuditInfo(
+                authorId,
+                when,
+                reason == null ? "UPDATE_AND_RESUBMIT" : reason
+        );
 
         validateInvariants();
+    }
+
+    public void block(String code, String reason, String actor, LocalDateTime when) {
+        if (code == null || code.isBlank()) {
+            throw new DomainValidationException("BLOCK_CODE_REQUIRED", "block code is required", Map.of());
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new DomainValidationException("BLOCK_REASON_REQUIRED", "block reason is required", Map.of());
+        }
+        if (status == FeePolicyStatus.ARCHIVED) {
+            throw new InvalidStateException(
+                    "INVALID_STATUS_TRANSITION",
+                    "ARCHIVED policy cannot be blocked",
+                    Map.of("currentStatus", status.name())
+            );
+        }
+
+        this.status = FeePolicyStatus.BLOCKED;
+        this.blockReason = code;
+        this.lastModified = new AuditInfo(actor, when, reason);
     }
 
     public void submitForApproval(String authorId, LocalDateTime when, String reason) {
@@ -256,10 +273,6 @@ public class FeePolicy {
         this.lastModified = this.approvedOrRejected;
     }
 
-    /**
-     * Suspension temporaire (campagne promo).
-     * Une policy suspendue ne s'applique pas tant que la fenêtre est active.
-     */
     public void suspend(LocalDateTime from, LocalDateTime to, String actorId, LocalDateTime when, String reason) {
         if (status != FeePolicyStatus.ACTIVE) {
             throw new InvalidStateException(
@@ -281,11 +294,6 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "SUSPEND" : reason);
     }
 
-
-    /**
-     * Reprise manuelle.
-     * (Optionnel: reprise auto côté Query/Resolver si now > suspension.to)
-     */
     public void resume(String actorId, LocalDateTime when, String reason) {
         if (status != FeePolicyStatus.SUSPENDED) {
             throw new IllegalStateException("Only SUSPENDED policies can be resumed.");
@@ -303,14 +311,6 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "ARCHIVE" : reason);
     }
 
-    // -------------------------
-    // Query (pure domain)
-    // -------------------------
-
-    /**
-     * Calcule le frais selon les règles.
-     * Renvoie un résultat détaillé utile pour audit/notification.
-     */
     public FeeComputation computeFee(Money transactionAmount, TransactionContext ctx, LocalDateTime now) {
         requireNonNull(transactionAmount, "transactionAmount");
         requireNonNull(ctx, "ctx");
@@ -318,7 +318,6 @@ public class FeePolicy {
 
         ensureApplicable(at, ctx);
 
-        // seuil gratuit
         if (rules.activationThreshold() != null && transactionAmount.compareTo(rules.activationThreshold()) <= 0) {
             return FeeComputation.free(
                     id,
@@ -334,14 +333,12 @@ public class FeePolicy {
         Money raw = strategy.apply(transactionAmount);
         Money bounded = rules.applyMinMax(raw);
 
-        String ruleApplied = strategyRuleApplied(strategy.type());
-
         return new FeeComputation(
                 id,
                 transactionAmount,
                 bounded,
                 strategy.type(),
-                ruleApplied,
+                strategyRuleApplied(strategy.type()),
                 rules.activationThreshold(),
                 rules.minFee(),
                 rules.maxFee()
@@ -357,10 +354,6 @@ public class FeePolicy {
         }
     }
 
-    // -------------------------
-    // Internal checks
-    // -------------------------
-
     private void ensureApplicable(LocalDateTime at, TransactionContext ctx) {
         if (status != FeePolicyStatus.ACTIVE && status != FeePolicyStatus.SUSPENDED) {
             throw new IllegalStateException("FeePolicy not applicable (status=" + status + ")");
@@ -370,7 +363,6 @@ public class FeePolicy {
             throw new IllegalStateException("FeePolicy not valid at " + at);
         }
 
-        // Suspension active => non applicable
         if (status == FeePolicyStatus.SUSPENDED) {
             if (suspension == null) {
                 throw new IllegalStateException("Policy is SUSPENDED but suspension window is missing");
@@ -378,30 +370,33 @@ public class FeePolicy {
             if (suspension.isActiveAt(at)) {
                 throw new IllegalStateException("FeePolicy suspended until " + suspension.to());
             }
-            // suspension expirée: on peut considérer applicable,
-            // la transition persistée peut être faite par un handler/job.
         }
 
         if (kycRequirement == KycRequirement.REQUIRED && !ctx.isKycValidated()) {
             throw new IllegalStateException("KYC is required but not verified");
         }
 
-        // Condition volume
         rules.minMonthlyTxCountOpt().ifPresent(minTx -> {
             if (ctx.monthlyTransactionCount() < minTx) {
                 throw new IllegalStateException("Monthly tx count requirement not met");
             }
         });
-
     }
 
     private void ensureEditable() {
-        if (status != FeePolicyStatus.DRAFT) {
-            throw new IllegalStateException("Only DRAFT policy is editable.");
+        if (status == FeePolicyStatus.ARCHIVED) {
+            throw new InvalidStateException(
+                    "FEE_POLICY_NOT_EDITABLE",
+                    "ARCHIVED policy is not editable",
+                    Map.of("currentStatus", status.name())
+            );
         }
     }
 
     private void validateInvariants() {
+        if (transactionCode == null) {
+            throw new IllegalArgumentException("transactionCode cannot be null");
+        }
         if (target.scope() == null) {
             throw new IllegalArgumentException("target.scope cannot be null");
         }
@@ -425,35 +420,21 @@ public class FeePolicy {
         return Objects.requireNonNull(value, name + " must not be null");
     }
 
-    // -------------------------
-    // Getters
-    // -------------------------
-
     public FeePolicyId id() { return id; }
-
+    public TransactionCode transactionCode() { return transactionCode; }
     public TransactionType transactionType() { return transactionType; }
-
     public FeeTarget target() { return target; }
-
     public FeeStrategy strategy() { return strategy; }
-
     public FeeRules rules() { return rules; }
-
     public KycRequirement kycRequirement() { return kycRequirement; }
-
     public ValidityPeriod validity() { return validity; }
-
     public Priority priority() { return priority; }
-
     public FeePolicyStatus status() { return status; }
-
     public Optional<SuspensionWindow> suspension() { return Optional.ofNullable(suspension); }
-
     public AuditInfo created() { return created; }
-
     public Optional<AuditInfo> lastModified() { return Optional.ofNullable(lastModified); }
-
     public Optional<AuditInfo> approvedOrRejected() { return Optional.ofNullable(approvedOrRejected); }
+    public String blockReason() { return blockReason; }
 
     public FeePolicyComplianceData toComplianceData() {
         return new FeePolicyComplianceData(
@@ -466,42 +447,4 @@ public class FeePolicy {
                 this.kycRequirement == KycRequirement.REQUIRED
         );
     }
-
-
-    public static FeePolicy bootstrapActive(
-            TransactionType transactionType,
-            FeeTarget target,
-            FeeStrategy strategy,
-            FeeRules rules,
-            KycRequirement kycRequirement,
-            ValidityPeriod validity,
-            Priority priority,
-            String systemActor,
-            LocalDateTime when
-    ) {
-        var id = FeePolicyId.generate();
-
-        var audit = new AuditInfo(
-                systemActor,
-                when,
-                "SYSTEM_BOOTSTRAP"
-        );
-
-        return new FeePolicy(
-                id,
-                transactionType,
-                target,
-                strategy,
-                rules,
-                kycRequirement,
-                validity,
-                priority,
-                FeePolicyStatus.ACTIVE,
-                null,                     // suspension
-                audit,                    // created
-                audit,                    // lastModified
-                audit                     // approvedOrRejected (optionnel, mais cohérent: “validé par système”)
-        );
-    }
-
 }

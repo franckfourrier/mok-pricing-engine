@@ -58,6 +58,14 @@ public class OpenApiGroupsConfig {
                 .build();
     }
 
+    @Bean
+    GroupedOpenApi referenceApi() {
+        return GroupedOpenApi.builder()
+                .group("reference")
+                .pathsToMatch("/v1/reference/**")
+                .build();
+    }
+
     private OpenApiCustomizer addBearerSecurityOnlyForSensitivePaths() {
 
         Set<String> actions = Set.of(

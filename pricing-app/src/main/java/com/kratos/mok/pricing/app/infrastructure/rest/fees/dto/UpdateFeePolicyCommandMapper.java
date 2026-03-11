@@ -1,13 +1,14 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.dto;
 
-import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyCommand;
+import com.kratos.mok.pricing.fees.application.command.updateFeePolicy.UpdateFeePolicyCommand;
 
-public final class CreateFeePolicyCommandMapper {
+public final class UpdateFeePolicyCommandMapper {
 
-    private CreateFeePolicyCommandMapper() {}
+    private UpdateFeePolicyCommandMapper() {}
 
-    public static CreateFeePolicyCommand toCommand(CreateFeePolicyRequest req) {
-        return new CreateFeePolicyCommand(
+    public static UpdateFeePolicyCommand toCommand(String policyId, UpdateFeePolicyRequest req) {
+        return new UpdateFeePolicyCommand(
+                policyId,
                 req.transactionCode(),
                 req.targetScope(),
                 req.targetValue(),
@@ -17,7 +18,7 @@ public final class CreateFeePolicyCommandMapper {
                 req.percentage(),
                 req.tiers() == null ? null :
                         req.tiers().stream()
-                                .map(t -> new CreateFeePolicyCommand.TierCommand(
+                                .map(t -> new UpdateFeePolicyCommand.TierCommand(
                                         t.min(), t.max(), t.tierStrategyType(), t.tierValue()
                                 ))
                                 .toList(),

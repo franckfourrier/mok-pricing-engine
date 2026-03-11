@@ -3,7 +3,7 @@ bootstrap:
   currency: "XAF"
 
   fees:
-    - transactionType: P2P_TRANSFER
+    - transactionCode: SUBSCRIBER_P2P_TRANSFER
       target:
         scope: GLOBAL
         value: "ALL"
@@ -14,17 +14,14 @@ bootstrap:
           max: "10000"
           tierStrategyType: FIXED
           tierValue: "50"
-
         - min: "10000"
           max: "100000"
           tierStrategyType: PROPORTIONAL
           tierValue: "0.005"
-
         - min: "100001"
           max: "200000"
           tierStrategyType: PROPORTIONAL
           tierValue: "0.005"
-
         - min: "200001"
           max: "500000"
           tierStrategyType: FIXED
@@ -36,7 +33,7 @@ bootstrap:
       minMonthlyTxCount: null
       kycRequirement: NONE
 
-    - transactionType: WITHDRAWAL
+    - transactionCode: SUBSCRIBER_WITHDRAWAL
       target:
         scope: GLOBAL
         value: "ALL"
@@ -47,17 +44,14 @@ bootstrap:
           max: "3333"
           tierStrategyType: FIXED
           tierValue: "50"
-
         - min: "3334"
           max: "175000"
           tierStrategyType: PROPORTIONAL
           tierValue: "0.015"
-
         - min: "175001"
           max: "266666"
           tierStrategyType: PROPORTIONAL
           tierValue: "0.015"
-
         - min: "266667"
           max: "500000"
           tierStrategyType: FIXED

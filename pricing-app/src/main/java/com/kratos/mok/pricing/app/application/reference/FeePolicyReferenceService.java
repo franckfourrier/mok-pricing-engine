@@ -1,0 +1,53 @@
+package com.kratos.mok.pricing.app.application.reference;
+
+import com.kratos.mok.pricing.fees.infrastructure.repository.JpaFeePolicyRepository;
+import com.kratos.mok.pricing.shared.api.reference.FeePolicyOptionDto;
+import com.kratos.mok.pricing.shared.domain.enums.AccountType;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.stream.Stream;
+
+@Service
+@RequiredArgsConstructor
+public class FeePolicyReferenceService {
+
+    private final JpaFeePolicyRepository feePolicyRepository;
+
+    public List<FeePolicyOptionDto> availableFeePolicyOptions() {
+
+        Set<String> configuredKeys = feePolicyRepository.findConfiguredOptions().stream()
+                .map(v -> key(
+                        v.getTransactionCode(),
+                        v.getTargetScope(),
+                        v.getTargetValue()
+                ))
+                .collect(java.util.stream.Collectors.toSet());
+
+        return buildAllOptions()
+                .filter(option -> !configuredKeys.contains(
+                        key(option.transactionCode(), option.targetScope(), option.targetValue())
+                ))
+                .toList();
+    }
+
+    private Stream<FeePolicyOptionDto> buildAllOptions() {
+        return Arrays.stream(TransactionCode.values())
+                .flatMap(tx -> Arrays.stream(AccountType.values())
+                        .map(accountType -> new FeePolicyOptionDto(
+                                tx.name(),
+                                tx.label(),
+                                tx.transactionType().name(),
+                                TargetScope.ACCOUNT_TYPE.name(),
+                                accountType.name(),
+                                accountType.label()
+                        )));
+    }
+
+    private String key(String transactionCode, String targetScope, String targetValue) {
+        return transactionCode + "|" + targetScope + "|" + targetValue;
+    }
+}

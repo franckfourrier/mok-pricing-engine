@@ -2,13 +2,14 @@ package com.kratos.mok.pricing.app.bootstrap;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
 import com.kratos.mok.pricing.fees.domain.FeeTarget;
-import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
-import com.kratos.mok.pricing.shared.domain.vo.Priority;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
+import com.kratos.mok.pricing.shared.domain.vo.Priority;
+import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import java.util.List;
 public class FeePolicyBootstrapService {
 
     public static final String SYSTEM_ACTOR = "SYSTEM_BOOTSTRAP";
+
     private final FeePolicyRepository repository;
 
     @Transactional
@@ -33,7 +35,6 @@ public class FeePolicyBootstrapService {
             throw new IllegalArgumentException("bootstrap version is required");
         }
 
-        // ✅ devise du bootstrap (fallback)
         final String ccy = (props.currency() == null || props.currency().isBlank())
                 ? Money.DEFAULT_CURRENCY
                 : props.currency().trim().toUpperCase();
@@ -43,10 +44,15 @@ public class FeePolicyBootstrapService {
         for (var y : props.fees()) {
 
             FeeTarget target = toTarget(y.target().scope(), y.target().value());
+            TransactionCode transactionCode = y.transactionCode();
 
-            if (repository.existsAnyFor(y.transactionType(), target.scope(), target.value())) {
-                log.info("[BOOTSTRAP v{}] exists => skip: type={}, scope={}, value={}",
-                        props.version(), y.transactionType(), target.scope(), target.value());
+            if (repository.existsAnyFor(transactionCode, target.scope(), target.value())) {
+                log.info("[BOOTSTRAP v{}] exists => skip: code={}, type={}, scope={}, value={}",
+                        props.version(),
+                        transactionCode,
+                        transactionCode.transactionType(),
+                        target.scope(),
+                        target.value());
                 continue;
             }
 
@@ -55,7 +61,8 @@ public class FeePolicyBootstrapService {
             var priority = Priority.defaultFor(target.scope());
 
             FeePolicy policy = FeePolicy.bootstrapActive(
-                    y.transactionType(),
+                    transactionCode,
+                    transactionCode.transactionType(),
                     target,
                     strategy,
                     rules,
@@ -68,8 +75,13 @@ public class FeePolicyBootstrapService {
 
             repository.save(policy);
 
-            log.info("[BOOTSTRAP v{}] created ACTIVE: id={}, type={}, scope={}, value={}",
-                    props.version(), policy.id().value(), y.transactionType(), target.scope(), target.value());
+            log.info("[BOOTSTRAP v{}] created ACTIVE: id={}, code={}, type={}, scope={}, value={}",
+                    props.version(),
+                    policy.id().value(),
+                    policy.transactionCode(),
+                    policy.transactionType(),
+                    target.scope(),
+                    target.value());
         }
     }
 
@@ -77,7 +89,7 @@ public class FeePolicyBootstrapService {
         String v = required(value, "target.value is required").trim();
         return switch (scope) {
             case GLOBAL -> FeeTarget.global();
-            case ACCOUNT_TYPE -> FeeTarget.accountType(v.toUpperCase()); // ✅ normalisation
+            case ACCOUNT_TYPE -> FeeTarget.accountType(v.toUpperCase());
             case ACCOUNT_ID -> FeeTarget.accountId(v);
         };
     }
@@ -127,8 +139,6 @@ public class FeePolicyBootstrapService {
             case TIERED -> throw new IllegalArgumentException("Nested TIERED not allowed");
         };
     }
-
-    // ---------------- helpers ----------------
 
     private Money money(String value, String ccy) {
         return Money.of(value, ccy);

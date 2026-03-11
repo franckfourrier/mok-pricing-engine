@@ -1,12 +1,13 @@
 package com.kratos.mok.pricing.fees.infrastructure.repository;
 
 import com.kratos.mok.pricing.fees.domain.FeePolicy;
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.fees.infrastructure.mapper.FeePolicyEntityMapper;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -59,22 +60,22 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
         LocalDateTime end = policy.validity().end();
 
         LocalDateTime startBound = (start == null) ? LocalDateTime.of(1900, 1, 1, 0, 0) : start;
-        LocalDateTime endBound   = (end == null)   ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
+        LocalDateTime endBound = (end == null) ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
 
         return jpaRepository.existsConflict(
-                policy.transactionType(),
+                policy.transactionCode(),
                 scope,
                 value,
                 startBound,
-                endBound
+                endBound,
+                policy.id().value()
         );
     }
 
-
     @Override
-    public boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value) {
-        return jpaRepository.existsByTransactionTypeAndTargetScopeAndTargetValue(
-                transactionType,
+    public boolean existsAnyFor(TransactionCode transactionCode, TargetScope scope, String value) {
+        return jpaRepository.existsByTransactionCodeAndTargetScopeAndTargetValue(
+                transactionCode,
                 scope,
                 normalize(scope, value)
         );
