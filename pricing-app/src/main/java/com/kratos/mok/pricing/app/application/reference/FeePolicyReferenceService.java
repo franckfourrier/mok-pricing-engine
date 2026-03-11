@@ -17,7 +17,7 @@ public class FeePolicyReferenceService {
 
     private final JpaFeePolicyRepository feePolicyRepository;
 
-    public List<FeePolicyOptionDto> availableFeePolicyOptions() {
+    public java.util.List<FeePolicyOptionDto> availableFeePolicyOptions() {
 
         Set<String> configuredKeys = feePolicyRepository.findConfiguredOptions().stream()
                 .map(v -> key(
@@ -36,6 +36,7 @@ public class FeePolicyReferenceService {
 
     private Stream<FeePolicyOptionDto> buildAllOptions() {
         return Arrays.stream(TransactionCode.values())
+                .filter(TransactionCode::supportsFees)
                 .flatMap(tx -> Arrays.stream(AccountType.values())
                         .map(accountType -> new FeePolicyOptionDto(
                                 tx.name(),

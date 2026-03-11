@@ -71,4 +71,14 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
         where e.status <> 'ARCHIVED'
     """)
     List<FeePolicyConfiguredOptionView> findConfiguredOptions();
+
+    /*@Query("""
+        select
+            e.transactionCode as transactionCode,
+            e.targetScope as targetScope,
+            e.targetValue as targetValue
+        from FeePolicyEntity e
+        where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
+    """)
+    List<FeePolicyConfiguredOptionView> findConfiguredOptions();*/
 }

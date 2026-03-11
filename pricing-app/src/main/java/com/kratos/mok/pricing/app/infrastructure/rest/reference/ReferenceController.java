@@ -22,15 +22,38 @@ public class ReferenceController {
 
     private final FeePolicyReferenceService feePolicyReferenceService;
 
-    @Operation(summary = "List transaction codes")
+    @Operation(summary = "List all transaction codes")
     @GetMapping("/transaction-codes")
     public List<TransactionCodeDto> transactionCodes() {
         return Arrays.stream(TransactionCode.values())
-                .map(v -> new TransactionCodeDto(
-                        v.name(),
-                        v.label(),
-                        v.transactionType().name()
-                ))
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Operation(summary = "Transaction codes supporting FEES")
+    @GetMapping("/transaction-codes/fees")
+    public List<TransactionCodeDto> transactionCodesForFees() {
+        return Arrays.stream(TransactionCode.values())
+                .filter(TransactionCode::supportsFees)
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Operation(summary = "Transaction codes supporting TAXES")
+    @GetMapping("/transaction-codes/taxes")
+    public List<TransactionCodeDto> transactionCodesForTaxes() {
+        return Arrays.stream(TransactionCode.values())
+                .filter(TransactionCode::supportsTaxes)
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Operation(summary = "Transaction codes supporting COMMISSIONS")
+    @GetMapping("/transaction-codes/commissions")
+    public List<TransactionCodeDto> transactionCodesForCommissions() {
+        return Arrays.stream(TransactionCode.values())
+                .filter(TransactionCode::supportsCommissions)
+                .map(this::toDto)
                 .toList();
     }
 
@@ -49,5 +72,13 @@ public class ReferenceController {
     @GetMapping("/fee-policy-options")
     public List<FeePolicyOptionDto> feePolicyOptions() {
         return feePolicyReferenceService.availableFeePolicyOptions();
+    }
+
+    private TransactionCodeDto toDto(TransactionCode v) {
+        return new TransactionCodeDto(
+                v.name(),
+                v.label(),
+                v.transactionType().name()
+        );
     }
 }
