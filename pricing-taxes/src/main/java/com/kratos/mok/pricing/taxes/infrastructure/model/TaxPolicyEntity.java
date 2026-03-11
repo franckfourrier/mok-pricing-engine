@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.taxes.infrastructure.model;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
@@ -25,6 +26,10 @@ public class TaxPolicyEntity {
     @Id
     @Column(length = 36, nullable = false)
     private String id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_code", nullable = false, length = 80)
+    private TransactionCode transactionCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_type", nullable = false, length = 40)

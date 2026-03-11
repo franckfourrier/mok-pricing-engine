@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.fees.infrastructure.repository;
 
+import com.kratos.mok.pricing.fees.domain.repository.FeeConfiguredTransactionCodeView;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyConfiguredOptionView;
 import com.kratos.mok.pricing.fees.infrastructure.model.FeePolicyEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
@@ -81,4 +82,12 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
         where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
     """)
     List<FeePolicyConfiguredOptionView> findConfiguredOptions();*/
+
+    @Query("""
+    select distinct
+        e.transactionCode as transactionCode
+    from FeePolicyEntity e
+    where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
+""")
+    List<FeeConfiguredTransactionCodeView> findConfiguredTransactionCodes();
 }

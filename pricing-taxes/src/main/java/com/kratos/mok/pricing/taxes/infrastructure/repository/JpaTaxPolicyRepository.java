@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.taxes.infrastructure.repository;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
+import com.kratos.mok.pricing.taxes.domain.repository.TaxConfiguredTransactionCodeView;
 import com.kratos.mok.pricing.taxes.infrastructure.model.TaxPolicyEntity;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +48,11 @@ public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, S
             @Param("value") String value
     );
 
+    @Query("""
+        select distinct
+            e.transactionCode as transactionCode
+        from TaxPolicyEntity e
+        where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
+    """)
+    List<TaxConfiguredTransactionCodeView> findConfiguredTransactionCodes();
 }

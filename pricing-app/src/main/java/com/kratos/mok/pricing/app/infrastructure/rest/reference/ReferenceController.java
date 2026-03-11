@@ -30,13 +30,10 @@ public class ReferenceController {
                 .toList();
     }
 
-    @Operation(summary = "Transaction codes supporting FEES")
+    @Operation(summary = "List available transaction codes for fees")
     @GetMapping("/transaction-codes/fees")
     public List<TransactionCodeDto> transactionCodesForFees() {
-        return Arrays.stream(TransactionCode.values())
-                .filter(TransactionCode::supportsFees)
-                .map(this::toDto)
-                .toList();
+        return feePolicyReferenceService.availableTransactionCodesForFees();
     }
 
     @Operation(summary = "Transaction codes supporting TAXES")

@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.commissions.infrastructure.model;
 import com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.infrastructure.config.model.AuditEmbeddable;
 import jakarta.persistence.*;
@@ -37,6 +38,10 @@ public class CommissionPlanEntity {
     // ------------------------------------------------------------------
     // Scope
     // ------------------------------------------------------------------
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_code", nullable = false, length = 80)
+    private TransactionCode transactionCode;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "transaction_type", nullable = false, length = 40)

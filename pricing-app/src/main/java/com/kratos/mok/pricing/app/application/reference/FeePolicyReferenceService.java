@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.app.application.reference;
 
 import com.kratos.mok.pricing.fees.infrastructure.repository.JpaFeePolicyRepository;
 import com.kratos.mok.pricing.shared.api.reference.FeePolicyOptionDto;
+import com.kratos.mok.pricing.shared.api.reference.TransactionCodeDto;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
@@ -16,6 +17,22 @@ import java.util.stream.Stream;
 public class FeePolicyReferenceService {
 
     private final JpaFeePolicyRepository feePolicyRepository;
+
+    public java.util.List<TransactionCodeDto> availableTransactionCodesForFees() {
+        Set<String> configuredCodes = feePolicyRepository.findConfiguredTransactionCodes().stream()
+                .map(v -> v.getTransactionCode())
+                .collect(java.util.stream.Collectors.toSet());
+
+        return Arrays.stream(TransactionCode.values())
+                .filter(TransactionCode::supportsFees)
+                .filter(tc -> !configuredCodes.contains(tc.name()))
+                .map(tc -> new TransactionCodeDto(
+                        tc.name(),
+                        tc.label(),
+                        tc.transactionType().name()
+                ))
+                .toList();
+    }
 
     public java.util.List<FeePolicyOptionDto> availableFeePolicyOptions() {
 

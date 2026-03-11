@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.commissions.infrastructure.repository;
 
+import com.kratos.mok.pricing.commissions.domain.repository.CommissionConfiguredTransactionCodeView;
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
@@ -72,4 +73,12 @@ public interface JpaCommissionPlanRepository
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("""
+        select distinct
+            e.transactionCode as transactionCode
+        from CommissionPlanEntity e
+        where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
+    """)
+    List<CommissionConfiguredTransactionCodeView> findConfiguredTransactionCodes();
 }
