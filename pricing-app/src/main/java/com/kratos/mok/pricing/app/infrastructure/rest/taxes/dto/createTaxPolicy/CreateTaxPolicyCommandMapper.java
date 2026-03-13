@@ -1,16 +1,22 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto;
+package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy;
 
 import com.kratos.mok.pricing.taxes.application.command.createTaxPolicy.CreateTaxPolicyCommand;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 
 public class CreateTaxPolicyCommandMapper {
 
     public static CreateTaxPolicyCommand toCommand(CreateTaxPolicyRequest r) {
+
+        TaxMode mode = r.mode() != null
+                ? r.mode()
+                : TaxMode.CANTONNEMENT;
+
         return new CreateTaxPolicyCommand(
-                r.type(),
+                r.transactionCodes(),
                 r.targetScope(),
                 r.targetValue(),
                 r.currency(),
-                r.mode(),
+                mode,
                 r.strategyType(),
                 r.rate(),
                 r.fixedAmount(),

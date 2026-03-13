@@ -1,18 +1,17 @@
-package com.kratos.mok.pricing.taxes.application.command.createTaxPolicy;
+package com.kratos.mok.pricing.taxes.application.command.updateTaxPolicy;
 
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
-import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
-import com.kratos.mok.pricing.taxes.domain.TaxTarget;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.strategy.ElectronicRateTax;
 import com.kratos.mok.pricing.taxes.domain.strategy.FixedAmountTax;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxRules;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxStrategy;
 import com.kratos.mok.pricing.taxes.domain.vo.FluxIntensity;
+import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 import com.kratos.mok.pricing.taxes.domain.vo.TaxRate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,12 +25,19 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class CreateTaxPolicyCommandHandler {
+public class UpdateTaxPolicyCommandHandler {
 
     private final TaxPolicyRepository repository;
 
     @Transactional
-    public CreateTaxPolicyResponse handle(CreateTaxPolicyCommand cmd, String actor) {
+    public UpdateTaxPolicyResponse handle(UpdateTaxPolicyCommand cmd, String actor) {
+
+        var policy = repository.findById(TaxPolicyId.from(cmd.policyId()))
+                .orElseThrow(() -> new NotFoundException(
+                        "TAX_POLICY_NOT_FOUND",
+                        "TaxPolicy not found",
+                        Map.of("id", cmd.policyId())
+                ));
 
         if (cmd.transactionCodes() == null || cmd.transactionCodes().isEmpty()) {
             throw new DomainValidationException(
@@ -51,18 +57,17 @@ public class CreateTaxPolicyCommandHandler {
             );
         }
 
-        TaxTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
-        TaxStrategy strategy = toStrategy(cmd);
+        TaxStrategy strategy = toStrategy(cmd, policy);
         TaxRules rules = toRules(cmd);
 
-        TaxPolicy policy = TaxPolicy.draft(
+        policy.updateConfiguration(
                 transactionCodes,
-                target,
                 cmd.mode(),
                 strategy,
                 rules,
                 actor,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                "UPDATE_AND_RESUBMIT"
         );
 
         if (repository.existsConflictingPolicy(policy)) {
@@ -71,27 +76,16 @@ public class CreateTaxPolicyCommandHandler {
             );
         }
 
-        policy.submitForApproval(actor, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
-
         repository.save(policy);
 
-        return new CreateTaxPolicyResponse(
+        return new UpdateTaxPolicyResponse(
                 policy.id().value(),
                 true,
                 policy.status().name()
         );
     }
 
-    private TaxTarget toTarget(TargetScope scope, String value) {
-        String v = required(value, "targetValue is required").trim();
-        return switch (scope) {
-            case GLOBAL -> TaxTarget.global();
-            case ACCOUNT_TYPE -> TaxTarget.accountType(v);
-            case ACCOUNT_ID -> TaxTarget.accountId(v);
-        };
-    }
-
-    private TaxStrategy toStrategy(CreateTaxPolicyCommand cmd) {
+    private TaxStrategy toStrategy(UpdateTaxPolicyCommand cmd, com.kratos.mok.pricing.taxes.domain.TaxPolicy policy) {
         return switch (cmd.strategyType()) {
             case ELECTRONIC_RATE -> {
                 if (cmd.rate() == null || cmd.rate().isBlank()) {
@@ -103,21 +97,25 @@ public class CreateTaxPolicyCommandHandler {
                 if (cmd.fixedAmount() == null || cmd.fixedAmount().isBlank()) {
                     throw new DomainValidationException("FIXED_AMOUNT_REQUIRED", "fixedAmount is required", Map.of());
                 }
-                yield new FixedAmountTax(Money.of(cmd.fixedAmount(), cmd.currency()));
+
+                String currency = extractCurrency(policy);
+                yield new FixedAmountTax(Money.of(cmd.fixedAmount(), currency));
             }
         };
     }
 
-    private TaxRules toRules(CreateTaxPolicyCommand cmd) {
+    private String extractCurrency(com.kratos.mok.pricing.taxes.domain.TaxPolicy policy) {
+        if (policy.strategy() instanceof FixedAmountTax fixed) {
+            return fixed.fixed().currency();
+        }
+        return Money.DEFAULT_CURRENCY;
+    }
+
+    private TaxRules toRules(UpdateTaxPolicyCommand cmd) {
         FluxIntensity intensity = (cmd.fluxIntensity() == null || cmd.fluxIntensity().isBlank())
                 ? FluxIntensity.defaultOne()
                 : new FluxIntensity(new BigDecimal(cmd.fluxIntensity().trim()));
 
         return new TaxRules(intensity, cmd.exempted());
-    }
-
-    private String required(String v, String msg) {
-        if (v == null || v.isBlank()) throw new IllegalArgumentException(msg);
-        return v;
     }
 }

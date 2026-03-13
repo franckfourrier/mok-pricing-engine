@@ -1,11 +1,10 @@
 package com.kratos.mok.pricing.taxes.infrastructure.mapper;
 
-import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
 import com.kratos.mok.pricing.taxes.domain.TaxTarget;
-import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.strategy.ElectronicRateTax;
 import com.kratos.mok.pricing.taxes.domain.strategy.FixedAmountTax;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxRules;
@@ -16,216 +15,114 @@ import com.kratos.mok.pricing.taxes.domain.vo.TaxRate;
 import com.kratos.mok.pricing.taxes.infrastructure.model.TaxPolicyEntity;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Objects;
-
 @Component
 public class TaxPolicyEntityMapper {
 
-    // -------------------------
-    // Domain -> Entity
-    // -------------------------
-    public TaxPolicyEntity fromDomain(TaxPolicy d) {
-        Objects.requireNonNull(d, "domain policy must not be null");
+    public TaxPolicyEntity fromDomain(TaxPolicy p) {
 
         TaxPolicyEntity e = new TaxPolicyEntity();
 
-        // Identity & perimeter
-        e.setId(d.id().value()); // TaxPolicyId is a String UUID
-        e.setTransactionType(d.transactionType());
-        e.setTargetScope(d.target().scope());
-        e.setTargetValue(normalizeTargetValue(d.target()));
+        e.setId(p.id().value());
+        e.setTransactionCodes(new java.util.LinkedHashSet<>(p.transactionCodes()));
 
-        // Core
-        e.setMode(d.mode());
+        e.setTargetScope(p.target().scope());
+        e.setTargetValue(p.target().value());
 
-        // Strategy -> columns
-        StrategyColumns sc = toStrategyColumns(d.strategy());
-        e.setStrategyType(sc.type);
-        e.setCurrency(sc.currency);
-        e.setRate(sc.rate);
-        e.setFixedAmount(sc.fixedAmount);
+        e.setMode(p.mode());
 
-        // Rules
-        FluxIntensity intensity = d.rules().intensity(); // defaultOne if null
-        e.setFluxIntensity(intensity.value());
-        e.setExempted(d.rules().isExempted());
-
-        // Status
-        e.setStatus(d.status());
-
-        // Block reason (nullable)
-        e.setBlockReason(d.blockReason());
-
-        // Audit (created mandatory)
-        AuditInfo created = d.created();
-        e.setCreatedBy(created.author());
-        e.setCreatedAt(created.timestamp());
-
-        // lastModified (nullable)
-        AuditInfo lm = d.lastModified();
-        if (lm != null) {
-            e.setLastModifiedBy(lm.author());
-            e.setLastModifiedAt(lm.timestamp());
-        } else {
-            e.setLastModifiedBy(null);
-            e.setLastModifiedAt(null);
+        if (p.strategy() instanceof ElectronicRateTax rateTax) {
+            e.setStrategyType(com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType.ELECTRONIC_RATE);
+            e.setRate(rateTax.rate().value());
+            e.setFixedAmount(null);
+            e.setCurrency(Money.DEFAULT_CURRENCY);
         }
 
-        // approvedOrRejected (nullable)
-        AuditInfo ap = d.approvedOrRejected();
-        if (ap != null) {
-            e.setApprovedBy(ap.author());
-            e.setApprovedAt(ap.timestamp());
-        } else {
-            e.setApprovedBy(null);
-            e.setApprovedAt(null);
+        if (p.strategy() instanceof FixedAmountTax fixedTax) {
+            e.setStrategyType(com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType.FIXED_AMOUNT);
+            e.setFixedAmount(fixedTax.fixed().amount());
+            e.setRate(null);
+            e.setCurrency(fixedTax.fixed().currency());
+        }
+
+        e.setFluxIntensity(p.rules().intensity().value());
+        e.setExempted(p.rules().isExempted());
+
+        e.setStatus(p.status());
+
+        e.setBlockReason(p.blockReason());
+
+        e.setCreatedBy(p.created().author());
+        e.setCreatedAt(p.created().timestamp());
+
+        if (p.lastModified() != null) {
+            e.setLastModifiedBy(p.lastModified().author());
+            e.setLastModifiedAt(p.lastModified().timestamp());
+        }
+
+        if (p.approvedOrRejected() != null) {
+            e.setApprovedBy(p.approvedOrRejected().author());
+            e.setApprovedAt(p.approvedOrRejected().timestamp());
         }
 
         return e;
     }
 
-    private String normalizeTargetValue(TaxTarget t) {
-        String v = t.value().trim();
-        return switch (t.scope()) {
-            case ACCOUNT_TYPE -> v.toUpperCase();
-            default -> v;
-        };
-    }
-
-    private StrategyColumns toStrategyColumns(TaxStrategy s) {
-        Objects.requireNonNull(s, "strategy must not be null");
-
-        if (s instanceof ElectronicRateTax er) {
-            return new StrategyColumns(
-                    TaxStrategyType.ELECTRONIC_RATE,
-                    Money.DEFAULT_CURRENCY,   // convention V1
-                    er.rate().value(),
-                    null
-            );
-        }
-
-        if (s instanceof FixedAmountTax fa) {
-            Money fixed = fa.fixed();
-            return new StrategyColumns(
-                    TaxStrategyType.FIXED_AMOUNT,
-                    fixed.currency(),
-                    null,
-                    fixed.amount()
-            );
-        }
-
-        throw new DomainValidationException(
-                "UNSUPPORTED_TAX_STRATEGY",
-                "Unsupported TaxStrategy implementation: " + s.getClass().getName(),
-                Map.of("strategyClass", s.getClass().getName())
-        );
-    }
-
-    // -------------------------
-    // Entity -> Domain
-    // -------------------------
     public TaxPolicy toDomain(TaxPolicyEntity e) {
-        Objects.requireNonNull(e, "entity must not be null");
 
-        TaxPolicyId id = TaxPolicyId.from(e.getId());
+        TaxTarget target = switch (e.getTargetScope()) {
+            case GLOBAL -> TaxTarget.global();
+            case ACCOUNT_TYPE -> TaxTarget.accountType(e.getTargetValue());
+            case ACCOUNT_ID -> TaxTarget.accountId(e.getTargetValue());
+        };
 
-        TaxTarget target = new TaxTarget(e.getTargetScope(), e.getTargetValue());
+        TaxStrategy strategy = switch (e.getStrategyType()) {
 
-        TaxStrategy strategy = fromStrategyColumns(
-                e.getStrategyType(),
-                e.getCurrency(),
-                e.getRate(),
-                e.getFixedAmount()
+            case ELECTRONIC_RATE ->
+                    new ElectronicRateTax(new TaxRate(e.getRate()));
+
+            case FIXED_AMOUNT ->
+                    new FixedAmountTax(Money.of(e.getFixedAmount(), e.getCurrency()));
+        };
+
+        TaxRules rules = new TaxRules(
+                new FluxIntensity(e.getFluxIntensity()),
+                e.isExempted()
         );
-
-        FluxIntensity intensity = (e.getFluxIntensity() == null)
-                ? FluxIntensity.defaultOne()
-                : new FluxIntensity(e.getFluxIntensity());
-
-        TaxRules rules = new TaxRules(intensity, e.isExempted());
 
         AuditInfo created = new AuditInfo(
-                requireNonBlank(e.getCreatedBy(), "createdBy"),
-                requireNonNull(e.getCreatedAt(), "createdAt"),
-                "PERSISTED"
+                e.getCreatedBy(),
+                e.getCreatedAt(),
+                "CREATED"
         );
 
-        AuditInfo lastModified = toAuditInfoNullable(e.getLastModifiedBy(), e.getLastModifiedAt(), "LAST_MODIFIED");
-        AuditInfo approvedOrRejected = toAuditInfoNullable(e.getApprovedBy(), e.getApprovedAt(), "APPROVED_OR_REJECTED");
+        AuditInfo lastModified = e.getLastModifiedAt() == null
+                ? null
+                : new AuditInfo(
+                e.getLastModifiedBy(),
+                e.getLastModifiedAt(),
+                "UPDATED"
+        );
+
+        AuditInfo approved = e.getApprovedAt() == null
+                ? null
+                : new AuditInfo(
+                e.getApprovedBy(),
+                e.getApprovedAt(),
+                "APPROVED"
+        );
 
         return TaxPolicy.reconstitute(
-                id,
-                e.getTransactionType(),
+                TaxPolicyId.from(e.getId()),
+                e.getTransactionCodes(),
                 target,
                 e.getMode(),
                 strategy,
                 rules,
-                e.getStatus(),
+                TaxPolicyStatus.valueOf(e.getStatus().name()),
                 created,
                 lastModified,
-                approvedOrRejected,
+                approved,
                 e.getBlockReason()
         );
     }
-
-    private TaxStrategy fromStrategyColumns(
-            TaxStrategyType type,
-            String currency,
-            BigDecimal rate,
-            BigDecimal fixedAmount
-    ) {
-        if (type == null) {
-            throw new DomainValidationException("STRATEGY_TYPE_REQUIRED", "strategyType is required", Map.of());
-        }
-
-        return switch (type) {
-            case ELECTRONIC_RATE -> {
-                if (rate == null) {
-                    throw new DomainValidationException(
-                            "RATE_REQUIRED",
-                            "rate is required for ELECTRONIC_RATE",
-                            Map.of("strategyType", "ELECTRONIC_RATE")
-                    );
-                }
-                yield new ElectronicRateTax(new TaxRate(rate));
-            }
-
-            case FIXED_AMOUNT -> {
-                if (fixedAmount == null) {
-                    throw new DomainValidationException(
-                            "FIXED_AMOUNT_REQUIRED",
-                            "fixedAmount is required for FIXED_AMOUNT",
-                            Map.of("strategyType", "FIXED_AMOUNT")
-                    );
-                }
-                String c = (currency == null || currency.isBlank()) ? Money.DEFAULT_CURRENCY : currency;
-                yield new FixedAmountTax(Money.of(fixedAmount, c));
-            }
-        };
-    }
-
-    private AuditInfo toAuditInfoNullable(String author, LocalDateTime at, String reason) {
-        if (author == null || author.isBlank() || at == null) return null;
-        return new AuditInfo(author, at, reason);
-    }
-
-    private static LocalDateTime requireNonNull(LocalDateTime v, String name) {
-        if (v == null) throw new IllegalArgumentException(name + " must not be null");
-        return v;
-    }
-
-    private static String requireNonBlank(String v, String name) {
-        if (v == null || v.isBlank()) throw new IllegalArgumentException(name + " must not be blank");
-        return v;
-    }
-
-    private record StrategyColumns(
-            TaxStrategyType type,
-            String currency,
-            BigDecimal rate,
-            BigDecimal fixedAmount
-    ) {}
 }

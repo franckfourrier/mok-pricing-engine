@@ -2,9 +2,12 @@ package com.kratos.mok.pricing.app.infrastructure.rest.computePricing;
 
 import com.kratos.mok.pricing.app.application.query.computePricingBreakdown.ComputePricingBreakdownQuery;
 import com.kratos.mok.pricing.app.application.query.computePricingBreakdown.PricingBreakdownResult;
-import com.kratos.mok.pricing.shared.api.*;
+import com.kratos.mok.pricing.shared.api.MoneyDto;
+import com.kratos.mok.pricing.shared.api.PricingBreakdownResponse;
+import com.kratos.mok.pricing.shared.api.PricingComputeRequest;
+import com.kratos.mok.pricing.shared.api.SelectedPoliciesDto;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
 import jakarta.validation.Valid;
@@ -23,13 +26,13 @@ public class ComputePricingController {
     @PostMapping("/compute")
     public PricingBreakdownResponse compute(@RequestBody @Valid PricingComputeRequest req) {
 
-        TransactionType txType = TransactionType.valueOf(req.transactionType().trim().toUpperCase());
+        TransactionCode txCode = TransactionCode.valueOf(req.transactionCode().trim().toUpperCase());
         AccountType accType = AccountType.valueOf(req.accountType().trim().toUpperCase());
 
         Money amount = Money.of(req.amount().amount(), req.amount().currency());
 
         var ctx = new PricingRequestContext(
-                txType,
+                txCode,
                 amount,
                 req.accountId(),
                 accType,
@@ -41,6 +44,7 @@ public class ComputePricingController {
         PricingBreakdownResult out = query.compute(ctx);
 
         return new PricingBreakdownResponse(
+                out.transactionCode(),
                 out.transactionType(),
                 toDto(out.amount()),
                 toDto(out.fee()),
@@ -48,7 +52,11 @@ public class ComputePricingController {
                 null,
                 toDto(out.totalDebited()),
                 null,
-                new SelectedPoliciesDto(out.feePolicyId(), out.taxPolicyId(), out.commissionPolicyId())
+                new SelectedPoliciesDto(
+                        out.feePolicyId(),
+                        out.taxPolicyId(),
+                        out.commissionPolicyId()
+                )
         );
     }
 

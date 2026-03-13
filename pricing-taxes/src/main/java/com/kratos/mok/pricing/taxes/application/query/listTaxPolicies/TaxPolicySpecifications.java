@@ -11,9 +11,6 @@ public final class TaxPolicySpecifications {
         return (root, query, cb) -> {
             var predicates = cb.conjunction();
 
-            if (q.transactionType() != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("transactionType"), q.transactionType()));
-            }
             if (q.targetScope() != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("targetScope"), q.targetScope()));
             }

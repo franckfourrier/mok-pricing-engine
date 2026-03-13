@@ -90,4 +90,24 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
     where e.status in ('DRAFT', 'PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED')
 """)
     List<FeeConfiguredTransactionCodeView> findConfiguredTransactionCodes();
+
+    @Query("""
+    SELECT f FROM FeePolicyEntity f
+    WHERE f.transactionCode = :transactionCode
+      AND f.status = 'ACTIVE'
+      AND (f.validityStart IS NULL OR f.validityStart <= :at)
+      AND (f.validityEnd IS NULL OR f.validityEnd >= :at)
+      AND (
+          f.targetScope = com.kratos.mok.pricing.shared.domain.enums.TargetScope.GLOBAL
+          OR (f.targetScope = com.kratos.mok.pricing.shared.domain.enums.TargetScope.ACCOUNT_TYPE AND f.targetValue = :accountType)
+          OR (f.targetScope = com.kratos.mok.pricing.shared.domain.enums.TargetScope.ACCOUNT_ID AND f.targetValue = :accountId)
+      )
+    ORDER BY f.priority DESC
+""")
+    List<FeePolicyEntity> findActiveCandidatesByTransactionCode(
+            @Param("transactionCode") TransactionCode transactionCode,
+            @Param("accountType") String accountType,
+            @Param("accountId") String accountId,
+            @Param("at") LocalDateTime at
+    );
 }

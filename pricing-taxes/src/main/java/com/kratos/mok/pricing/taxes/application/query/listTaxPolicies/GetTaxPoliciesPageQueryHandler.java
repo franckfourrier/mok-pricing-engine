@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.taxes.application.query.listTaxPolicies;
 
 import com.kratos.mok.pricing.shared.api.PageResponseDto;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxPolicyStatusMapper;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxPolicyUiMapper;
 import com.kratos.mok.pricing.taxes.infrastructure.model.TaxPolicyEntity;
@@ -8,6 +9,9 @@ import com.kratos.mok.pricing.taxes.infrastructure.repository.JpaTaxPolicyReposi
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,34 +34,28 @@ public class GetTaxPoliciesPageQueryHandler {
 
         Page<TaxPolicyEntity> p = jpaRepository.findAll(spec, pageable);
 
-       /*Page<TaxPolicySummary> mapped = p.map(e -> new TaxPolicySummary(
-                e.getId(),
-                null, // name
-                e.getTransactionType(),
-                e.getTargetScope(),
-                e.getTargetValue(),
-                e.getMode().name(),
-                e.getStrategyType().name(),
-                TaxPolicyReadMapper.value(e),
-                TaxPolicyStatusMapper.toLabel(e.getStatus()),
-                e.getCreatedAt()
-        ));*/
-
-         Page<TaxPolicySummary> mapped = p.map(e -> new TaxPolicySummary(
-                 e.getId(),
-                 TaxPolicyUiMapper.name(e),
-                 TaxPolicyUiMapper.appliedTransaction(e.getTransactionType()),
-                 TaxPolicyUiMapper.type(e),
-                 TaxPolicyUiMapper.value(e),
-                 e.getTransactionType(),
-                 e.getTargetScope(),
-                 e.getTargetValue(),
-                 e.getStatus().name(),
-                 TaxPolicyStatusMapper.toLabel(e.getStatus()),
-                 TaxPolicyUiMapper.createdAt(e)
-        ));
-
+        Page<TaxPolicySummary> mapped = p.map(this::toSummary);
 
         return PageResponseDto.from(mapped);
+    }
+
+    private TaxPolicySummary toSummary(TaxPolicyEntity e) {
+        List<String> appliedTransactions = e.getTransactionCodes().stream()
+                .sorted(Comparator.comparing(Enum::name))
+                .map(TransactionCode::label)
+                .toList();
+
+        return new TaxPolicySummary(
+                e.getId(),
+                TaxPolicyUiMapper.name(e),
+                appliedTransactions,
+                TaxPolicyUiMapper.type(e),
+                TaxPolicyUiMapper.value(e),
+                e.getTargetScope(),
+                e.getTargetValue(),
+                e.getStatus().name(),
+                TaxPolicyStatusMapper.toLabel(e.getStatus()),
+                TaxPolicyUiMapper.createdAt(e)
+        );
     }
 }

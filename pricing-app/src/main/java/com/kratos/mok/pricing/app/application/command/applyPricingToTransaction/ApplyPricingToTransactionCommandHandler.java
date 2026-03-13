@@ -11,6 +11,7 @@ import com.kratos.mok.pricing.ledger.application.port.LedgerWriter;
 import com.kratos.mok.pricing.ledger.domain.Posting;
 import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
 import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
@@ -25,7 +26,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -55,7 +58,7 @@ public class ApplyPricingToTransactionCommandHandler {
         validate(cmd);
 
         PricingRequestContext ctx = new PricingRequestContext(
-                cmd.type(),
+                cmd.transactionCode(),
                 cmd.amount(),
                 cmd.accountId(),
                 cmd.accountType(),
@@ -64,23 +67,18 @@ public class ApplyPricingToTransactionCommandHandler {
                 cmd.occurredAt()
         );
 
-        // 1) Fee
         FeeComputationResult feeRes = computeFeeQuery.computeFee(ctx);
         Money fee = feeRes.fee();
 
-        // 2) Tax
         TaxComputationResult taxRes = computeTaxQuery.computeTax(ctx);
         Money tax = taxRes.tax();
 
-        // 3) Commission base
-        Money commissionBase = (cmd.type() == TransactionType.DEPOSIT)
+        Money commissionBase = (cmd.transactionCode().transactionType() == TransactionType.DEPOSIT)
                 ? estimateWithdrawalFee(ctx)
                 : safe(fee);
 
-        // 4) Commission distribution (plan + lines)
         CommissionDistributionResult comRes = computeCommissionDistributionQuery.compute(ctx, commissionBase);
 
-        // 5) External credits (idempotent) + compute totals for ledger
         Money externalTotal = Money.ZERO;
         Money agentExternal = Money.ZERO;
 
@@ -91,7 +89,6 @@ public class ApplyPricingToTransactionCommandHandler {
             if (amt == null || amt.isZero()) continue;
 
             if ("KRATOS".equals(b)) {
-                // interne, ledger (optionnel plus bas)
                 continue;
             }
 
@@ -115,13 +112,13 @@ public class ApplyPricingToTransactionCommandHandler {
             );
 
             externalTotal = externalTotal.add(amt);
-            if ("AGENT".equals(b)) agentExternal = agentExternal.add(amt);
+            if ("AGENT".equals(b)) {
+                agentExternal = agentExternal.add(amt);
+            }
         }
 
-        // 6) Ledger postings (fees + taxes + commissions + trace KRATOS)
         List<Posting> postings = new ArrayList<>();
 
-        // Fees: cantonnement (DEBIT) -> exploitation (CREDIT)
         if (fee != null && !fee.isZero()) {
             postings.add(debit(accCant, fee, LedgerEntryKind.FEE, feeRes.feePolicyId(),
                     "FEE applied tx=" + cmd.externalTxId()));
@@ -129,7 +126,6 @@ public class ApplyPricingToTransactionCommandHandler {
                     "FEE collected tx=" + cmd.externalTxId()));
         }
 
-        // Taxes
         if (tax != null && !tax.isZero()) {
             String debitAccount = (taxRes.taxMode() == TaxMode.EXPLOITATION) ? accExp : accCant;
             String creditAccount = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
@@ -143,14 +139,15 @@ public class ApplyPricingToTransactionCommandHandler {
                     "TAX credited tx=" + cmd.externalTxId()));
         }
 
-        // Commission: exploitation DEBIT (payout)
-        Money expDebit = (cmd.type() == TransactionType.DEPOSIT) ? externalTotal : agentExternal;
+        Money expDebit = (cmd.transactionCode().transactionType() == TransactionType.DEPOSIT)
+                ? externalTotal
+                : agentExternal;
+
         if (expDebit != null && !expDebit.isZero()) {
             postings.add(debit(accExp, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION payout tx=" + cmd.externalTxId()));
         }
 
-        // KRATOS trace (interne): cantonnement DEBIT -> exploitation CREDIT
         Money kratos = sumForBeneficiary(comRes, "KRATOS");
         if (kratos != null && !kratos.isZero()) {
             postings.add(debit(accCant, kratos, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
@@ -159,7 +156,6 @@ public class ApplyPricingToTransactionCommandHandler {
                     "COMMISSION KRATOS revenue tx=" + cmd.externalTxId()));
         }
 
-        // 7) Record ledger transaction (idempotent by externalTxId)
         RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(
                 new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings),
                 actor
@@ -175,12 +171,9 @@ public class ApplyPricingToTransactionCommandHandler {
         );
     }
 
-    // -------------------------
-    // estimateWithdrawalFee for DEPOSIT
-    // -------------------------
     private Money estimateWithdrawalFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                TransactionType.WITHDRAWAL,
+                resolveWithdrawalTransactionCode(ctx),
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
@@ -192,13 +185,22 @@ public class ApplyPricingToTransactionCommandHandler {
         return safe(res.fee());
     }
 
+    private TransactionCode resolveWithdrawalTransactionCode(PricingRequestContext ctx) {
+        return switch (ctx.accountType()) {
+            case AGENT, DISTRIBUTOR -> TransactionCode.AGENT_DISTRIBUTOR_WITHDRAWAL;
+            case STANDARD, PREMIUM, SUBSCRIBER -> TransactionCode.SUBSCRIBER_WITHDRAWAL;
+            default -> throw new DomainValidationException(
+                    "WITHDRAWAL_TRANSACTION_CODE_NOT_RESOLVED",
+                    "Cannot resolve withdrawal transaction code for account type",
+                    Map.of("accountType", ctx.accountType().name())
+            );
+        };
+    }
+
     private Money safe(Money m) {
         return (m == null) ? Money.ZERO : m;
     }
 
-    // -------------------------
-    // beneficiary account mapping
-    // -------------------------
     private String resolveBeneficiaryAccountId(String beneficiary, ApplyPricingToTransactionCommand cmd) {
         return switch (beneficiary) {
             case "AGENT" -> cmd.accountId();
@@ -219,9 +221,6 @@ public class ApplyPricingToTransactionCommandHandler {
         return sum;
     }
 
-    // -------------------------
-    // Posting helpers
-    // -------------------------
     private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
         return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
     }
@@ -230,16 +229,15 @@ public class ApplyPricingToTransactionCommandHandler {
         return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
     }
 
-    // -------------------------
-    // Validation
-    // -------------------------
     private void validate(ApplyPricingToTransactionCommand cmd) {
-        if (cmd == null) throw new IllegalArgumentException("command is required");
+        if (cmd == null) {
+            throw new IllegalArgumentException("command is required");
+        }
         if (blank(cmd.externalTxId())) {
             throw new DomainValidationException("EXTERNAL_TX_ID_REQUIRED", "externalTxId is required", Map.of());
         }
-        if (cmd.type() == null) {
-            throw new DomainValidationException("TRANSACTION_TYPE_REQUIRED", "transaction type is required", Map.of());
+        if (cmd.transactionCode() == null) {
+            throw new DomainValidationException("TRANSACTION_CODE_REQUIRED", "transactionCode is required", Map.of());
         }
         if (cmd.amount() == null || cmd.amount().isZero() || cmd.amount().isNegative()) {
             throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0",
@@ -258,7 +256,7 @@ public class ApplyPricingToTransactionCommandHandler {
             throw new DomainValidationException("OCCURRED_AT_REQUIRED", "occurredAt is required", Map.of());
         }
 
-        if (cmd.type() == TransactionType.DEPOSIT) {
+        if (cmd.transactionCode().transactionType() == TransactionType.DEPOSIT) {
             if (blank(cmd.distributorAccountId())) {
                 throw new DomainValidationException("DISTRIBUTOR_REQUIRED", "distributorAccountId required for DEPOSIT", Map.of());
             }
@@ -268,5 +266,7 @@ public class ApplyPricingToTransactionCommandHandler {
         }
     }
 
-    private boolean blank(String s) { return s == null || s.isBlank(); }
+    private boolean blank(String s) {
+        return s == null || s.isBlank();
+    }
 }

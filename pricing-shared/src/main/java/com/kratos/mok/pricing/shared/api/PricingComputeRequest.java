@@ -3,7 +3,7 @@ package com.kratos.mok.pricing.shared.api;
 import java.time.OffsetDateTime;
 
 public record PricingComputeRequest(
-        String transactionType,
+        String transactionCode,
         MoneyDto amount,
         String accountId,
         String accountType,

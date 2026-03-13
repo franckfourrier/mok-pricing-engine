@@ -1,25 +1,23 @@
-package com.kratos.mok.pricing.commissions.application.command.createCommissionPlan;
+package com.kratos.mok.pricing.commissions.application.command.updateCommissionPlan;
 
 import com.kratos.mok.pricing.commissions.domain.CommissionPlan;
-import com.kratos.mok.pricing.commissions.domain.CommissionTarget;
 import com.kratos.mok.pricing.commissions.domain.enums.BeneficiaryType;
-import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanCreatedEvent;
+import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanUpdatedEvent;
 import com.kratos.mok.pricing.commissions.domain.gateway.CommissionRegulatoryGatekeeper;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.DepositDistributionStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
+import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
-import com.kratos.mok.pricing.shared.domain.vo.Priority;
-import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -34,47 +32,43 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CreateCommissionPlanCommandHandler {
+public class UpdateCommissionPlanCommandHandler {
 
     private final CommissionPlanRepository repository;
     private final CommissionRegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public CreateCommissionPlanResponse handle(CreateCommissionPlanCommand cmd, String authorId) {
+    public UpdateCommissionPlanResponse handle(UpdateCommissionPlanCommand cmd, String actor) {
 
-        log.info("CreateCommissionPlan: transactionCode={}, type={}, scope={}, value={}",
-                cmd.transactionCode(), cmd.type(), cmd.targetScope(), cmd.targetValue());
+        CommissionPlan plan = repository.findById(CommissionPlanId.from(cmd.commissionPlanId()))
+                .orElseThrow(() -> new NotFoundException(
+                        "COMMISSION_PLAN_NOT_FOUND",
+                        "Commission plan not found",
+                        Map.of("id", cmd.commissionPlanId())
+                ));
 
-        CommissionTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
-        CommissionStrategy strategy = toStrategy(cmd);
+        CommissionStrategy newStrategy = toStrategy(plan.transactionType(), cmd);
+        var now = LocalDateTime.now();
 
-        ValidityPeriod validity = (cmd.validityStart() == null && cmd.validityEnd() == null)
-                ? ValidityPeriod.PERMANENT
-                : new ValidityPeriod(cmd.validityStart(), cmd.validityEnd());
-
-        var priority = Priority.defaultFor(target.scope());
-
-        CommissionPlan plan = CommissionPlan.draft(
-                cmd.transactionCode(),
-                cmd.type(),
-                target,
-                strategy,
-                validity,
-                priority,
-                authorId,
-                LocalDateTime.now()
+        plan.updateConfiguration(
+                newStrategy,
+                plan.validity(),
+                plan.priority(),
+                actor,
+                now,
+                "UPDATE_AND_RESUBMIT"
         );
 
         if (repository.existsConflictingPlan(plan)) {
-            block(plan, authorId, "CONFLICTING_PLAN", "Plan conflict", cmd);
+            block(plan, actor, "CONFLICTING_PLAN", "Plan conflict after update", cmd);
             throw new ConflictException("Un plan de commission actif existe déjà pour ce périmètre");
         }
 
         try {
             regulatoryGatekeeper.validate(plan.toComplianceData());
         } catch (RegulatoryViolationException e) {
-            block(plan, authorId, e.regulationCode(), e.getMessage(), cmd);
+            block(plan, actor, e.regulationCode(), e.getMessage(), cmd);
             throw new DomainValidationException(
                     "BEAC_NON_COMPLIANT",
                     e.getMessage(),
@@ -82,21 +76,23 @@ public class CreateCommissionPlanCommandHandler {
             );
         }
 
-        plan.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
         repository.save(plan);
 
-        eventPublisher.publishEvent(new CommissionPlanCreatedEvent(
+        eventPublisher.publishEvent(new CommissionPlanUpdatedEvent(
                 plan.id().value(),
-                authorId,
-                LocalDateTime.now()
+                actor,
+                plan.status().name(),
+                now
         ));
 
-        return new CreateCommissionPlanResponse(plan.id().value(), true, plan.status());
+        return new UpdateCommissionPlanResponse(
+                plan.id().value(),
+                true,
+                plan.status()
+        );
     }
 
-    private CommissionStrategy toStrategy(CreateCommissionPlanCommand cmd) {
-
-        TransactionType tt = cmd.type();
+    private CommissionStrategy toStrategy(TransactionType tt, UpdateCommissionPlanCommand cmd) {
 
         if (tt == TransactionType.DEPOSIT) {
             var keys = requiredList(cmd.keys(), "keys are required for DEPOSIT");
@@ -142,37 +138,29 @@ public class CreateCommissionPlanCommandHandler {
     }
 
     private void block(
-            CommissionPlan p,
+            CommissionPlan plan,
             String actor,
             String code,
             String reason,
-            CreateCommissionPlanCommand cmd
+            UpdateCommissionPlanCommand cmd
     ) {
-        p.block(code, reason, actor, LocalDateTime.now());
-        repository.save(p);
+        plan.block(code, reason, actor, LocalDateTime.now());
+        repository.save(plan);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
-                p.id().value(),
+                plan.id().value(),
                 "COMMISSION_PLAN",
                 actor,
                 code,
                 reason,
                 Map.of(
-                        "transactionCode", cmd.transactionCode().name(),
-                        "transactionType", cmd.type().name(),
-                        "scope", cmd.targetScope().name(),
-                        "value", cmd.targetValue()
+                        "commissionPlanId", cmd.commissionPlanId(),
+                        "transactionCode", plan.transactionCode().name(),
+                        "transactionType", plan.transactionType().name(),
+                        "scope", plan.target().scope().name(),
+                        "value", plan.target().value()
                 )
         ));
-    }
-
-    private CommissionTarget toTarget(TargetScope scope, String value) {
-        String v = required(value, "targetValue is required").trim();
-        return switch (scope) {
-            case GLOBAL -> CommissionTarget.global();
-            case ACCOUNT_TYPE -> CommissionTarget.accountType(v);
-            case ACCOUNT_ID -> CommissionTarget.accountId(v);
-        };
     }
 
     private <T> List<T> requiredList(List<T> list, String msg) {
@@ -183,7 +171,9 @@ public class CreateCommissionPlanCommandHandler {
     }
 
     private String required(String v, String msg) {
-        if (v == null || v.isBlank()) throw new IllegalArgumentException(msg);
+        if (v == null || v.isBlank()) {
+            throw new IllegalArgumentException(msg);
+        }
         return v;
     }
 }

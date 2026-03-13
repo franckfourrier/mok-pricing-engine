@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.taxes.domain;
 
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
 import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
@@ -9,19 +9,20 @@ import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxRules;
 import com.kratos.mok.pricing.taxes.domain.strategy.TaxStrategy;
-import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 import com.kratos.mok.pricing.taxes.domain.vo.FluxIntensity;
+import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class TaxPolicy {
 
     private final TaxPolicyId id;
-
-    private final TransactionType transactionType;
+    private final Set<TransactionCode> transactionCodes;
     private final TaxTarget target;
 
     private TaxMode mode;
@@ -38,7 +39,7 @@ public class TaxPolicy {
 
     private TaxPolicy(
             TaxPolicyId id,
-            TransactionType transactionType,
+            Set<TransactionCode> transactionCodes,
             TaxTarget target,
             TaxMode mode,
             TaxStrategy strategy,
@@ -50,7 +51,7 @@ public class TaxPolicy {
             String blockReason
     ) {
         this.id = requireNonNull(id, "id");
-        this.transactionType = requireNonNull(transactionType, "transactionType");
+        this.transactionCodes = new LinkedHashSet<>(requireNonNull(transactionCodes, "transactionCodes"));
         this.target = requireNonNull(target, "target");
         this.mode = requireNonNull(mode, "mode");
         this.strategy = requireNonNull(strategy, "strategy");
@@ -64,12 +65,8 @@ public class TaxPolicy {
         validateInvariants();
     }
 
-    // -------------------------
-    // Factories
-    // -------------------------
-
     public static TaxPolicy draft(
-            TransactionType transactionType,
+            Set<TransactionCode> transactionCodes,
             TaxTarget target,
             TaxMode mode,
             TaxStrategy strategy,
@@ -80,7 +77,7 @@ public class TaxPolicy {
         var created = new AuditInfo(author, when, "DRAFT_CREATION");
         return new TaxPolicy(
                 TaxPolicyId.generate(),
-                transactionType,
+                transactionCodes,
                 target,
                 mode,
                 strategy,
@@ -95,7 +92,7 @@ public class TaxPolicy {
 
     public static TaxPolicy reconstitute(
             TaxPolicyId id,
-            TransactionType transactionType,
+            Set<TransactionCode> transactionCodes,
             TaxTarget target,
             TaxMode mode,
             TaxStrategy strategy,
@@ -107,16 +104,19 @@ public class TaxPolicy {
             String blockReason
     ) {
         return new TaxPolicy(
-                id, transactionType, target, mode, strategy, rules, status,
-                created, lastModified, approvedOrRejected, blockReason
+                id,
+                transactionCodes,
+                target,
+                mode,
+                strategy,
+                rules,
+                status,
+                created,
+                lastModified,
+                approvedOrRejected,
+                blockReason
         );
     }
-
-
-
-    // -------------------------
-    // Commands (business methods)
-    // -------------------------
 
     public void submitForApproval(String actor, LocalDateTime at, String reason) {
         if (status != TaxPolicyStatus.DRAFT) {
@@ -139,7 +139,7 @@ public class TaxPolicy {
             );
         }
         this.status = TaxPolicyStatus.ACTIVE;
-        this.approvedOrRejected = new AuditInfo(superAdmin, at, "APPROVED" );
+        this.approvedOrRejected = new AuditInfo(superAdmin, at, "APPROVED");
         this.lastModified = this.approvedOrRejected;
     }
 
@@ -151,7 +151,6 @@ public class TaxPolicy {
                     Map.of("currentStatus", status.name())
             );
         }
-
         this.status = TaxPolicyStatus.SUSPENDED;
         this.lastModified = new AuditInfo(actor, at, reason == null ? "SUSPENDED" : reason);
     }
@@ -167,8 +166,6 @@ public class TaxPolicy {
         this.status = TaxPolicyStatus.ACTIVE;
         this.lastModified = new AuditInfo(actor, at, reason == null ? "RESUMED" : reason);
     }
-
-
 
     public void reject(String superAdmin, LocalDateTime at, String justification) {
         if (status != TaxPolicyStatus.PENDING_APPROVAL) {
@@ -202,6 +199,7 @@ public class TaxPolicy {
     }
 
     public void updateConfiguration(
+            Set<TransactionCode> transactionCodes,
             TaxMode mode,
             TaxStrategy strategy,
             TaxRules rules,
@@ -209,19 +207,34 @@ public class TaxPolicy {
             LocalDateTime at,
             String reason
     ) {
-        ensureEditable();
+        ensureUpdatable();
 
+        this.transactionCodes.clear();
+        this.transactionCodes.addAll(requireNonNull(transactionCodes, "transactionCodes"));
         this.mode = requireNonNull(mode, "mode");
         this.strategy = requireNonNull(strategy, "strategy");
         this.rules = (rules == null) ? TaxRules.standard() : rules;
 
-        this.lastModified = new AuditInfo(actor, at, reason == null ? "UPDATE" : reason);
+        this.status = TaxPolicyStatus.PENDING_APPROVAL;
+        this.approvedOrRejected = null;
+        this.lastModified = new AuditInfo(
+                actor,
+                at,
+                reason == null ? "UPDATE_AND_RESUBMIT" : reason
+        );
+
         validateInvariants();
     }
 
-    // -------------------------
-    // Query (pure domain)
-    // -------------------------
+    private void ensureUpdatable() {
+        if (status == TaxPolicyStatus.ARCHIVED) {
+            throw new InvalidStateException(
+                    "TAX_POLICY_NOT_UPDATABLE",
+                    "ARCHIVED policy cannot be updated",
+                    Map.of("currentStatus", status.name())
+            );
+        }
+    }
 
     public Money computeTax(Money baseAmount) {
         Objects.requireNonNull(baseAmount, "baseAmount must not be null");
@@ -242,10 +255,6 @@ public class TaxPolicy {
         return strategy.apply(baseAmount, intensity);
     }
 
-    // -------------------------
-    // Invariants / guards
-    // -------------------------
-
     private void ensureEditable() {
         if (status != TaxPolicyStatus.DRAFT) {
             throw new InvalidStateException(
@@ -257,7 +266,9 @@ public class TaxPolicy {
     }
 
     private void validateInvariants() {
-        // TaxTarget valide déjà scope/value, mais on garde une protection
+        if (transactionCodes.isEmpty()) {
+            throw new DomainValidationException("TRANSACTION_CODES_REQUIRED", "transactionCodes are required", Map.of());
+        }
         if (target.scope() == null) {
             throw new DomainValidationException("TARGET_SCOPE_REQUIRED", "target scope is required", Map.of());
         }
@@ -279,18 +290,13 @@ public class TaxPolicy {
         return Objects.requireNonNull(v, name + " must not be null");
     }
 
-    // -------------------------
-    // Getters
-    // -------------------------
-
     public TaxPolicyId id() { return id; }
-    public TransactionType transactionType() { return transactionType; }
+    public Set<TransactionCode> transactionCodes() { return Set.copyOf(transactionCodes); }
     public TaxTarget target() { return target; }
     public TaxMode mode() { return mode; }
     public TaxStrategy strategy() { return strategy; }
     public TaxRules rules() { return rules; }
     public TaxPolicyStatus status() { return status; }
-
     public AuditInfo created() { return created; }
     public AuditInfo lastModified() { return lastModified; }
     public AuditInfo approvedOrRejected() { return approvedOrRejected; }

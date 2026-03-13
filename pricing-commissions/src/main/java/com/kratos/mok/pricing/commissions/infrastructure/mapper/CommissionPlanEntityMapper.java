@@ -31,6 +31,7 @@ public class CommissionPlanEntityMapper {
 
         return CommissionPlan.reconstitute(
                 CommissionPlanId.from(e.getId()),
+                e.getTransactionCode(),
                 e.getTransactionType(),
                 new CommissionTarget(e.getTargetScope(), e.getTargetValue()),
                 e.getStrategy(),
@@ -51,24 +52,21 @@ public class CommissionPlanEntityMapper {
         var e = new CommissionPlanEntity();
 
         e.setId(d.id().value());
+        e.setTransactionCode(d.transactionCode());
         e.setTransactionType(d.transactionType());
         e.setTargetScope(d.target().scope());
         e.setTargetValue(d.target().value());
         e.setPriority(d.priority().value());
         e.setStatus(d.status());
 
-        // validity
         e.setValidityStart(d.validity().start());
         e.setValidityEnd(d.validity().end());
 
-        // suspension
         e.setSuspensionFrom(d.suspension().map(SuspensionWindow::from).orElse(null));
         e.setSuspensionTo(d.suspension().map(SuspensionWindow::to).orElse(null));
 
-        // strategy (jsonb)
         e.setStrategy(d.strategy());
 
-        // audit
         e.setCreatedBy(toEmbeddable(d.created()));
         d.lastModified().ifPresent(a -> e.setLastModifiedBy(toEmbeddable(a)));
         d.approvedOrRejected().ifPresent(a -> e.setApprovedOrRejectedBy(toEmbeddable(a)));

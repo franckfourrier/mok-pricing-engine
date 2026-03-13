@@ -5,6 +5,7 @@ import com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus;
 import com.kratos.mok.pricing.commissions.domain.policy.CommissionPlanValidator;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
@@ -22,16 +23,17 @@ public class CommissionPlan {
 
     private final CommissionPlanId id;
 
+    private final TransactionCode transactionCode;
     private final TransactionType transactionType;
     private final CommissionTarget target;
 
     private CommissionStrategy strategy;
 
-    private ValidityPeriod validity;         // start/end optionnel
-    private Priority priority;         // tie-breaker
+    private ValidityPeriod validity;
+    private Priority priority;
 
-    private CommissionPlanStatus status;     // DRAFT, PENDING_APPROVAL, ACTIVE, ...
-    private SuspensionWindow suspension;     // optionnel
+    private CommissionPlanStatus status;
+    private SuspensionWindow suspension;
 
     private AuditInfo created;
     private AuditInfo lastModified;
@@ -40,6 +42,7 @@ public class CommissionPlan {
 
     private CommissionPlan(
             CommissionPlanId id,
+            TransactionCode transactionCode,
             TransactionType transactionType,
             CommissionTarget target,
             CommissionStrategy strategy,
@@ -52,13 +55,14 @@ public class CommissionPlan {
             AuditInfo approvedOrRejected
     ) {
         this.id = requireNonNull(id, "id");
+        this.transactionCode = requireNonNull(transactionCode, "transactionCode");
         this.transactionType = requireNonNull(transactionType, "transactionType");
         this.target = requireNonNull(target, "target");
         this.strategy = requireNonNull(strategy, "strategy");
         this.validity = (validity == null) ? ValidityPeriod.permanent() : validity;
         this.priority = (priority == null) ? Priority.defaultFor(target.scope()) : priority;
         this.status = requireNonNull(status, "status");
-        this.suspension = suspension; // nullable
+        this.suspension = suspension;
         this.created = requireNonNull(created, "created");
         this.lastModified = lastModified;
         this.approvedOrRejected = approvedOrRejected;
@@ -66,11 +70,8 @@ public class CommissionPlan {
         validateInvariants();
     }
 
-    // -------------------------
-    // Factories
-    // -------------------------
-
     public static CommissionPlan draft(
+            TransactionCode transactionCode,
             TransactionType transactionType,
             CommissionTarget target,
             CommissionStrategy strategy,
@@ -84,6 +85,7 @@ public class CommissionPlan {
 
         return new CommissionPlan(
                 id,
+                transactionCode,
                 transactionType,
                 target,
                 strategy,
@@ -97,12 +99,9 @@ public class CommissionPlan {
         );
     }
 
-    /**
-     * Reconstitution depuis la persistence.
-     * (On vérifie les invariants, pas les transitions.)
-     */
     public static CommissionPlan reconstitute(
             CommissionPlanId id,
+            TransactionCode transactionCode,
             TransactionType transactionType,
             CommissionTarget target,
             CommissionStrategy strategy,
@@ -117,6 +116,7 @@ public class CommissionPlan {
     ) {
         var p = new CommissionPlan(
                 id,
+                transactionCode,
                 transactionType,
                 target,
                 strategy,
@@ -132,10 +132,6 @@ public class CommissionPlan {
         return p;
     }
 
-    // -------------------------
-    // Commands (business methods)
-    // -------------------------
-
     public void updateConfiguration(
             CommissionStrategy newStrategy,
             ValidityPeriod newValidity,
@@ -144,12 +140,20 @@ public class CommissionPlan {
             LocalDateTime when,
             String reason
     ) {
-        ensureEditable();
+        ensureUpdatable();
 
         this.strategy = requireNonNull(newStrategy, "newStrategy");
         this.validity = (newValidity == null) ? ValidityPeriod.permanent() : newValidity;
         this.priority = (newPriority == null) ? Priority.defaultFor(target.scope()) : newPriority;
-        this.lastModified = new AuditInfo(authorId, when, reason == null ? "UPDATE" : reason);
+
+        this.status = CommissionPlanStatus.PENDING_APPROVAL;
+        this.suspension = null;
+        this.approvedOrRejected = null;
+        this.lastModified = new AuditInfo(
+                authorId,
+                when,
+                reason == null ? "UPDATE_AND_RESUBMIT" : reason
+        );
 
         validateInvariants();
     }
@@ -176,7 +180,7 @@ public class CommissionPlan {
         }
         this.status = CommissionPlanStatus.ACTIVE;
         this.suspension = null;
-        this.approvedOrRejected = new AuditInfo(superAdminId, when,  "APPROVED");
+        this.approvedOrRejected = new AuditInfo(superAdminId, when, "APPROVED");
         this.lastModified = this.approvedOrRejected;
     }
 
@@ -189,7 +193,11 @@ public class CommissionPlan {
             );
         }
         this.status = CommissionPlanStatus.REJECTED;
-        this.approvedOrRejected = new AuditInfo(superAdminId, when, justification == null ? "REJECTED" : justification);
+        this.approvedOrRejected = new AuditInfo(
+                superAdminId,
+                when,
+                justification == null ? "REJECTED" : justification
+        );
         this.lastModified = this.approvedOrRejected;
     }
 
@@ -227,7 +235,9 @@ public class CommissionPlan {
     }
 
     public void archive(String actorId, LocalDateTime when, String reason) {
-        if (status == CommissionPlanStatus.ARCHIVED) return;
+        if (status == CommissionPlanStatus.ARCHIVED) {
+            return;
+        }
         this.status = CommissionPlanStatus.ARCHIVED;
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "ARCHIVE" : reason);
     }
@@ -260,10 +270,6 @@ public class CommissionPlan {
         );
     }
 
-    // -------------------------
-    // Query helpers (pure domain)
-    // -------------------------
-
     public boolean isApplicableAt(LocalDateTime at) {
         try {
             ensureApplicable(at);
@@ -294,12 +300,12 @@ public class CommissionPlan {
         }
     }
 
-    private void ensureEditable() {
-        if (status != CommissionPlanStatus.DRAFT) {
+    private void ensureUpdatable() {
+        if (status == CommissionPlanStatus.ARCHIVED) {
             throw new InvalidStateException(
-                    "PLAN_NOT_EDITABLE",
-                    "Only DRAFT plan is editable",
-                    Map.of("currentStatus", status.name(), "expectedStatus", CommissionPlanStatus.DRAFT.name())
+                    "PLAN_NOT_UPDATABLE",
+                    "ARCHIVED plan cannot be updated",
+                    Map.of("currentStatus", status.name())
             );
         }
     }
@@ -314,8 +320,6 @@ public class CommissionPlan {
         if (priority.value() < 0) {
             throw new IllegalArgumentException("priority cannot be negative");
         }
-
-        // validations métier (somme=100%, etc.)
         CommissionPlanValidator.validate(strategy);
     }
 
@@ -323,31 +327,17 @@ public class CommissionPlan {
         return Objects.requireNonNull(value, name + " must not be null");
     }
 
-    // -------------------------
-    // Getters
-    // -------------------------
-
     public CommissionPlanId id() { return id; }
-
+    public TransactionCode transactionCode() { return transactionCode; }
     public TransactionType transactionType() { return transactionType; }
-
     public CommissionTarget target() { return target; }
-
     public CommissionStrategy strategy() { return strategy; }
-
     public ValidityPeriod validity() { return validity; }
-
     public Priority priority() { return priority; }
-
     public CommissionPlanStatus status() { return status; }
-
     public Optional<SuspensionWindow> suspension() { return Optional.ofNullable(suspension); }
-
     public AuditInfo created() { return created; }
-
     public Optional<AuditInfo> lastModified() { return Optional.ofNullable(lastModified); }
-
     public Optional<AuditInfo> approvedOrRejected() { return Optional.ofNullable(approvedOrRejected); }
-
     public String blockReason() { return blockReason; }
 }

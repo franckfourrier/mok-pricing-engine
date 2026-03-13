@@ -4,7 +4,10 @@ import com.kratos.mok.pricing.commissions.application.port.ComputeCommissionDist
 import com.kratos.mok.pricing.commissions.domain.CommissionPlan;
 import com.kratos.mok.pricing.commissions.domain.enums.BeneficiaryType;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
-import com.kratos.mok.pricing.commissions.domain.strategy.*;
+import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.DepositDistributionStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
@@ -30,24 +33,25 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
         if (ctx == null) throw new IllegalArgumentException("ctx is required");
         if (commissionBase == null) throw new IllegalArgumentException("commissionBase is required");
 
-        var candidates = repository.findCandidates(ctx.transactionType(),
-                        ctx.accountType() == null ? null : ctx.accountType().name(),
-                        ctx.accountId());
+        var candidates = repository.findCandidates(
+                ctx.transactionCode(),
+                ctx.accountType() == null ? null : ctx.accountType().name(),
+                ctx.accountId()
+        );
 
         CommissionPlan plan = candidates.stream().findFirst()
                 .orElseThrow(() -> new NotFoundException(
                         "COMMISSION_PLAN_NOT_FOUND",
                         "No approved commission plan found",
                         Map.of(
-                                "transactionType", ctx.transactionType().name(),
+                                "transactionCode", ctx.transactionCode().name(),
                                 "accountType", String.valueOf(ctx.accountType()),
                                 "accountId", ctx.accountId()
                         )
                 ));
 
-        var lines = computeLines(ctx.transactionType(), plan.strategy(), commissionBase);
+        var lines = computeLines(ctx.transactionCode().transactionType(), plan.strategy(), commissionBase);
 
-        // garde seulement les lignes non null / non zero
         lines = lines.stream()
                 .filter(l -> l.amount() != null && !l.amount().isZero())
                 .toList();
@@ -55,16 +59,16 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
         return new CommissionDistributionResult(plan.id().value(), lines);
     }
 
-    private List<CommissionDistributionResult.Line> computeLines(TransactionType txType,
-                                                                 CommissionStrategy strategy,
-                                                                 Money base) {
-
+    private List<CommissionDistributionResult.Line> computeLines(
+            TransactionType txType,
+            CommissionStrategy strategy,
+            Money base
+    ) {
         if (strategy == null) throw new IllegalArgumentException("strategy is required");
 
-        // base amount * percentage (scale Money)
         if (strategy instanceof DepositDistributionStrategy s) {
             ensure(txType == TransactionType.DEPOSIT, "DEPOSIT strategy used for non-DEPOSIT");
-            return distributeShares(s.keys(), base, true); // pas de KRATOS attendu (on le filtre)
+            return distributeShares(s.keys(), base, true);
         }
 
         if (strategy instanceof DirectStrategy s) {
@@ -78,10 +82,6 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             Percentage coverage = s.coverageRate();
             Percentage kratos = s.kratosShare();
 
-            // règles métier de compatibilité (sans refactor) :
-            // 0 <= agent <= 1
-            // 0 <= coverage <= 1
-            // agent + coverage <= 1
             if (agent.value().add(coverage.value()).compareTo(BigDecimal.ONE) > 0) {
                 throw new IllegalArgumentException("Invalid withdrawal plan: agentShare + coverageRate > 1");
             }
@@ -95,7 +95,11 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
         throw new IllegalArgumentException("Unsupported commission strategy: " + strategy.getClass().getSimpleName());
     }
 
-    private List<CommissionDistributionResult.Line> distributeShares(List<CommissionShare> shares, Money base, boolean rejectKratos) {
+    private List<CommissionDistributionResult.Line> distributeShares(
+            List<CommissionShare> shares,
+            Money base,
+            boolean rejectKratos
+    ) {
         if (shares == null || shares.isEmpty()) throw new IllegalArgumentException("shares is required");
 
         BigDecimal sum = shares.stream()
@@ -124,9 +128,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
     }
 
     private Money multiply(Money base, Percentage p) {
-        // Money.of(BigDecimal, currency) supposé exister via Money.amount() etc.
         var v = base.amount().multiply(p.value());
-        // On garde la même devise, scale Money gère le rounding interne.
         return new Money(v, base.currency());
     }
 

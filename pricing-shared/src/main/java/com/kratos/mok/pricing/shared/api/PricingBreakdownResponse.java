@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.shared.api;
 
 public record PricingBreakdownResponse(
+        String transactionCode,
         String transactionType,
         MoneyDto amount,
         MoneyDto fee,

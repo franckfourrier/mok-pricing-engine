@@ -86,4 +86,27 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
         String v = value.trim();
         return (scope == TargetScope.ACCOUNT_TYPE) ? v.toUpperCase() : v;
     }
+
+    @Override
+    public List<FeePolicy> findCandidates(TransactionCode transactionCode, String accountType, String accountId) {
+        LocalDateTime at = LocalDateTime.now();
+
+        String normalizedAccountType = (accountType == null || accountType.isBlank())
+                ? null
+                : accountType.trim().toUpperCase();
+
+        String normalizedAccountId = (accountId == null || accountId.isBlank())
+                ? null
+                : accountId.trim();
+
+        return jpaRepository.findActiveCandidatesByTransactionCode(
+                        transactionCode,
+                        normalizedAccountType,
+                        normalizedAccountId,
+                        at
+                )
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }

@@ -6,6 +6,7 @@ import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
 import com.kratos.mok.pricing.commissions.infrastructure.mapper.CommissionPlanEntityMapper;
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -51,6 +52,29 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
     }
 
     @Override
+    public List<CommissionPlan> findCandidates(TransactionCode transactionCode, String accountType, String accountId) {
+        LocalDateTime at = LocalDateTime.now();
+
+        String normalizedAccountType = (accountType == null || accountType.isBlank())
+                ? null
+                : accountType.trim().toUpperCase();
+
+        String normalizedAccountId = (accountId == null || accountId.isBlank())
+                ? null
+                : accountId.trim();
+
+        return jpaRepository.findActiveCandidatesByTransactionCode(
+                        transactionCode,
+                        normalizedAccountType,
+                        normalizedAccountId,
+                        at
+                )
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public boolean existsConflictingPlan(CommissionPlan plan) {
         TargetScope scope = plan.target().scope();
         String value = normalize(scope, plan.target().value());
@@ -58,27 +82,28 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
         LocalDateTime start = plan.validity().start();
         LocalDateTime end = plan.validity().end();
 
-        // Bornes comme dans Fees
-        /*LocalDateTime startBound = plan.validity().start().orElse(LocalDateTime.of(1900, 1, 1, 0, 0));
-        LocalDateTime endBound = plan.validity().end().orElse(LocalDateTime.of(9999, 12, 31, 23, 59, 59));
-*/
-        LocalDateTime startBound = (start == null) ? LocalDateTime.of(1900, 1, 1, 0, 0) : start;
-        LocalDateTime endBound   = (end == null)   ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
+        LocalDateTime startBound = (start == null)
+                ? LocalDateTime.of(1900, 1, 1, 0, 0)
+                : start;
 
+        LocalDateTime endBound = (end == null)
+                ? LocalDateTime.of(9999, 12, 31, 23, 59, 59)
+                : end;
 
         return jpaRepository.existsConflict(
-                plan.transactionType(),
+                plan.transactionCode(),
                 scope,
                 value,
                 startBound,
-                endBound
+                endBound,
+                plan.id().value()
         );
     }
 
     @Override
-    public boolean existsAnyFor(TransactionType transactionType, TargetScope scope, String value) {
-        return jpaRepository.existsByTransactionTypeAndTargetScopeAndTargetValue(
-                transactionType,
+    public boolean existsAnyFor(TransactionCode transactionCode, TargetScope scope, String value) {
+        return jpaRepository.existsByTransactionCodeAndTargetScopeAndTargetValue(
+                transactionCode,
                 scope,
                 normalize(scope, value)
         );

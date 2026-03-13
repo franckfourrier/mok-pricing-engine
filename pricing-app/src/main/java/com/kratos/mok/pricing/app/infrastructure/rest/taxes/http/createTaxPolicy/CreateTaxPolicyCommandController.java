@@ -1,7 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.taxes.http.createTaxPolicy;
 
-import com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.CreateTaxPolicyCommandMapper;
-import com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.CreateTaxPolicyRequest;
+import com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy.CreateTaxPolicyCommandMapper;
+import com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy.CreateTaxPolicyRequest;
 import com.kratos.mok.pricing.taxes.application.command.createTaxPolicy.CreateTaxPolicyCommandHandler;
 import com.kratos.mok.pricing.taxes.application.command.createTaxPolicy.CreateTaxPolicyResponse;
 import jakarta.validation.Valid;

@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction;
 
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import jakarta.validation.constraints.*;
 
@@ -8,7 +9,7 @@ import java.time.OffsetDateTime;
 
 public record ApplyPricingToTransactionRequest(
         @NotBlank String externalTxId,
-        @NotNull TransactionType transactionType,
+        @NotNull TransactionCode transactionCode,
         @NotBlank String amount,
         String currency,
 

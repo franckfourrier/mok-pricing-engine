@@ -4,11 +4,12 @@ import com.kratos.mok.pricing.fees.application.query.computeFee.ComputeFeeQueryH
 import com.kratos.mok.pricing.fees.application.query.computeFee.FeeComputeResponse;
 import com.kratos.mok.pricing.shared.api.MoneyDto;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.OffsetDateTime;
 
 @RestController
@@ -17,7 +18,7 @@ public class ComputeFeeQueryController {
 
     private final ComputeFeeQueryHandler feeService;
 
-    public ComputeFeeQueryController(ComputeFeeQueryHandler  feeService) {
+    public ComputeFeeQueryController(ComputeFeeQueryHandler feeService) {
         this.feeService = feeService;
     }
 
@@ -27,7 +28,7 @@ public class ComputeFeeQueryController {
     )
     @GetMapping("/compute")
     public FeeComputeResponse computeFee(
-            @RequestParam String transactionType,
+            @RequestParam String transactionCode,
             @RequestParam String amount,
             @RequestParam String currency,
             @RequestParam String accountId,
@@ -36,23 +37,23 @@ public class ComputeFeeQueryController {
             @RequestParam(required = false) Integer monthlyTxCount,
             @RequestParam OffsetDateTime occurredAt
     ) {
-
+        TransactionCode txCode = TransactionCode.valueOf(transactionCode.trim().toUpperCase());
         Money txAmount = Money.of(amount, currency);
 
         PricingRequestContext ctx = new PricingRequestContext(
-                TransactionType.valueOf(transactionType.trim().toUpperCase()),
+                txCode,
                 txAmount,
                 accountId,
                 AccountType.valueOf(accountType.trim().toUpperCase()),
                 kycValidated,
-                monthlyTxCount,
+                monthlyTxCount == null ? 0 : monthlyTxCount,
                 occurredAt
         );
 
         var result = feeService.computeFee(ctx);
 
         return new FeeComputeResponse(
-                transactionType,
+                txCode.name(),
                 new MoneyDto(txAmount.amount(), txAmount.currency()),
                 new MoneyDto(result.fee().amount(), result.fee().currency()),
                 result.feePolicyId()

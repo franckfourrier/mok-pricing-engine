@@ -8,7 +8,8 @@ public final class CreateCommissionPlanCommandMapper {
 
     public static CreateCommissionPlanCommand toCommand(CreateCommissionPlanRequest req) {
         return new CreateCommissionPlanCommand(
-                req.type(),
+                req.transactionCode(),
+                req.transactionCode().transactionType(),
                 req.targetScope(),
                 req.targetValue(),
                 req.keys() == null ? null :

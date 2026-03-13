@@ -1,12 +1,14 @@
 package com.kratos.mok.pricing.commissions.application.command.createCommissionPlan;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record CreateCommissionPlanCommand(
+        TransactionCode transactionCode,
         TransactionType type,
         TargetScope targetScope,
         String targetValue,

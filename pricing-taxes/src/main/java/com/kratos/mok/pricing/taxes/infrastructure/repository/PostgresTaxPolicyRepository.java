@@ -1,7 +1,7 @@
 package com.kratos.mok.pricing.taxes.infrastructure.repository;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -31,29 +32,12 @@ public class PostgresTaxPolicyRepository implements TaxPolicyRepository {
     }
 
     @Override
-    public boolean existsAnyFor(TransactionType type, TargetScope scope, String value) {
-        return jpaRepository.existsByTransactionTypeAndTargetScopeAndTargetValue(
-                type,
+    public boolean existsAnyForAnyTransactionCode(Set<TransactionCode> transactionCodes, TargetScope scope, String value) {
+        return jpaRepository.existsAnyForAnyTransactionCode(
+                transactionCodes,
                 scope,
                 normalize(scope, value)
         );
-    }
-
-    @Override
-    public List<TaxPolicy> findCandidates(TransactionType type, String accountType, String accountId) {
-
-        String normalizedAccountType = (accountType == null || accountType.isBlank())
-                ? null
-                : accountType.trim().toUpperCase();
-
-        String normalizedAccountId = (accountId == null || accountId.isBlank())
-                ? null
-                : accountId.trim();
-
-        return jpaRepository.findActiveCandidates(type, normalizedAccountType, normalizedAccountId, TaxPolicyStatus.ACTIVE)
-                .stream()
-                .map(mapper::toDomain)
-                .toList();
     }
 
     @Override
@@ -63,11 +47,34 @@ public class PostgresTaxPolicyRepository implements TaxPolicyRepository {
         TargetScope scope = policy.target().scope();
         String value = normalize(scope, policy.target().value());
 
-        return jpaRepository.existsConflictV1(
-                policy.transactionType(),
+        return jpaRepository.existsConflict(
+                policy.transactionCodes(),
                 scope,
-                value
+                value,
+                policy.id().value()
         );
+    }
+
+    @Override
+    public List<TaxPolicy> findCandidates(String accountType, String accountId, TransactionCode transactionCode) {
+
+        String normalizedAccountType = (accountType == null || accountType.isBlank())
+                ? null
+                : accountType.trim().toUpperCase();
+
+        String normalizedAccountId = (accountId == null || accountId.isBlank())
+                ? null
+                : accountId.trim();
+
+        return jpaRepository.findActiveCandidates(
+                        transactionCode,
+                        normalizedAccountType,
+                        normalizedAccountId,
+                        TaxPolicyStatus.ACTIVE
+                )
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 
     private String normalize(TargetScope scope, String value) {

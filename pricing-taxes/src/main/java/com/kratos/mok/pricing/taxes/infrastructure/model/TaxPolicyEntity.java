@@ -2,7 +2,6 @@ package com.kratos.mok.pricing.taxes.infrastructure.model;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
@@ -12,13 +11,11 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
-@Table(name = "tax_policies",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_tax_policy_perimeter",
-                columnNames = {"transaction_type", "target_scope", "target_value"}
-        ))
+@Table(name = "tax_policies")
 @Getter
 @Setter
 public class TaxPolicyEntity {
@@ -27,13 +24,14 @@ public class TaxPolicyEntity {
     @Column(length = 36, nullable = false)
     private String id;
 
-    @Enumerated(EnumType.STRING)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "tax_policy_transaction_codes",
+            joinColumns = @JoinColumn(name = "tax_policy_id")
+    )
     @Column(name = "transaction_code", nullable = false, length = 80)
-    private TransactionCode transactionCode;
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "transaction_type", nullable = false, length = 40)
-    private TransactionType transactionType;
+    private Set<TransactionCode> transactionCodes = new LinkedHashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_scope", nullable = false, length = 30)
@@ -53,15 +51,12 @@ public class TaxPolicyEntity {
     @Column(name = "currency", nullable = false, length = 8)
     private String currency;
 
-    // ELECTRONIC_RATE
     @Column(name = "rate", precision = 19, scale = 8)
     private BigDecimal rate;
 
-    // FIXED_AMOUNT
     @Column(name = "fixed_amount", precision = 19, scale = 2)
     private BigDecimal fixedAmount;
 
-    // Rules
     @Column(name = "flux_intensity", precision = 19, scale = 8, nullable = false)
     private BigDecimal fluxIntensity;
 

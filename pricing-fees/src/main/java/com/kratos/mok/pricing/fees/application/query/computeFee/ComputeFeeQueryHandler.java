@@ -24,14 +24,13 @@ public class ComputeFeeQueryHandler implements ComputeFeeQuery {
         this.resolver = resolver;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public FeeComputationResult computeFee(PricingRequestContext ctx) {
 
         var domainCtx = FeeTransactionContextAdapter.from(ctx);
 
         var candidates = repository.findCandidates(
-                ctx.transactionType(),
+                ctx.transactionCode(),
                 ctx.accountType().name(),
                 ctx.accountId()
         );
@@ -40,6 +39,6 @@ public class ComputeFeeQueryHandler implements ComputeFeeQuery {
 
         var computation = selected.computeFee(ctx.amount(), domainCtx, LocalDateTime.now());
 
-        return new FeeComputationResult(selected.id().toString(), computation.feeAmount());
+        return new FeeComputationResult(selected.id().value(), computation.feeAmount());
     }
 }

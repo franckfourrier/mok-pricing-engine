@@ -1,20 +1,23 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto;
+package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.List;
+
 public record CreateTaxPolicyRequest(
-        @NotNull TransactionType type,
+        @NotEmpty List<@NotNull TransactionCode> transactionCodes,
         @NotNull TargetScope targetScope,
         @NotBlank String targetValue,
 
         @NotBlank String currency,               // "XAF"
 
-        @NotNull TaxMode mode,                   // CANTONNEMENT / EXPLOITATION
+        TaxMode mode,         // CANTONNEMENT / EXPLOITATION
         @NotNull TaxStrategyType strategyType,   // ELECTRONIC_RATE / FIXED_AMOUNT
 
         // ELECTRONIC_RATE

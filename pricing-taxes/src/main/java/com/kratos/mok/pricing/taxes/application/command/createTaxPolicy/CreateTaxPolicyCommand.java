@@ -1,12 +1,14 @@
 package com.kratos.mok.pricing.taxes.application.command.createTaxPolicy;
 
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+
+import java.util.List;
 
 public record CreateTaxPolicyCommand(
-        TransactionType type,
+        List<TransactionCode> transactionCodes,
         TargetScope targetScope,
         String targetValue,
 

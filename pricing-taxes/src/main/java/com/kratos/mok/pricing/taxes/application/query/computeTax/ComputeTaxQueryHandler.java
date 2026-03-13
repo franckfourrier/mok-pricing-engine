@@ -25,9 +25,9 @@ public class ComputeTaxQueryHandler implements ComputeTaxQuery {
     public TaxComputationResult computeTax(PricingRequestContext ctx) {
 
         var candidates = repository.findCandidates(
-                ctx.transactionType(),
                 ctx.accountType().name(),
-                ctx.accountId()
+                ctx.accountId(),
+                ctx.transactionCode()
         );
 
         TaxPolicy selected = resolver.resolveBestPolicy(candidates, ctx, ctx.occurredAt());
