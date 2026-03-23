@@ -73,7 +73,7 @@ public class FeePolicyBootstrapService {
                     now
             );
 
-            repository.save(policy);
+            //repository.save(policy);
 
             log.info("[BOOTSTRAP v{}] created ACTIVE: id={}, code={}, type={}, scope={}, value={}",
                     props.version(),
