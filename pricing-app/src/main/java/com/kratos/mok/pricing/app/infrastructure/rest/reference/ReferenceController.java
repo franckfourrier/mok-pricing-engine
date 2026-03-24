@@ -1,6 +1,8 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.reference;
 
+import com.kratos.mok.pricing.app.application.reference.CommissionPlanReferenceService;
 import com.kratos.mok.pricing.app.application.reference.FeePolicyReferenceService;
+import com.kratos.mok.pricing.app.application.reference.TaxPolicyReferenceService;
 import com.kratos.mok.pricing.shared.api.reference.AccountTypeDto;
 import com.kratos.mok.pricing.shared.api.reference.FeePolicyOptionDto;
 import com.kratos.mok.pricing.shared.api.reference.TransactionCodeDto;
@@ -21,6 +23,8 @@ import java.util.List;
 public class ReferenceController {
 
     private final FeePolicyReferenceService feePolicyReferenceService;
+    private final TaxPolicyReferenceService taxPolicyReferenceService;
+    private final CommissionPlanReferenceService commissionPlanReferenceService;
 
     @Operation(summary = "List all transaction codes")
     @GetMapping("/transaction-codes")
@@ -39,19 +43,13 @@ public class ReferenceController {
     @Operation(summary = "Transaction codes supporting TAXES")
     @GetMapping("/transaction-codes/taxes")
     public List<TransactionCodeDto> transactionCodesForTaxes() {
-        return Arrays.stream(TransactionCode.values())
-                .filter(TransactionCode::supportsTaxes)
-                .map(this::toDto)
-                .toList();
+        return taxPolicyReferenceService.availableTransactionCodesForTaxes();
     }
 
     @Operation(summary = "Transaction codes supporting COMMISSIONS")
     @GetMapping("/transaction-codes/commissions")
     public List<TransactionCodeDto> transactionCodesForCommissions() {
-        return Arrays.stream(TransactionCode.values())
-                .filter(TransactionCode::supportsCommissions)
-                .map(this::toDto)
-                .toList();
+        return commissionPlanReferenceService.availableTransactionCodesForCommissions();
     }
 
     @Operation(summary = "List account types")
