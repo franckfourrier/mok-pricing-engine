@@ -103,6 +103,6 @@ public class FeePolicyEntity {
     })
     private AuditEmbeddable approvedOrRejectedBy;
 
-    @Version
-    private long version;
+/*    @Version
+    private long version;*/
 }
