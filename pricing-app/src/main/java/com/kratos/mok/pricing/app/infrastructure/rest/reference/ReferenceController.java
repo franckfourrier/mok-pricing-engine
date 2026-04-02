@@ -73,7 +73,9 @@ public class ReferenceController {
         return new TransactionCodeDto(
                 v.name(),
                 v.label(),
-                v.transactionType().name()
+                v.transactionType().name(),
+                v.sender(),
+                v.receiver()
         );
     }
 }

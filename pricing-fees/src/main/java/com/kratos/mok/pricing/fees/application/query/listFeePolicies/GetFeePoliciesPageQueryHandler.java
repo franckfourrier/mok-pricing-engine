@@ -28,8 +28,9 @@ public class GetFeePoliciesPageQueryHandler {
         Page<FeePolicySummary> mapped = p.map(e -> new FeePolicySummary(
                 e.getId(),
                 e.getTransactionType(),
-                e.getTargetScope(),
-                e.getTargetValue(),
+                e.getTransactionCode().label(),
+                e.getTransactionCode().sender(),
+                e.getTransactionCode().receiver(),
                 FeePolicyReadMapper.toTierSummaries(e.getStrategy()),
                 e.getStatus(),
                 e.getPriority(),

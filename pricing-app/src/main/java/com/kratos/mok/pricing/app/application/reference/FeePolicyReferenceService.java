@@ -29,7 +29,9 @@ public class FeePolicyReferenceService {
                 .map(tc -> new TransactionCodeDto(
                         tc.name(),
                         tc.label(),
-                        tc.transactionType().name()
+                        tc.transactionType().name(),
+                        tc.sender(),
+                        tc.receiver()
                 ))
                 .toList();
     }

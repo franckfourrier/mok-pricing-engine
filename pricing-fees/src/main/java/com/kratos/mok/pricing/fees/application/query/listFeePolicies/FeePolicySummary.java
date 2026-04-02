@@ -8,8 +8,9 @@ import java.util.List;
 public record FeePolicySummary(
         String id,
         TransactionType transactionType,
-        TargetScope targetScope,
-        String targetValue,
+        String TransactionLabel,
+        String sender,
+        String receiver,
         List<FeeTierSummary> tiers,
         String status,
         Integer priority,
