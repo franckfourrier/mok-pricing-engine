@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy;
 
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.taxes.application.command.createTaxPolicy.CreateTaxPolicyCommand;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 
@@ -13,8 +14,8 @@ public class CreateTaxPolicyCommandMapper {
 
         return new CreateTaxPolicyCommand(
                 r.transactionCodes(),
-                r.targetScope(),
-                r.targetValue(),
+                TargetScope.GLOBAL,
+                "ALL",
                 r.currency(),
                 mode,
                 r.strategyType(),

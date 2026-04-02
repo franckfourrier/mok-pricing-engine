@@ -12,8 +12,8 @@ import java.util.List;
 
 public record CreateTaxPolicyRequest(
         @NotEmpty List<@NotNull TransactionCode> transactionCodes,
-        @NotNull TargetScope targetScope,
-        @NotBlank String targetValue,
+        //@NotNull TargetScope targetScope,
+        //@NotBlank String targetValue,
 
         @NotBlank String currency,               // "XAF"
 

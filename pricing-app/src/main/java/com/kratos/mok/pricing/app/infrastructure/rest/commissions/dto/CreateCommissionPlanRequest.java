@@ -12,8 +12,8 @@ import java.util.List;
 public record CreateCommissionPlanRequest(
 
         @NotNull TransactionCode transactionCode,
-        @NotNull TargetScope targetScope,
-        @NotBlank String targetValue,
+        //@NotNull TargetScope targetScope,
+        //@NotBlank String targetValue,
         @Valid List<KeyRequest> keys,
         String agentPercentage,
         String coverageRate,

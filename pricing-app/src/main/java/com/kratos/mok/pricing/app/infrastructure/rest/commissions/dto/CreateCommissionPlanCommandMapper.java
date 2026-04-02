@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.commissions.dto;
 
 import com.kratos.mok.pricing.commissions.application.command.createCommissionPlan.CreateCommissionPlanCommand;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 
 public final class CreateCommissionPlanCommandMapper {
 
@@ -10,8 +11,8 @@ public final class CreateCommissionPlanCommandMapper {
         return new CreateCommissionPlanCommand(
                 req.transactionCode(),
                 req.transactionCode().transactionType(),
-                req.targetScope(),
-                req.targetValue(),
+                TargetScope.GLOBAL,
+                "ALL",
                 req.keys() == null ? null :
                         req.keys().stream()
                                 .map(k -> new com.kratos.mok.pricing.commissions.application.command.createCommissionPlan.KeyCommand(

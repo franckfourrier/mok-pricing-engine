@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.dto;
 
 import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyCommand;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 
 public final class CreateFeePolicyCommandMapper {
 
@@ -9,8 +10,8 @@ public final class CreateFeePolicyCommandMapper {
     public static CreateFeePolicyCommand toCommand(CreateFeePolicyRequest req) {
         return new CreateFeePolicyCommand(
                 req.transactionCode(),
-                req.targetScope(),
-                req.targetValue(),
+                TargetScope.GLOBAL,
+                "ALL",
                 req.currency(),
                 req.strategyType(),
                 req.fixedAmount(),
