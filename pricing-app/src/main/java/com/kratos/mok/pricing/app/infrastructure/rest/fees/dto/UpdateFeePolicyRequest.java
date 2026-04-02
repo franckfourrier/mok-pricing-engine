@@ -16,9 +16,9 @@ public record UpdateFeePolicyRequest(
 
         @NotNull TransactionCode transactionCode,
 
-        @NotNull TargetScope targetScope,
+        //@NotNull TargetScope targetScope,
 
-        @NotBlank String targetValue,
+        //@NotBlank String targetValue,
 
         @NotBlank String currency,
 

@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.dto;
 
 import com.kratos.mok.pricing.fees.application.command.updateFeePolicy.UpdateFeePolicyCommand;
+import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 
 public final class UpdateFeePolicyCommandMapper {
 
@@ -10,8 +11,8 @@ public final class UpdateFeePolicyCommandMapper {
         return new UpdateFeePolicyCommand(
                 policyId,
                 req.transactionCode(),
-                req.targetScope(),
-                req.targetValue(),
+                TargetScope.GLOBAL,
+                "ALL",
                 req.currency(),
                 req.strategyType(),
                 req.fixedAmount(),
