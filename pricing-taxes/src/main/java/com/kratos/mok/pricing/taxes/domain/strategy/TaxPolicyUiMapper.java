@@ -50,8 +50,23 @@ public final class TaxPolicyUiMapper {
         };
     }
 
-    public static String createdAt(TaxPolicyEntity e) {
+    /*public static String createdAt(TaxPolicyEntity e) {
         if (e.getCreatedAt() == null) return "";
         return e.getCreatedAt().format(DATE_FORMAT);
+    }*/
+
+    // --- MISE À JOUR POUR AUDITEMBEDDABLE ---
+    public static String createdAt(TaxPolicyEntity e) {
+        if (e.getCreatedBy() == null || e.getCreatedBy().getTimestamp() == null) {
+            return "";
+        }
+        return e.getCreatedBy().getTimestamp().format(DATE_FORMAT);
+    }
+
+    public static String author(TaxPolicyEntity e) {
+        if (e.getCreatedBy() == null || e.getCreatedBy().getAuthor() == null) {
+            return "Système";
+        }
+        return e.getCreatedBy().getAuthor();
     }
 }

@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.taxes.infrastructure.model;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import com.kratos.mok.pricing.shared.infrastructure.config.model.AuditEmbeddable;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
@@ -70,7 +71,7 @@ public class TaxPolicyEntity {
     @Column(name = "block_reason", length = 120)
     private String blockReason;
 
-    @Column(name = "created_by", nullable = false, length = 80)
+   /* @Column(name = "created_by", nullable = false, length = 80)
     private String createdBy;
 
     @Column(name = "created_at", nullable = false)
@@ -86,5 +87,30 @@ public class TaxPolicyEntity {
     private String approvedBy;
 
     @Column(name = "approved_at")
-    private LocalDateTime approvedAt;
+    private LocalDateTime approvedAt;*/
+    // --- SECTION AUDIT UNIFORMISÉE ---
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "author", column = @Column(name = "created_by", nullable = false, length = 80)),
+            @AttributeOverride(name = "timestamp", column = @Column(name = "created_at", nullable = false)),
+            @AttributeOverride(name = "reason", column = @Column(name = "created_reason", nullable = false))
+    })
+    private AuditEmbeddable createdBy;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "author", column = @Column(name = "last_modified_by", length = 80)),
+            @AttributeOverride(name = "timestamp", column = @Column(name = "last_modified_at")),
+            @AttributeOverride(name = "reason", column = @Column(name = "last_modified_reason"))
+    })
+    private AuditEmbeddable lastModifiedBy;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "author", column = @Column(name = "approved_by", length = 80)),
+            @AttributeOverride(name = "timestamp", column = @Column(name = "approved_at")),
+            @AttributeOverride(name = "reason", column = @Column(name = "approved_reason"))
+    })
+    private AuditEmbeddable approvedOrRejectedBy;
 }
