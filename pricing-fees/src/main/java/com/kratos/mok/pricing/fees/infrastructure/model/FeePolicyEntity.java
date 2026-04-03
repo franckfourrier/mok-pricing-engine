@@ -15,7 +15,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "fee_policies")
+@Table(
+        name = "fee_policies",
+        indexes = {
+                @Index(name = "idx_fee_scope_value", columnList = "target_scope, target_value"),
+                @Index(name = "idx_fee_tx_code", columnList = "transaction_code")
+        }
+)
 @Getter
 @Setter
 public class FeePolicyEntity {
@@ -89,9 +95,9 @@ public class FeePolicyEntity {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "author", column = @Column(name = "modified_by")),
-            @AttributeOverride(name = "timestamp", column = @Column(name = "modified_at")),
-            @AttributeOverride(name = "reason", column = @Column(name = "modified_reason"))
+            @AttributeOverride(name = "author", column = @Column(name = "last_modified_by")),
+            @AttributeOverride(name = "timestamp", column = @Column(name = "last_modified_at")),
+            @AttributeOverride(name = "reason", column = @Column(name = "last_modified_reason"))
     })
     private AuditEmbeddable lastModifiedBy;
 
@@ -103,6 +109,6 @@ public class FeePolicyEntity {
     })
     private AuditEmbeddable approvedOrRejectedBy;
 
-/*    @Version
+/*    @Version //TODO
     private long version;*/
 }

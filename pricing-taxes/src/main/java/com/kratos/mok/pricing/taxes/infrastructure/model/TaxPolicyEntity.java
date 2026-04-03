@@ -16,7 +16,12 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "tax_policies")
+@Table(
+        name = "tax_policies",
+        indexes = {
+                @Index(name = "idx_tax_scope_value", columnList = "target_scope, target_value")
+        }
+)
 @Getter
 @Setter
 public class TaxPolicyEntity {
@@ -70,25 +75,6 @@ public class TaxPolicyEntity {
 
     @Column(name = "block_reason", length = 120)
     private String blockReason;
-
-   /* @Column(name = "created_by", nullable = false, length = 80)
-    private String createdBy;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "last_modified_by", length = 80)
-    private String lastModifiedBy;
-
-    @Column(name = "last_modified_at")
-    private LocalDateTime lastModifiedAt;
-
-    @Column(name = "approved_by", length = 80)
-    private String approvedBy;
-
-    @Column(name = "approved_at")
-    private LocalDateTime approvedAt;*/
-    // --- SECTION AUDIT UNIFORMISÉE ---
 
     @Embedded
     @AttributeOverrides({
