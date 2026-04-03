@@ -27,7 +27,7 @@ public class GetTaxPoliciesPageQueryHandler {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Direction.DESC, "createdAt")
+                Sort.by(Sort.Direction.DESC, "createdBy.timestamp")
         );
 
         var spec = TaxPolicySpecifications.from(q);
@@ -51,8 +51,8 @@ public class GetTaxPoliciesPageQueryHandler {
                 appliedTransactions,
                 TaxPolicyUiMapper.type(e),
                 TaxPolicyUiMapper.value(e),
-                e.getTargetScope(),
-                e.getTargetValue(),
+                /*e.getTargetScope(),
+                e.getTargetValue(),*/
                 e.getStatus().name(),
                 TaxPolicyStatusMapper.toLabel(e.getStatus()),
                 TaxPolicyUiMapper.createdAt(e)

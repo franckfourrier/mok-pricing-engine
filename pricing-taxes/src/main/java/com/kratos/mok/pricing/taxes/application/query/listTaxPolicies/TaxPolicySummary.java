@@ -1,6 +1,5 @@
 package com.kratos.mok.pricing.taxes.application.query.listTaxPolicies;
 
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import java.util.List;
 
 public record TaxPolicySummary(
@@ -9,8 +8,8 @@ public record TaxPolicySummary(
         List<String> appliedTransactions,
         String type,
         String value,
-        TargetScope targetScope,
-        String targetValue,
+        /*TargetScope targetScope,
+        String targetValue,*/
         String status,
         String statusLabel,
         String createdAt

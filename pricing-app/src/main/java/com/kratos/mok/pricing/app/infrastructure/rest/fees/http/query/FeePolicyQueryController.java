@@ -24,8 +24,8 @@ public class FeePolicyQueryController {
             @RequestParam(defaultValue = "20") int size,
 
             @RequestParam(required = false) String transactionType,
-            @RequestParam(required = false) String targetScope,
-            @RequestParam(required = false) String targetValue,
+            /*@RequestParam(required = false) String targetScope,
+            @RequestParam(required = false) String targetValue,*/
             @RequestParam(required = false) String status
     ) {
 
@@ -33,11 +33,12 @@ public class FeePolicyQueryController {
                 ? null
                 : TransactionType.valueOf(transactionType.trim().toUpperCase());
 
-        TargetScope ts = (targetScope == null || targetScope.isBlank())
+        /*TargetScope ts = (targetScope == null || targetScope.isBlank())
                 ? null
                 : TargetScope.valueOf(targetScope.trim().toUpperCase());
 
-        var query = new GetFeePoliciesPageQuery(page, size, tt, ts, targetValue, status);
+        var query = new GetFeePoliciesPageQuery(page, size, tt, ts, targetValue, status);*/
+        var query = new GetFeePoliciesPageQuery(page, size, tt, status);
         return handler.handle(query);
     }
 }

@@ -38,7 +38,7 @@ public final class TaxPolicyUiMapper {
         };
     }
 
-    public static String value(TaxPolicyEntity e) {
+    /*public static String value(TaxPolicyEntity e) {
         return switch (e.getStrategyType()) {
             case FIXED_AMOUNT ->
                     e.getFixedAmount() + " " + e.getCurrency();
@@ -47,6 +47,20 @@ public final class TaxPolicyUiMapper {
                     e.getRate().multiply(java.math.BigDecimal.valueOf(100))
                             .stripTrailingZeros()
                             .toPlainString() + " %";
+        };
+    }*/
+    public static String value(TaxPolicyEntity e) {
+        if (e.getStrategyType() == null) return "-";
+
+        return switch (e.getStrategyType()) {
+            case FIXED_AMOUNT ->
+                    (e.getFixedAmount() != null ? e.getFixedAmount() : "0") + " " + (e.getCurrency() != null ? e.getCurrency() : "");
+
+            case ELECTRONIC_RATE ->
+                    (e.getRate() != null ?
+                            e.getRate().multiply(java.math.BigDecimal.valueOf(100))
+                                    .stripTrailingZeros()
+                                    .toPlainString() : "0") + " %";
         };
     }
 

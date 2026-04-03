@@ -23,15 +23,16 @@ public class TaxPolicyQueryController {
     public PageResponseDto<TaxPolicySummary> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String targetScope,
-            @RequestParam(required = false) String targetValue,
+            /*@RequestParam(required = false) String targetScope,
+            @RequestParam(required = false) String targetValue,*/
             @RequestParam(required = false) String status
     ) {
-        TargetScope ts = (targetScope == null || targetScope.isBlank())
+        /*TargetScope ts = (targetScope == null || targetScope.isBlank())
                 ? null
                 : TargetScope.valueOf(targetScope.trim().toUpperCase());
 
-        var query = new GetTaxPoliciesPageQuery(page, size, ts, targetValue, status);
+        var query = new GetTaxPoliciesPageQuery(page, size, ts, targetValue, status);*/
+        var query = new GetTaxPoliciesPageQuery(page, size, status);
         return handler.handle(query);
     }
 }
