@@ -118,7 +118,7 @@ public enum TransactionCode {
             "Dépôt abonné",
             TransactionType.DEPOSIT,
             "Agent/distributeur", "Abonné",
-            false, false, true
+            false, true, true
     ),
 
     AGENT_DISTRIBUTOR_P2P_TRANSFER(

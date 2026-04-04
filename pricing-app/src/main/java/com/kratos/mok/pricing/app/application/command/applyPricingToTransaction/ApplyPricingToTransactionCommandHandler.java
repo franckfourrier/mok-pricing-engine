@@ -73,7 +73,8 @@ public class ApplyPricingToTransactionCommandHandler {
         TaxComputationResult taxRes = computeTaxQuery.computeTax(ctx);
         Money tax = taxRes.tax();
 
-        Money commissionBase = (cmd.transactionCode().transactionType() == TransactionType.DEPOSIT)
+        Money commissionBase = (cmd.transactionCode() == TransactionCode.SUBSCRIBER_WITHDRAWAL
+                || cmd.transactionCode() == TransactionCode.SUBSCRIBER_DEPOSIT)
                 ? estimateWithdrawalFee(ctx)
                 : safe(fee);
 
