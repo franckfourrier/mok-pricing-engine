@@ -13,8 +13,8 @@ public final class FeePolicySpecifications {
         return (root, query, cb) -> {
             var predicates = cb.conjunction();
 
-            if (q.transactionType() != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("transactionType"), q.transactionType()));
+            if (q.transactionCode() != null) {
+                predicates = cb.and(predicates, cb.equal(root.get("transactionType"), q.transactionCode()));
             }
             /*if (q.targetScope() != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("targetScope"), q.targetScope()));

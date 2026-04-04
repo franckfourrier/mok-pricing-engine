@@ -5,10 +5,14 @@ import com.kratos.mok.pricing.commissions.domain.enums.CommissionPlanStatus;
 import com.kratos.mok.pricing.commissions.domain.strategy.*;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 
 import java.util.Comparator;
 import java.util.List;
+
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_DEPOSIT;
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_WITHDRAWAL;
 
 public final class CommissionPlanReadMapper {
 
@@ -16,7 +20,7 @@ public final class CommissionPlanReadMapper {
 
     public static CommissionPlanSummary toSummary(CommissionPlanEntity e) {
 
-        List<CommissionLineSummary> lines = toLines(e.getTransactionType(), e.getStrategy());
+        List<CommissionLineSummary> lines = toLines(e.getTransactionCode(), e.getStrategy());
 
         CommissionPlanStatus st = e.getStatus();
         String statusLabel = switch (st) {
@@ -29,8 +33,8 @@ public final class CommissionPlanReadMapper {
 
         return new CommissionPlanSummary(
                 e.getId(),
-                e.getTransactionType(),
-                toTxLabel(e.getTransactionType()),
+                e.getTransactionCode(),
+                toTxLabel(e.getTransactionCode()),
                 lines,
                 e.getCreatedBy() == null ? null : e.getCreatedBy().getTimestamp(),
                 statusLabel,
@@ -38,10 +42,10 @@ public final class CommissionPlanReadMapper {
         );
     }
 
-    private static List<CommissionLineSummary> toLines(TransactionType txType, CommissionStrategy strategy) {
+    private static List<CommissionLineSummary> toLines(TransactionCode txCode, CommissionStrategy strategy) {
         if (strategy == null) return List.of();
 
-        String baseLabel = baseLabel(txType, strategy); // "des frais de retrait (potentiel)" etc.
+        String baseLabel = baseLabel(txCode, strategy); // "des frais de retrait (potentiel)" etc.
 
         // DepositDistributionStrategy: liste de CommissionShare (beneficiary + percentage)
         if (strategy instanceof DepositDistributionStrategy s) {
@@ -109,20 +113,19 @@ public final class CommissionPlanReadMapper {
         };
     }
 
-    private static String toTxLabel(TransactionType tt) {
-        // adapte à tes enums, ici c’est une base
-        return switch (tt) {
-            case DEPOSIT -> "Dépôt";
-            case WITHDRAWAL -> "Retrait";
-            default -> tt.name();
+    private static String toTxLabel(TransactionCode tc) {
+        return switch (tc) {
+            case SUBSCRIBER_DEPOSIT -> SUBSCRIBER_DEPOSIT.label();
+            case SUBSCRIBER_WITHDRAWAL -> SUBSCRIBER_WITHDRAWAL.label();
+            default -> tc.label();
         };
     }
 
-    private static String baseLabel(TransactionType txType, CommissionStrategy strategy) {
-        if (txType == TransactionType.WITHDRAWAL) {
+    private static String baseLabel(TransactionCode txCode, CommissionStrategy strategy) {
+        if (txCode == SUBSCRIBER_WITHDRAWAL) {
             return "des frais de retrait";
         }
-        if (txType == TransactionType.DEPOSIT && strategy instanceof DepositDistributionStrategy) {
+        if (txCode == SUBSCRIBER_DEPOSIT && strategy instanceof DepositDistributionStrategy) {
             return "des frais de retrait (potentiel)";
         }
         return "des frais de transaction";

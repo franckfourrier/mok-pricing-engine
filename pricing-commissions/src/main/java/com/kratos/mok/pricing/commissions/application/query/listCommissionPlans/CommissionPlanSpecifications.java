@@ -11,15 +11,15 @@ public final class CommissionPlanSpecifications {
         return (root, query, cb) -> {
             var predicates = cb.conjunction();
 
-            if (q.transactionType() != null) {
-                predicates = cb.and(predicates, cb.equal(root.get("transactionType"), q.transactionType()));
+            if (q.transactionCode() != null) {
+                predicates = cb.and(predicates, cb.equal(root.get("transactionCode"), q.transactionCode()));
             }
-            if (q.targetScope() != null) {
+            /*if (q.targetScope() != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("targetScope"), q.targetScope()));
             }
             if (q.targetValue() != null && !q.targetValue().isBlank()) {
                 predicates = cb.and(predicates, cb.equal(root.get("targetValue"), q.targetValue().trim()));
-            }
+            }*/
             if (q.status() != null) {
                 predicates = cb.and(predicates, cb.equal(root.get("status"), q.status()));
             }

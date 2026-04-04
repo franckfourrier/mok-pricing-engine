@@ -118,9 +118,9 @@ public class CommissionPlanEntity {
 
     @Embedded
     @AttributeOverrides({
-            @AttributeOverride(name = "author", column = @Column(name = "modified_by")),
-            @AttributeOverride(name = "timestamp", column = @Column(name = "modified_at")),
-            @AttributeOverride(name = "reason", column = @Column(name = "modified_reason"))
+            @AttributeOverride(name = "author", column = @Column(name = "last_modified_by")),
+            @AttributeOverride(name = "timestamp", column = @Column(name = "last_modified_at")),
+            @AttributeOverride(name = "reason", column = @Column(name = "last_modified_reason"))
     })
     private AuditEmbeddable lastModifiedBy;
 
@@ -136,6 +136,6 @@ public class CommissionPlanEntity {
     })
     private AuditEmbeddable approvedOrRejectedBy;
 
-    @Version
-    private long version;
+    /*@Version TODO
+    private long version;*/
 }

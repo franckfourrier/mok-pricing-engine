@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.fees.application.query.listFeePolicies;
 
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 
 /*public record GetFeePoliciesPageQuery(
@@ -15,6 +16,6 @@ import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 public record GetFeePoliciesPageQuery(
         int page,
         int size,
-        TransactionType transactionType,
+        TransactionCode transactionCode,
         String status
 ) {}

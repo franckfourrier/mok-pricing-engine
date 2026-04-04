@@ -2,8 +2,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.query;
 
 import com.kratos.mok.pricing.fees.application.query.listFeePolicies.*;
 import com.kratos.mok.pricing.shared.api.PageResponseDto;
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +22,15 @@ public class FeePolicyQueryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
 
-            @RequestParam(required = false) String transactionType,
+            @RequestParam(required = false) String transactionCode,
             /*@RequestParam(required = false) String targetScope,
             @RequestParam(required = false) String targetValue,*/
             @RequestParam(required = false) String status
     ) {
 
-        TransactionType tt = (transactionType == null || transactionType.isBlank())
+        TransactionCode tt = (transactionCode == null || transactionCode.isBlank())
                 ? null
-                : TransactionType.valueOf(transactionType.trim().toUpperCase());
+                : TransactionCode.valueOf(transactionCode.trim().toUpperCase());
 
         /*TargetScope ts = (targetScope == null || targetScope.isBlank())
                 ? null
