@@ -10,6 +10,7 @@ import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
@@ -21,6 +22,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_DEPOSIT;
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_WITHDRAWAL;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +54,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                         )
                 ));
 
-        var lines = computeLines(ctx.transactionCode().transactionType(), plan.strategy(), commissionBase);
+        var lines = computeLines(ctx.transactionCode(), ctx.accountId(), plan.strategy(), commissionBase);
 
         lines = lines.stream()
                 .filter(l -> l.amount() != null && !l.amount().isZero())
@@ -60,35 +64,36 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
     }
 
     private List<CommissionDistributionResult.Line> computeLines(
-            TransactionType txType,
+            TransactionCode txCode,
+            String accountId,
             CommissionStrategy strategy,
             Money base
     ) {
         if (strategy == null) throw new IllegalArgumentException("strategy is required");
 
         if (strategy instanceof DepositDistributionStrategy s) {
-            ensure(txType == TransactionType.DEPOSIT, "DEPOSIT strategy used for non-DEPOSIT");
-            return distributeShares(s.keys(), base, true);
+            ensure(txCode == SUBSCRIBER_DEPOSIT, "DEPOSIT strategy used for non-DEPOSIT");
+            return distributeShares(s.keys(), accountId, base, true);
         }
 
         if (strategy instanceof DirectStrategy s) {
-            return distributeShares(s.keys(), base, false);
+            return distributeShares(s.keys(), accountId, base, false);
         }
 
         if (strategy instanceof WithdrawalAgentKratosStrategy s) {
-            ensure(txType == TransactionType.WITHDRAWAL, "WITHDRAWAL strategy used for non-WITHDRAWAL");
+            ensure(txCode == SUBSCRIBER_WITHDRAWAL, "WITHDRAWAL strategy used for non-WITHDRAWAL");
 
             Percentage agent = s.agentShare();
             Percentage coverage = s.coverageRate();
-            Percentage kratos = s.kratosShare();
+            //Percentage kratos = s.kratosShare();
 
             if (agent.value().add(coverage.value()).compareTo(BigDecimal.ONE) > 0) {
                 throw new IllegalArgumentException("Invalid withdrawal plan: agentShare + coverageRate > 1");
             }
 
             List<CommissionDistributionResult.Line> lines = new ArrayList<>();
-            lines.add(line(BeneficiaryType.AGENT, agent, base));
-            lines.add(line(BeneficiaryType.KRATOS, kratos, base));
+            lines.add(line(BeneficiaryType.AGENT, accountId, agent, base));
+            //lines.add(line(BeneficiaryType.KRATOS, kratos, base));
             return lines;
         }
 
@@ -97,6 +102,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
     private List<CommissionDistributionResult.Line> distributeShares(
             List<CommissionShare> shares,
+            String accountId,
             Money base,
             boolean rejectKratos
     ) {
@@ -116,15 +122,15 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             if (rejectKratos && s.beneficiaryType() == BeneficiaryType.KRATOS) {
                 throw new IllegalArgumentException("DEPOSIT plan must not include KRATOS as beneficiary");
             }
-            lines.add(line(s.beneficiaryType(), s.share(), base));
+            lines.add(line(s.beneficiaryType(), accountId, s.share(), base));
         }
 
         return lines;
     }
 
-    private CommissionDistributionResult.Line line(BeneficiaryType b, Percentage p, Money base) {
+    private CommissionDistributionResult.Line line(BeneficiaryType b, String accountId, Percentage p, Money base) {
         Money amount = multiply(base, p);
-        return new CommissionDistributionResult.Line(b.name(), p.value().toPlainString(), amount);
+        return new CommissionDistributionResult.Line(b.name(), accountId, p.value().toPlainString(), amount);
     }
 
     private Money multiply(Money base, Percentage p) {

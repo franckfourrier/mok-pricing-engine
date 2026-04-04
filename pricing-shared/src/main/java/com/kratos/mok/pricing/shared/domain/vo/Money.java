@@ -1,5 +1,7 @@
 package com.kratos.mok.pricing.shared.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -87,14 +89,17 @@ public record Money(BigDecimal amount, String currency) implements Comparable<Mo
     }
 
     // ---------- Helpers ----------
+    @JsonIgnore
     public boolean isPositive() {
         return amount.compareTo(BigDecimal.ZERO) > 0;
     }
 
+    @JsonIgnore
     public boolean isNegative() {
         return amount.compareTo(BigDecimal.ZERO) < 0;
     }
 
+    @JsonIgnore
     public boolean isZero() {
         return amount.compareTo(BigDecimal.ZERO) == 0;
     }

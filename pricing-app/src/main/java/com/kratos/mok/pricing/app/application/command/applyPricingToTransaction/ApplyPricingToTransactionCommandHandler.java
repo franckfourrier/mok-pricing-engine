@@ -101,7 +101,7 @@ public class ApplyPricingToTransactionCommandHandler {
                 );
             }
 
-            String idempotencyKey = cmd.externalTxId() + ":COM:" + b;
+            /*String idempotencyKey = cmd.externalTxId() + ":COM:" + b;
 
             externalAccountCreditor.credit(
                     b,
@@ -109,7 +109,7 @@ public class ApplyPricingToTransactionCommandHandler {
                     amt,
                     idempotencyKey,
                     "Commission " + b + " for tx=" + cmd.externalTxId()
-            );
+            );*/
 
             externalTotal = externalTotal.add(amt);
             if ("AGENT".equals(b)) {
@@ -161,13 +161,13 @@ public class ApplyPricingToTransactionCommandHandler {
                 actor
         );
 
-        return new ApplyPricingToTransactionResponse(
+        return ApplyPricingToTransactionResponse.fromDomain(
                 cmd.externalTxId(),
-                feeRes.feePolicyId(), fee,
-                taxRes.taxPolicyId(), tax,
-                comRes.commissionPlanId(), commissionBase, comRes.lines(),
+                fee,
+                tax,
+                comRes.lines(),
                 externalTotal,
-                ledgerRes.externalTxId(), ledgerRes.recorded()
+                ledgerRes.recorded()
         );
     }
 

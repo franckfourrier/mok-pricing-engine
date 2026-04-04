@@ -9,7 +9,7 @@ public interface ComputeCommissionDistributionQuery {
     CommissionDistributionResult compute(PricingRequestContext ctx, Money commissionBase);
 
     record CommissionDistributionResult(String commissionPlanId, List<Line> lines) {
-        public record Line(String beneficiary, String rate, Money amount) {}
+        public record Line(String beneficiary, String accountId, String rate, Money amount) {}
     }
 }
 
