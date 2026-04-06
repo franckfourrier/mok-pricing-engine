@@ -28,6 +28,7 @@ public final class TaxPolicyUiMapper {
         return switch (e.getStrategyType()) {
             case FIXED_AMOUNT -> "Fixe";
             case ELECTRONIC_RATE -> "Variable";
+            case NONE -> "Aucune";
         };
     }
 
@@ -35,6 +36,7 @@ public final class TaxPolicyUiMapper {
         return switch (e.getStrategyType()) {
             case FIXED_AMOUNT -> "Forfaitaire";
             case ELECTRONIC_RATE -> "Electronique";
+            case NONE -> "Exonéré";
         };
     }
 
@@ -61,6 +63,8 @@ public final class TaxPolicyUiMapper {
                             e.getRate().multiply(java.math.BigDecimal.valueOf(100))
                                     .stripTrailingZeros()
                                     .toPlainString() : "0") + " %";
+
+            case NONE -> "0";
         };
     }
 

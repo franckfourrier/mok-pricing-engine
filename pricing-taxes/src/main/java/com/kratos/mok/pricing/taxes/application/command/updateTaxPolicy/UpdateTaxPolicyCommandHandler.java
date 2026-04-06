@@ -101,6 +101,9 @@ public class UpdateTaxPolicyCommandHandler {
                 String currency = extractCurrency(policy);
                 yield new FixedAmountTax(Money.of(cmd.fixedAmount(), currency));
             }
+            case NONE -> {
+                yield null;
+            }
         };
     }
 

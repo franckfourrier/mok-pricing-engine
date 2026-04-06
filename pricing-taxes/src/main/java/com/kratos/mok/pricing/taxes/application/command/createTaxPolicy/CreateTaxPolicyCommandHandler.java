@@ -105,6 +105,10 @@ public class CreateTaxPolicyCommandHandler {
                 }
                 yield new FixedAmountTax(Money.of(cmd.fixedAmount(), cmd.currency()));
             }
+
+            case NONE -> {
+                yield null;
+            }
         };
     }
 

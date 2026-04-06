@@ -63,6 +63,7 @@ public class TaxPolicyEntityMapper {
         TaxStrategy strategy = switch (e.getStrategyType()) {
             case ELECTRONIC_RATE -> new ElectronicRateTax(new TaxRate(e.getRate()));
             case FIXED_AMOUNT -> new FixedAmountTax(Money.of(e.getFixedAmount(), e.getCurrency()));
+            case NONE -> null;
         };
 
         TaxRules rules = new TaxRules(new FluxIntensity(e.getFluxIntensity()), e.isExempted());

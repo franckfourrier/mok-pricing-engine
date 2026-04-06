@@ -67,16 +67,34 @@ public class ApplyPricingToTransactionCommandHandler {
                 cmd.occurredAt()
         );
 
-        FeeComputationResult feeRes = computeFeeQuery.computeFee(ctx);
-        Money fee = feeRes.fee();
+        // 1. Calcul des Frais (uniquement si supportés)
+        FeeComputationResult feeRes;
+        if (ctx.transactionCode().supportsFees()) {
+            feeRes = computeFeeQuery.computeFee(ctx);
+        } else {
+            feeRes = new FeeComputationResult("NONE", Money.ZERO);
+        }
+        Money fee = safe(feeRes.fee());
 
-        TaxComputationResult taxRes = computeTaxQuery.computeTax(ctx);
-        Money tax = taxRes.tax();
+        // 2. Calcul des Taxes (uniquement si supportées)
+        TaxComputationResult taxRes;
+        if (ctx.transactionCode().supportsTaxes()) {
+            taxRes = computeTaxQuery.computeTax(ctx);
+        } else {
+            taxRes = new TaxComputationResult(
+                    "NONE",
+                    Money.ZERO,
+                    TaxMode.NONE,
+                    TaxStrategyType.NONE
+            );
+        }
+        Money tax = safe(taxRes.tax());
 
-        Money commissionBase = (cmd.transactionCode() == TransactionCode.SUBSCRIBER_WITHDRAWAL
-                || cmd.transactionCode() == TransactionCode.SUBSCRIBER_DEPOSIT)
-                ? estimateWithdrawalFee(ctx)
-                : safe(fee);
+        Money commissionBase = switch (cmd.transactionCode()) {
+            case SUBSCRIBER_WITHDRAWAL -> estimateWithdrawalFee(ctx);
+            case SUBSCRIBER_DEPOSIT    -> estimateWithdrawalFee(ctx);
+            default                    -> safe(fee);
+        };
 
         CommissionDistributionResult comRes = computeCommissionDistributionQuery.compute(ctx, commissionBase);
 
@@ -174,7 +192,7 @@ public class ApplyPricingToTransactionCommandHandler {
 
     private Money estimateWithdrawalFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                resolveWithdrawalTransactionCode(ctx),
+                TransactionCode.SUBSCRIBER_WITHDRAWAL,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
@@ -186,7 +204,21 @@ public class ApplyPricingToTransactionCommandHandler {
         return safe(res.fee());
     }
 
-    private TransactionCode resolveWithdrawalTransactionCode(PricingRequestContext ctx) {
+    /*private Money estimateDepositFee(PricingRequestContext ctx) {
+        PricingRequestContext wCtx = new PricingRequestContext(
+                resolveDepositTransactionCode(ctx),
+                ctx.amount(),
+                ctx.accountId(),
+                ctx.accountType(),
+                ctx.kycValidated(),
+                ctx.monthlyTxCount(),
+                ctx.occurredAt()
+        );
+        FeeComputationResult res = computeFeeQuery.computeFee(ctx);
+        return safe(res.fee());
+    }*/
+
+    /*private TransactionCode resolveWithdrawalTransactionCode(PricingRequestContext ctx) {
         return switch (ctx.accountType()) {
             case AGENT, DISTRIBUTOR -> TransactionCode.AGENT_DISTRIBUTOR_WITHDRAWAL;
             case STANDARD, PREMIUM, SUBSCRIBER -> TransactionCode.SUBSCRIBER_WITHDRAWAL;
@@ -196,7 +228,7 @@ public class ApplyPricingToTransactionCommandHandler {
                     Map.of("accountType", ctx.accountType().name())
             );
         };
-    }
+    }*/
 
     private Money safe(Money m) {
         return (m == null) ? Money.ZERO : m;
