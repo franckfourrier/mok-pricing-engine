@@ -57,6 +57,13 @@ public class ApplyPricingToTransactionCommandHandler {
     public ApplyPricingToTransactionResponse handle(ApplyPricingToTransactionCommand cmd, String actor) {
         validate(cmd);
 
+        // On crée la map de hiérarchie
+        Map<String, String> hierarchy = Map.of(
+                "AGENT", cmd.accountId(),
+                "DISTRIBUTOR", cmd.distributorAccountId() != null ? cmd.distributorAccountId() : "",
+                "SUPER_DISTRIBUTOR", cmd.superDistributorAccountId() != null ? cmd.superDistributorAccountId() : ""
+        );
+
         PricingRequestContext ctx = new PricingRequestContext(
                 cmd.transactionCode(),
                 cmd.amount(),
@@ -64,7 +71,8 @@ public class ApplyPricingToTransactionCommandHandler {
                 cmd.accountType(),
                 cmd.kycValidated(),
                 cmd.monthlyTxCount(),
-                cmd.occurredAt()
+                cmd.occurredAt(),
+                hierarchy
         );
 
         // 1. Calcul des Frais (uniquement si supportés)
@@ -198,7 +206,8 @@ public class ApplyPricingToTransactionCommandHandler {
                 ctx.accountType(),
                 ctx.kycValidated(),
                 ctx.monthlyTxCount(),
-                ctx.occurredAt()
+                ctx.occurredAt(),
+                ctx.hierarchy()
         );
         FeeComputationResult res = computeFeeQuery.computeFee(wCtx);
         return safe(res.fee());

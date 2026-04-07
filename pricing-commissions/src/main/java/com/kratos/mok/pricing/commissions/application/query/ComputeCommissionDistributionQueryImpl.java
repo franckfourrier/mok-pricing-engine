@@ -54,7 +54,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                         )
                 ));
 
-        var lines = computeLines(ctx.transactionCode(), ctx.accountId(), plan.strategy(), commissionBase);
+        var lines = computeLines(ctx.transactionCode(), ctx, plan.strategy(), commissionBase);
 
         lines = lines.stream()
                 .filter(l -> l.amount() != null && !l.amount().isZero())
@@ -65,7 +65,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
     private List<CommissionDistributionResult.Line> computeLines(
             TransactionCode txCode,
-            String accountId,
+            PricingRequestContext ctx,
             CommissionStrategy strategy,
             Money base
     ) {
@@ -73,11 +73,11 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
         if (strategy instanceof DepositDistributionStrategy s) {
             ensure(txCode == SUBSCRIBER_DEPOSIT, "DEPOSIT strategy used for non-DEPOSIT");
-            return distributeShares(s.keys(), accountId, base, true);
+            return distributeShares(s.keys(), ctx, base, true);
         }
 
         if (strategy instanceof DirectStrategy s) {
-            return distributeShares(s.keys(), accountId, base, false);
+            return distributeShares(s.keys(), ctx, base, false);
         }
 
         if (strategy instanceof WithdrawalAgentKratosStrategy s) {
@@ -92,7 +92,10 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             }
 
             List<CommissionDistributionResult.Line> lines = new ArrayList<>();
-            lines.add(line(BeneficiaryType.AGENT, accountId, agent, base));
+            // On récupère l'ID du compte AGENT depuis le contexte
+            String agentAccountId = ctx.getAccountFor("AGENT");
+
+            lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
             //lines.add(line(BeneficiaryType.KRATOS, kratos, base));
             return lines;
         }
@@ -102,7 +105,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
     private List<CommissionDistributionResult.Line> distributeShares(
             List<CommissionShare> shares,
-            String accountId,
+            PricingRequestContext ctx,
             Money base,
             boolean rejectKratos
     ) {
@@ -119,10 +122,14 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
         List<CommissionDistributionResult.Line> lines = new ArrayList<>();
 
         for (CommissionShare s : shares) {
+            String beneficiary = s.beneficiaryType().name(); // ex: "AGENT", "DISTRIBUTOR"
+            // On récupère dynamiquement l'ID du compte depuis la hiérarchie du contexte
+            String targetAccountId = ctx.getAccountFor(beneficiary);
+
             if (rejectKratos && s.beneficiaryType() == BeneficiaryType.KRATOS) {
                 throw new IllegalArgumentException("DEPOSIT plan must not include KRATOS as beneficiary");
             }
-            lines.add(line(s.beneficiaryType(), accountId, s.share(), base));
+            lines.add(line(s.beneficiaryType(), targetAccountId, s.share(), base));
         }
 
         return lines;
