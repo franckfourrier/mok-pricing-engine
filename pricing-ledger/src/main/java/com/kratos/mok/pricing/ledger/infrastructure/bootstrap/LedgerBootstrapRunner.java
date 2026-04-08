@@ -24,7 +24,7 @@ public class LedgerBootstrapRunner implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        ensure(props.getCantonnement(), "Compte Cantonnement");
+        ensure(props.getCantonment(), "Compte Cantonnement");
         ensure(props.getExploitation(), "Compte Exploitation");
         ensure(props.getTax(), "Compte Taxe");
         ensure(props.getTaxRate(), "Sous-compte taxe (Rate)");

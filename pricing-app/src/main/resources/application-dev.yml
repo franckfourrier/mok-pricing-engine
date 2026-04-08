@@ -48,7 +48,7 @@ logging:
 
 ledger:
   accounts:
-    cantonnement: "ACC-CANT"
+    cantonment: "ACC-CANT"
     exploitation: "ACC-EXP"
     tax: "ACC-TAX"
     taxRate: "ACC-TAX-RATE"

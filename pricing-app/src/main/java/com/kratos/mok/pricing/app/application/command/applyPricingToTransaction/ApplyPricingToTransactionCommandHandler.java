@@ -41,17 +41,26 @@ public class ApplyPricingToTransactionCommandHandler {
     private final ExternalAccountCreditor externalAccountCreditor;
     private final LedgerWriter ledgerWriter;
 
-    @Value("${ledger.accounts.cantonnement:ACC-CANT}")
+    @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
 
-    @Value("${ledger.accounts.exploitation:ACC-EXP}")
+    @Value("${ledger.accounts.exploitation}")
     private String accExp;
 
-    @Value("${ledger.accounts.taxRate:ACC-TAX-RATE}")
+    @Value("${ledger.accounts.tax}")
+    private String accTax;
+
+    @Value("${ledger.accounts.taxRate}")
     private String accTaxRate;
 
-    @Value("${ledger.accounts.taxFixed:ACC-TAX-FIXED}")
+    @Value("${ledger.accounts.taxFixed}")
     private String accTaxFixed;
+
+    @Value("${ledger.accounts.distributed}")
+    private String accDist;
+
+    @Value("${ledger.accounts.external}")
+    private String accExt;
 
     @Transactional
     public ApplyPricingToTransactionResponse handle(ApplyPricingToTransactionCommand cmd, String actor) {

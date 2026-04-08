@@ -13,6 +13,6 @@ CREATE INDEX idx_ledger_acc_time_xaf
     ON ledger_entries (account_code, occurred_at DESC)
     WHERE currency = 'XAF';
 
--- Quand ton système grossit : Partitioning recommandé
+-- Quand le système grossit : Partitioning recommandé
 CREATE TABLE ledger_entries_2026 PARTITION OF ledger_entries
     FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');

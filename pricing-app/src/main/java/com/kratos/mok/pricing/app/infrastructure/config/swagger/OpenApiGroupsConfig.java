@@ -66,6 +66,14 @@ public class OpenApiGroupsConfig {
                 .build();
     }
 
+    @Bean
+    GroupedOpenApi ledgerApi() {
+        return GroupedOpenApi.builder()
+                .group("ledger")
+                .pathsToMatch("/v1/ledger/**")
+                .build();
+    }
+
     private OpenApiCustomizer addBearerSecurityOnlyForSensitivePaths() {
 
         Set<String> actions = Set.of(

@@ -8,6 +8,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -16,7 +18,7 @@ public class GetDashboardCachedQueryHandler {
 
     private final DashboardSnapshotRepository repo;
 
-    @Value("${ledger.accounts.cantonnement}")
+    @Value("${ledger.accounts.cantonment}")
     private String accCant;
 
     @Value("${ledger.accounts.exploitation}")
@@ -25,20 +27,11 @@ public class GetDashboardCachedQueryHandler {
     @Value("${ledger.accounts.tax}")
     private String accTax;
 
-    @Value("${ledger.accounts.taxRate}")
-    private String accTaxRate;
-
-    @Value("${ledger.accounts.taxFixed}")
-    private String accTaxFixed;
-
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
     @Value("${ledger.accounts.external}")
     private String accExt;
-
-    @Value("${ledger.accounts.bankClearing}")
-    private String accBankClear;
 
     @Cacheable(value = "dashboard", key = "'GLOBAL'")
     public DashboardView handle() {
@@ -49,13 +42,31 @@ public class GetDashboardCachedQueryHandler {
 
         var list = repo.findAllById(accounts);
 
-        return new DashboardView(
-                find(list, accCant),
-                find(list, accExp),
-                find(list, accTax),
-                find(list, accDist),
-                find(list, accExt)
+        var cant = find(list, accCant);
+        var exp  = find(list, accExp);
+        var tax  = find(list, accTax);
+        var dist = find(list, accDist);
+        var ext  = find(list, accExt);
 
+        // Currency cohérente
+        String currency = cant.currency();
+
+        validateMonoCurrency(cant, exp, tax, dist, ext);
+
+        // Timestamp depuis DB (pas system clock)
+        OffsetDateTime updatedAt = list.stream()
+                .map(DashboardSnapshotEntity::getUpdatedAt)
+                .max(OffsetDateTime::compareTo)
+                .orElseThrow(() -> new IllegalStateException("No snapshot timestamp found"));
+
+        return new DashboardView(
+                currency,
+                updatedAt,
+                cant,
+                exp,
+                tax,
+                dist,
+                ext
         );
     }
 
@@ -71,5 +82,17 @@ public class GetDashboardCachedQueryHandler {
                         e.getLastTrend()
                 ))
                 .orElse(new BalanceView(code, BigDecimal.ZERO, "XAF", BigDecimal.ZERO, "STABLE"));
+    }
+
+    // Sécurité currency
+    private void validateMonoCurrency(BalanceView... views) {
+        var currencies = Arrays.stream(views)
+                .map(BalanceView::currency)
+                .distinct()
+                .toList();
+
+        if (currencies.size() > 1) {
+            throw new IllegalStateException("Multi-currency dashboard not supported: " + currencies);
+        }
     }
 }

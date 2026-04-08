@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.ledger.application.query.dashboard;
 import com.kratos.mok.pricing.ledger.domain.repository.LedgerEntryRepository;
 import com.kratos.mok.pricing.ledger.infrastructure.model.DashboardSnapshotEntity;
 import com.kratos.mok.pricing.ledger.infrastructure.repository.DashboardSnapshotRepository;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -19,8 +21,9 @@ public class DashboardSnapshotUpdater {
 
     private final LedgerEntryRepository entryRepo;
     private final DashboardSnapshotRepository snapshotRepo;
+    private final TimeProvider timeProvider;
 
-    @Value("${ledger.accounts.cantonnement}")
+    @Value("${ledger.accounts.cantonment}")
     private String accCant;
 
     @Value("${ledger.accounts.exploitation}")
@@ -54,7 +57,7 @@ public class DashboardSnapshotUpdater {
 
         var balances = entryRepo.computeBalances(accounts);
 
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = timeProvider.now();
 
         List<DashboardSnapshotEntity> toSave = balances.stream().map(b -> {
 
@@ -83,7 +86,7 @@ public class DashboardSnapshotUpdater {
 
         }).toList();
 
-        snapshotRepo.saveAll(toSave); // ✅ PERF
+        snapshotRepo.saveAll(toSave);
     }
 
     private String resolveTrend(BigDecimal variation) {

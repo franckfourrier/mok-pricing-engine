@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "ledger.accounts")
 public class LedgerAccountsProperties {
-    private String cantonnement = "ACC-CANT";
+    private String cantonment = "ACC-CANT";
     private String exploitation = "ACC-EXP";
     private String taxRate = "ACC-TAX-RATE";
     private String taxFixed = "ACC-TAX-FIXED";

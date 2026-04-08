@@ -30,7 +30,7 @@ public class RecordBankDepositCommandHandler {
     private final LedgerWriter ledgerWriter;
     private final JpaCantonmentCreditRepository cantonmentRepo;
 
-    @Value("${ledger.accounts.cantonnement:ACC-CANT}")
+    @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
 
     @Value("${ledger.accounts.bankClearing:ACC-BANK-CLEAR}")

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -20,7 +21,7 @@ public class GetDashboardNowQueryHandler {
     private final GetLastEntriesQueryHandler lastEntriesHandler;
     private final TimeProvider timeProvider;
 
-    @Value("${ledger.accounts.cantonnement:ACC-CANT}")
+    @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
 
     @Value("${ledger.accounts.exploitation:ACC-EXP}")
@@ -39,12 +40,24 @@ public class GetDashboardNowQueryHandler {
 
         OffsetDateTime now = timeProvider.now();
 
+        var cantView = compute(accCant, now);
+        var expView = compute(accExp, now);
+        var taxView = compute(accTax, now);
+        var distView = compute(accDist, now);
+        var extView = compute(accExt, now);
+
+        validateMonoCurrency(cantView, expView, taxView, distView, extView);
+
+        String globalCurrency = cantView.currency();
+
         return new DashboardView(
-                compute(accCant, now),
-                compute(accExp, now),
-                compute(accTax, now),
-                compute(accDist, now),
-                compute(accExt, now)
+                globalCurrency,
+                now,
+                cantView,
+                expView,
+                taxView,
+                distView,
+                extView
         );
     }
 
@@ -78,5 +91,18 @@ public class GetDashboardNowQueryHandler {
                 variation,
                 trend
         );
+    }
+
+    private void validateMonoCurrency(BalanceView... views) {
+        var currencies = Arrays.stream(views)
+                .map(BalanceView::currency)
+                .distinct()
+                .toList();
+
+        if (currencies.size() > 1) {
+            throw new IllegalStateException(
+                    "Multi-currency dashboard not supported: " + currencies
+            );
+        }
     }
 }
