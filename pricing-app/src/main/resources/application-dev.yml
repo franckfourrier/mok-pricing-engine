@@ -50,9 +50,11 @@ ledger:
   accounts:
     cantonnement: "ACC-CANT"
     exploitation: "ACC-EXP"
+    tax: "ACC-TAX"
     taxRate: "ACC-TAX-RATE"
     taxFixed: "ACC-TAX-FIXED"
-    commissions: "ACC-COMM"
+    external: "ACC-EXT"
+    distributed: "ACC-DIST"
     currency: "XAF"
     bankClearing: "ACC-BANK-CLEAR"
 

@@ -15,8 +15,8 @@ import java.time.OffsetDateTime;
 @Table(
         name = "ledger_entries",
         indexes = {
-                @Index(name = "idx_ledger_entries_account_time", columnList = "account_code, occurred_at"),
-                @Index(name = "idx_ledger_entries_external_tx", columnList = "external_tx_id")
+                @Index(name = "idx_ledger_acc_curr_time", columnList = "account_code, currency, occurred_at"),
+                @Index(name = "idx_ledger_external_tx", columnList = "external_tx_id")
         },
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_ledger_external_tx_line", columnNames = {"external_tx_id", "line_no"})

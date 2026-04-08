@@ -26,9 +26,12 @@ public class LedgerBootstrapRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         ensure(props.getCantonnement(), "Compte Cantonnement");
         ensure(props.getExploitation(), "Compte Exploitation");
+        ensure(props.getTax(), "Compte Taxe");
         ensure(props.getTaxRate(), "Sous-compte taxe (Rate)");
         ensure(props.getTaxFixed(), "Sous-compte taxe (Fixed)");
-        ensure(props.getBankClearing(), "Compte de compensation bancaire");
+        ensure(props.getDistributed(), "Compte Solde Distribué");
+        ensure(props.getExternal(), "Compte Reversement Ext.");
+        ensure(props.getBankClearing(), "Compte de Compensation bancaire");
     }
 
     private void ensure(String code, String name) {

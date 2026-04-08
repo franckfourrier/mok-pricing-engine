@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.ledger.infrastructure.repository;
 
 import com.kratos.mok.pricing.ledger.domain.LedgerEntry;
 import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
+import com.kratos.mok.pricing.ledger.domain.repository.AccountBalanceProjection;
 import com.kratos.mok.pricing.ledger.domain.repository.LedgerEntryRepository;
 import com.kratos.mok.pricing.ledger.domain.vo.AccountCode;
 import com.kratos.mok.pricing.ledger.infrastructure.mapper.LedgerMapper;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -32,8 +34,8 @@ public class PostgresLedgerEntryRepository implements LedgerEntryRepository {
     }
 
     @Override
-    public Money balanceAt(AccountCode code, LocalDateTime at, String currency) {
-        BigDecimal bal = jpa.balanceAt(code.value(), currency.toUpperCase(), at, EntryDirection.CREDIT);
+    public Money balanceAt(AccountCode code, OffsetDateTime at, String currency) {
+        BigDecimal bal = jpa.balanceAt(code.value(), currency.toUpperCase(), at);
         return Money.of(bal, currency);
     }
 
@@ -41,5 +43,10 @@ public class PostgresLedgerEntryRepository implements LedgerEntryRepository {
     public List<LedgerEntry> lastEntries(AccountCode code, int limit) {
         return jpa.findByAccountCodeOrderByOccurredAtDesc(code.value(), PageRequest.of(0, limit))
                 .stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<AccountBalanceProjection> computeBalances(List<String> accounts) {
+        return jpa.computeBalances(accounts);
     }
 }
