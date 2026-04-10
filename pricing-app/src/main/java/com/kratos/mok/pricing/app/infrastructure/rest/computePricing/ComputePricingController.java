@@ -1,3 +1,4 @@
+/*
 package com.kratos.mok.pricing.app.infrastructure.rest.computePricing;
 
 import com.kratos.mok.pricing.app.application.query.computePricingBreakdown.ComputePricingBreakdownQuery;
@@ -63,4 +64,4 @@ public class ComputePricingController {
     private static MoneyDto toDto(Money m) {
         return new MoneyDto(m.amount(), m.currency());
     }
-}
+}*/
