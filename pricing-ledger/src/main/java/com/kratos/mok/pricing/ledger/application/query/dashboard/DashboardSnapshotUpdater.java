@@ -11,7 +11,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -32,20 +31,11 @@ public class DashboardSnapshotUpdater {
     @Value("${ledger.accounts.tax}")
     private String accTax;
 
-    @Value("${ledger.accounts.taxRate}")
-    private String accTaxRate;
-
-    @Value("${ledger.accounts.taxFixed}")
-    private String accTaxFixed;
-
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
     @Value("${ledger.accounts.external}")
     private String accExt;
-
-    @Value("${ledger.accounts.bankClearing}")
-    private String accBankClear;
 
     @Transactional
     @CacheEvict(value = "dashboard", allEntries = true)
@@ -77,7 +67,7 @@ public class DashboardSnapshotUpdater {
 
             entity.setAccountCode(b.getAccountCode());
             entity.setBalance(current);
-            entity.setCurrency("XAF"); // OK si mono-devise
+            entity.setCurrency("XAF");
             entity.setLastVariation(variation);
             entity.setLastTrend(resolveTrend(variation));
             entity.setUpdatedAt(now);

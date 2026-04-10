@@ -8,10 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,10 +39,10 @@ public class GetDashboardNowQueryHandler {
         OffsetDateTime now = timeProvider.now();
 
         var cantView = compute(accCant, now);
-        var expView = compute(accExp, now);
-        var taxView = compute(accTax, now);
+        var expView  = compute(accExp, now);
+        var taxView  = compute(accTax, now);
         var distView = compute(accDist, now);
-        var extView = compute(accExt, now);
+        var extView  = compute(accExt, now);
 
         validateMonoCurrency(cantView, expView, taxView, distView, extView);
 

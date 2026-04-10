@@ -2,8 +2,8 @@ package com.kratos.mok.pricing.app.infrastructure.rest.ledger.http.dashboard;
 
 import com.kratos.mok.pricing.app.infrastructure.rest.ledger.dto.DashboardMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.ledger.dto.DashboardResponse;
-import com.kratos.mok.pricing.ledger.application.query.dashboard.GetDashboardNowQueryHandler;
 import com.kratos.mok.pricing.ledger.application.query.dashboard.DashboardView;
+import com.kratos.mok.pricing.ledger.application.query.dashboard.GetDashboardQueryHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GetDashboardController {
 
-    private final GetDashboardNowQueryHandler handler;
+    private final GetDashboardQueryHandler handler;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")

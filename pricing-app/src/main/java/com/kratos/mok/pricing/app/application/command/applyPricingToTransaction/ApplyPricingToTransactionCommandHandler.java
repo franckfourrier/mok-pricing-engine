@@ -11,6 +11,7 @@ import com.kratos.mok.pricing.ledger.application.port.LedgerWriter;
 import com.kratos.mok.pricing.ledger.domain.Posting;
 import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
 import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
+import com.kratos.mok.pricing.ledger.domain.event.LedgerEntriesCreatedEvent;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
@@ -23,6 +24,7 @@ import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,7 @@ public class ApplyPricingToTransactionCommandHandler {
     private final ComputeCommissionDistributionQuery computeCommissionDistributionQuery;
     private final ExternalAccountCreditor externalAccountCreditor;
     private final LedgerWriter ledgerWriter;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
@@ -195,6 +198,13 @@ public class ApplyPricingToTransactionCommandHandler {
         RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(
                 new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings),
                 actor
+        );
+
+        eventPublisher.publishEvent(
+                new LedgerEntriesCreatedEvent(
+                        cmd.externalTxId(),
+                        cmd.occurredAt()
+                )
         );
 
         return ApplyPricingToTransactionResponse.fromDomain(

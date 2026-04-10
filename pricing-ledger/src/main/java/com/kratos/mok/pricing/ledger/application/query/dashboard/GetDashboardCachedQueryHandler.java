@@ -42,6 +42,10 @@ public class GetDashboardCachedQueryHandler {
 
         var list = repo.findAllById(accounts);
 
+        if (list.isEmpty()) {
+            throw new IllegalStateException("No dashboard snapshot found");
+        }
+
         var cant = find(list, accCant);
         var exp  = find(list, accExp);
         var tax  = find(list, accTax);

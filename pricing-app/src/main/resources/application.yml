@@ -12,6 +12,8 @@ spring:
     open-in-view: false
   cache:
     type: redis
+    redis:
+      time-to-live: 30s
 
 server:
   servlet:
