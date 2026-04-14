@@ -29,3 +29,15 @@ springdoc:
 external:
   accounts:
     base-url: "https://accounts.mok.internal"  # prod
+
+ledger:
+  accounts:
+    cantonment: ${LEDGER_CANT:ACC-CANT}
+    exploitation: ${LEDGER_EXP:ACC-EXP}
+    tax: ${LEDGER_TAX:ACC-TAX}
+    taxRate: ${ACC-TAX-RATE:ACC-TAX-RATE}
+    taxFixed: ${ACC-TAX-FIXED:ACC-TAX-FIXED}
+    external: ${ACC-EXT:ACC-EXT}
+    distributed: ${ACC-DIST:ACC-DIST}
+    currency: "XAF"
+    bankClearing: ${ACC-BANK-CLEAR:ACC-BANK-CLEAR}

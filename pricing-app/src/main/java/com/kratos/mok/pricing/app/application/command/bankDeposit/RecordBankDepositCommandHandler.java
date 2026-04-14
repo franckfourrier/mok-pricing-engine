@@ -10,6 +10,7 @@ import com.kratos.mok.pricing.ledger.domain.enums.EntryDirection;
 import com.kratos.mok.pricing.ledger.domain.enums.LedgerEntryKind;
 import com.kratos.mok.pricing.ledger.domain.event.LedgerEntriesCreatedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +34,7 @@ public class RecordBankDepositCommandHandler {
     private final LedgerWriter ledgerWriter;
     private final JpaCantonmentCreditRepository cantonmentRepo;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
@@ -44,13 +47,14 @@ public class RecordBankDepositCommandHandler {
         validate(cmd);
 
         String ref = cmd.referencePayment().trim();
-        String externalTxId = "CANTONMENT_CREDIT:" + ref;
+        String externalTxId = ref;
+        OffsetDateTime now = timeProvider.now();
 
         // 1) idempotence DB
         if (cantonmentRepo.existsByPaymentReference(ref)) {
             log.info("Duplicate cantonnement credit: ref={}", ref);
             return new RecordBankDepositResponse(
-                    ref, true, "DUPLICATE", externalTxId, accCant, cmd.amount()
+                    ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
             );
         }
 
@@ -63,7 +67,7 @@ public class RecordBankDepositCommandHandler {
         entity.setSuperDistributorId(cmd.superDistributorId().trim());
         entity.setOccurredAt(cmd.occurredAt());
         entity.setStatus("RECEIVED");
-        entity.setReceivedAt(LocalDateTime.now());
+        entity.setReceivedAt(now);
 
         try {
             cantonmentRepo.save(entity);
@@ -71,7 +75,7 @@ public class RecordBankDepositCommandHandler {
             // Deux requêtes concurrentes => unique constraint
             log.info("Duplicate cantonnement credit (unique constraint): ref={}", ref);
             return new RecordBankDepositResponse(
-                    ref, true, "DUPLICATE", externalTxId, accCant, cmd.amount()
+                    ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
             );
         }
 
@@ -96,7 +100,7 @@ public class RecordBankDepositCommandHandler {
         // 4) marquer APPLIED
         entity.setStatus("APPLIED");
         entity.setLedgerExternalTxId(externalTxId);
-        entity.setAppliedAt(LocalDateTime.now());
+        entity.setAppliedAt(now);
         cantonmentRepo.save(entity);
 
         eventPublisher.publishEvent(

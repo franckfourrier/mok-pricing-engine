@@ -44,8 +44,8 @@ public class CantonmentCreditEntity {
     private String ledgerExternalTxId;
 
     @Column(name = "received_at", nullable = false)
-    private LocalDateTime receivedAt;
+    private OffsetDateTime receivedAt;
 
     @Column(name = "applied_at")
-    private LocalDateTime appliedAt;
+    private OffsetDateTime appliedAt;
 }

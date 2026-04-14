@@ -37,11 +37,16 @@ server:
 
 ledger:
   accounts:
-    cantonnement: "ACC-CANT"
-    exploitation: "ACC-EXP"
-    taxRate: "ACC-TAX-RATE"
-    taxFixed: "ACC-TAX-FIXED"
-    commissions: "ACC-COMM"
+    cantonment: ${LEDGER_CANT:ACC-CANT}
+    exploitation: ${LEDGER_EXP:ACC-EXP}
+    tax: ${LEDGER_TAX:ACC-TAX}
+    taxRate: ${ACC-TAX-RATE:ACC-TAX-RATE}
+    taxFixed: ${ACC-TAX-FIXED:ACC-TAX-FIXED}
+    external: ${ACC-EXT:ACC-EXT}
+    distributed: ${ACC-DIST:ACC-DIST}
     currency: "XAF"
-    bankClearing: "ACC-BANK-CLEAR"
+    bankClearing: ${ACC-BANK-CLEAR:ACC-BANK-CLEAR}
 
+mok:
+  currency:
+    default: "XAF"
