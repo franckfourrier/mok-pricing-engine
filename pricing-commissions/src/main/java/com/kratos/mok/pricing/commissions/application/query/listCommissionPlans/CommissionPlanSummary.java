@@ -6,6 +6,7 @@ import java.util.List;
 
 public record CommissionPlanSummary(
         String id,
+        String shortId,
         TransactionCode transactionCode,
         String transactionCodeLabel,
 

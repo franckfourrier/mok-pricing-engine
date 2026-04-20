@@ -45,8 +45,13 @@ public class GetTaxPoliciesPageQueryHandler {
                 .map(TransactionCode::label)
                 .toList();
 
+        String shortId = e.getId().length() > 8
+                ? e.getId().substring(0, 8).toUpperCase()
+                : e.getId();
+
         return new TaxPolicySummary(
                 e.getId(),
+                shortId,
                 TaxPolicyUiMapper.name(e),
                 appliedTransactions,
                 TaxPolicyUiMapper.type(e),

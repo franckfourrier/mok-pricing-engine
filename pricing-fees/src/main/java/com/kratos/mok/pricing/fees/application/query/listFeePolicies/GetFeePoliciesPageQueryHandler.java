@@ -20,13 +20,22 @@ public class GetFeePoliciesPageQueryHandler {
         int size = Math.min(Math.max(q.size(), 1), 200);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdBy.timestamp"));
 
-        // Option simple: filtrage via Spring Data "Specification" (recommandé)
+        // Option simple: filtrage via Spring Data "Specification"
         var spec = FeePolicySpecifications.from(q);
 
-        Page<FeePolicyEntity> p = jpaRepository.findAll(spec, pageable);
+        Page<FeePolicyEntity> entityPage = jpaRepository.findAll(spec, pageable);
 
-        Page<FeePolicySummary> mapped = p.map(e -> new FeePolicySummary(
+        return PageResponseDto.from(entityPage.map(this::toSummary));
+    }
+
+    private FeePolicySummary toSummary(FeePolicyEntity e) {
+        String shortId = e.getId().length() > 8
+                ? e.getId().substring(0, 8).toUpperCase()
+                : e.getId();
+
+        return new FeePolicySummary(
                 e.getId(),
+                shortId,
                 e.getTransactionType(),
                 e.getTransactionCode().label(),
                 e.getTransactionCode().sender(),
@@ -37,9 +46,7 @@ public class GetFeePoliciesPageQueryHandler {
                 e.getValidityStart(),
                 e.getValidityEnd(),
                 e.getCreatedBy().getTimestamp()
-        ));
-
-        return PageResponseDto.from(mapped);
+        );
     }
 }
 

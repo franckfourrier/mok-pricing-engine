@@ -30,8 +30,14 @@ public final class CommissionPlanReadMapper {
             default -> st.name();
         };
 
+        // Génération du Short ID (8 caractères)
+        String shortId = e.getId().length() > 8
+                ? e.getId().substring(0, 8).toUpperCase()
+                : e.getId();
+
         return new CommissionPlanSummary(
                 e.getId(),
+                shortId,
                 e.getTransactionCode(),
                 toTxLabel(e.getTransactionCode()),
                 lines,

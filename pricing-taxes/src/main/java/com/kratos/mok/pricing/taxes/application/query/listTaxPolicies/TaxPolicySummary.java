@@ -4,6 +4,7 @@ import java.util.List;
 
 public record TaxPolicySummary(
         String id,
+        String shortId,
         String name,
         List<String> appliedTransactions,
         String type,

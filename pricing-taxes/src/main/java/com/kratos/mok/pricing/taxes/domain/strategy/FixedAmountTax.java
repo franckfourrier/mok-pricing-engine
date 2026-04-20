@@ -16,10 +16,10 @@ public final class FixedAmountTax implements TaxStrategy {
         if (fixed == null) {
             throw new DomainValidationException("FIXED_TAX_REQUIRED", "Fixed tax amount is required", Map.of());
         }
-        if (fixed.amount() == null || fixed.amount().compareTo(BigDecimal.ZERO) < 0) {
+        if (fixed.amount() == null || fixed.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new DomainValidationException(
                     "INVALID_FIXED_TAX",
-                    "Fixed tax amount must be >= 0",
+                    "Fixed tax amount must be strictly > 0",
                     Map.of("amount", fixed.amount())
             );
         }
