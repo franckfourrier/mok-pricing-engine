@@ -11,17 +11,21 @@ public record TaxRate(BigDecimal value) {
     public TaxRate {
         Objects.requireNonNull(value, "rate value must not be null");
 
-        // V1: 0..1
-        if (value.compareTo(BigDecimal.ZERO) < 0 || value.compareTo(BigDecimal.ONE) > 0) {
+        // ]0, 100]
+        if (value.compareTo(BigDecimal.ZERO) <= 0 || value.compareTo(new BigDecimal("100")) > 0) {
             throw new DomainValidationException(
                     "INVALID_TAX_RATE",
-                    "Tax rate must be between 0 and 1 (e.g. 0.019 for 1.9%)",
+                    "Tax rate must be in ]0,100] (e.g. 1.9 for 1.9%)",
                     Map.of("rate", value)
             );
         }
     }
 
-    public static TaxRate of(BigDecimal v) {
-        return new TaxRate(v);
+    public static TaxRate of(BigDecimal percent) {
+        return new TaxRate(percent);
+    }
+
+    public BigDecimal asFraction() {
+        return value.divide(new BigDecimal("100"));
     }
 }

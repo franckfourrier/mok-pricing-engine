@@ -1,5 +1,7 @@
 HELP.md
 
+**/application-docker.yml
+
 # Maven / build
 target/
 !**/src/main/**/target/

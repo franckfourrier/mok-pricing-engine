@@ -1,6 +1,5 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.taxes.dto.createTaxPolicy;
 
-import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;

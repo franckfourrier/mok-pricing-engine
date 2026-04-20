@@ -60,9 +60,8 @@ public final class TaxPolicyUiMapper {
 
             case ELECTRONIC_RATE ->
                     (e.getRate() != null ?
-                            e.getRate().multiply(java.math.BigDecimal.valueOf(100))
-                                    .stripTrailingZeros()
-                                    .toPlainString() : "0") + " %";
+                            e.getRate().stripTrailingZeros()
+                                       .toPlainString() : "0") + " %";
 
             case NONE -> "0";
         };
