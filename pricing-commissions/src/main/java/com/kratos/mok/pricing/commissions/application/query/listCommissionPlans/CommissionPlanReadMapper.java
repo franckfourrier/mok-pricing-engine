@@ -6,7 +6,6 @@ import com.kratos.mok.pricing.commissions.domain.strategy.*;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEntity;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 
 import java.util.Comparator;
 import java.util.List;
@@ -48,7 +47,7 @@ public final class CommissionPlanReadMapper {
         String baseLabel = baseLabel(txCode, strategy); // "des frais de retrait (potentiel)" etc.
 
         // DepositDistributionStrategy: liste de CommissionShare (beneficiary + percentage)
-        if (strategy instanceof DepositDistributionStrategy s) {
+        if (strategy instanceof SubscriberDepositStrategy s) {
             return s.keys().stream()
                     .sorted(Comparator.comparingInt(x -> beneficiaryOrder(x.beneficiaryType())))
                     .map(x -> line(x, baseLabel))
@@ -64,11 +63,14 @@ public final class CommissionPlanReadMapper {
         }
 
         // WithdrawalAgentKratosStrategy: agentShare + kratosShare (+ coverageRate)
-        if (strategy instanceof WithdrawalAgentKratosStrategy s) {
-            var agent = new CommissionShare(BeneficiaryType.AGENT, s.agentShare());
-            var kratos = new CommissionShare(BeneficiaryType.KRATOS, s.kratosShare());
-
-            return List.of(line(agent, baseLabel), line(kratos, baseLabel));
+        if (strategy instanceof SubscriberWithdrawalStrategy s) {
+            //var agent = new CommissionShare(BeneficiaryType.AGENT, s.agentShare());
+            //var kratos = new CommissionShare(BeneficiaryType.KRATOS, s.kratosShare());
+            //return List.of(line(agent, baseLabel), line(kratos, baseLabel));
+            return s.keys().stream()
+                    .sorted(Comparator.comparingInt(x -> beneficiaryOrder(x.beneficiaryType())))
+                    .map(x -> line(x, baseLabel))
+                    .toList();
         }
 
         // fallback
@@ -125,7 +127,7 @@ public final class CommissionPlanReadMapper {
         if (txCode == SUBSCRIBER_WITHDRAWAL) {
             return "des frais de retrait";
         }
-        if (txCode == SUBSCRIBER_DEPOSIT && strategy instanceof DepositDistributionStrategy) {
+        if (txCode == SUBSCRIBER_DEPOSIT && strategy instanceof SubscriberDepositStrategy) {
             return "des frais de retrait (potentiel)";
         }
         return "des frais de transaction";

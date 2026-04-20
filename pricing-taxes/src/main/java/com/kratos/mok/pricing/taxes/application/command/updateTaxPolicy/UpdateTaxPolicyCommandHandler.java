@@ -4,6 +4,7 @@ import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.strategy.ElectronicRateTax;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -28,10 +30,11 @@ import java.util.Set;
 public class UpdateTaxPolicyCommandHandler {
 
     private final TaxPolicyRepository repository;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public UpdateTaxPolicyResponse handle(UpdateTaxPolicyCommand cmd, String actor) {
-
+        OffsetDateTime now = timeProvider.now();
         var policy = repository.findById(TaxPolicyId.from(cmd.policyId()))
                 .orElseThrow(() -> new NotFoundException(
                         "TAX_POLICY_NOT_FOUND",
@@ -66,7 +69,7 @@ public class UpdateTaxPolicyCommandHandler {
                 strategy,
                 rules,
                 actor,
-                LocalDateTime.now(),
+                now,
                 "UPDATE_AND_RESUBMIT"
         );
 

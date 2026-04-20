@@ -2,7 +2,7 @@ package com.kratos.mok.pricing.taxes.domain.event;
 
 import com.kratos.mok.pricing.shared.domain.event.PricingEvent;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -10,7 +10,7 @@ public record TaxPolicyApprovedEvent(
         String taxePolicyId,
         String superAdminUser,
         String justification,
-        LocalDateTime when
+        OffsetDateTime when
 ) implements PricingEvent {
 
     @Override
@@ -44,7 +44,7 @@ public record TaxPolicyApprovedEvent(
     }
 
     @Override
-    public LocalDateTime occurredAt() {
+    public OffsetDateTime occurredAt() {
         return when;
     }
 

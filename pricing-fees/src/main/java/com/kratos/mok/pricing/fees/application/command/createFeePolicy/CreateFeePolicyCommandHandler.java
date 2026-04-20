@@ -13,6 +13,7 @@ import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
@@ -35,9 +36,12 @@ public class CreateFeePolicyCommandHandler {
     private final FeePolicyRepository repository;
     private final RegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public CreateFeePolicyResponse handle(CreateFeePolicyCommand cmd, String authorId) {
+
+        var now = timeProvider.now();
         log.info("CreateFeePolicy: code={}, type={}, scope={}, value={}",
                 cmd.transactionCode(),
                 cmd.transactionCode().transactionType(),
@@ -73,7 +77,7 @@ public class CreateFeePolicyCommandHandler {
                 validity,
                 priority,
                 authorId,
-                LocalDateTime.now()
+                now
         );
 
         if (repository.existsConflictingPolicy(policy)) {
@@ -92,18 +96,19 @@ public class CreateFeePolicyCommandHandler {
             );
         }
 
-        policy.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
+        policy.submitForApproval(authorId, now, "SUBMIT_FOR_APPROVAL");
 
         repository.save(policy);
 
         eventPublisher.publishEvent(new FeePolicyCreatedEvent(
-                policy.id().value(), authorId, LocalDateTime.now()));
+                policy.id().value(), authorId, now));
 
         return new CreateFeePolicyResponse(policy.id().value(), true, policy.status());
     }
 
     private void block(FeePolicy p, String actor, String code, String reason, CreateFeePolicyCommand cmd) {
-        p.block(code, reason, actor, LocalDateTime.now());
+        var now = timeProvider.now();
+        p.block(code, reason, actor, now);
         repository.save(p);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
@@ -117,7 +122,8 @@ public class CreateFeePolicyCommandHandler {
                         "transactionType", cmd.transactionCode().transactionType().name(),
                         "scope", cmd.targetScope().name(),
                         "value", cmd.targetValue()
-                )
+                ),
+                now
         ));
     }
 

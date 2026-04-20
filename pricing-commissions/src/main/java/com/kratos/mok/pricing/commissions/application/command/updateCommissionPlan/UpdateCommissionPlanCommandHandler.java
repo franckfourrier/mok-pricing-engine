@@ -6,18 +6,20 @@ import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanUpdatedEven
 import com.kratos.mok.pricing.commissions.domain.gateway.CommissionRegulatoryGatekeeper;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.DepositDistributionStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberDepositStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberWithdrawalStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -26,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +41,7 @@ public class UpdateCommissionPlanCommandHandler {
     private final CommissionPlanRepository repository;
     private final CommissionRegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public UpdateCommissionPlanResponse handle(UpdateCommissionPlanCommand cmd, String actor) {
@@ -48,8 +53,9 @@ public class UpdateCommissionPlanCommandHandler {
                         Map.of("id", cmd.commissionPlanId())
                 ));
 
-        CommissionStrategy newStrategy = toStrategy(plan.transactionType(), cmd);
-        var now = LocalDateTime.now();
+        CommissionStrategy newStrategy = toStrategy(plan.transactionCode(), cmd);
+
+        OffsetDateTime now = timeProvider.now();
 
         plan.updateConfiguration(
                 newStrategy,
@@ -92,20 +98,16 @@ public class UpdateCommissionPlanCommandHandler {
         );
     }
 
-    private CommissionStrategy toStrategy(TransactionType tt, UpdateCommissionPlanCommand cmd) {
+    private CommissionStrategy toStrategy(TransactionCode tc, UpdateCommissionPlanCommand cmd) {
 
-        if (tt == TransactionType.DEPOSIT) {
-            var keys = requiredList(cmd.keys(), "keys are required for DEPOSIT");
-            return new DepositDistributionStrategy(toShares(keys));
+        if (tc == TransactionCode.SUBSCRIBER_DEPOSIT) {
+            var keys = requiredList(cmd.keys(), "keys are required for SUBSCRIBER DEPOSIT");
+            return new SubscriberDepositStrategy(toShares(keys));
         }
 
-        if (tt == TransactionType.WITHDRAWAL) {
-            String agent = required(cmd.agentPercentage(), "agentPercentage is required for WITHDRAWAL");
-            String cov = required(cmd.coverageRate(), "coverageRate is required for WITHDRAWAL");
-            return new WithdrawalAgentKratosStrategy(
-                    toPercentage(agent),
-                    toPercentage(cov)
-            );
+        if (tc == TransactionCode.SUBSCRIBER_WITHDRAWAL) {
+            var keys = requiredList(cmd.keys(), "keys are required for SUBSCRIBER WITHDRAWAL");
+            return new SubscriberWithdrawalStrategy(toShares(keys));
         }
 
         var keys = requiredList(cmd.keys(), "keys are required for DIRECT strategy");
@@ -144,7 +146,8 @@ public class UpdateCommissionPlanCommandHandler {
             String reason,
             UpdateCommissionPlanCommand cmd
     ) {
-        plan.block(code, reason, actor, LocalDateTime.now());
+        OffsetDateTime now = timeProvider.now();
+        plan.block(code, reason, actor, now);
         repository.save(plan);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
@@ -159,7 +162,8 @@ public class UpdateCommissionPlanCommandHandler {
                         "transactionType", plan.transactionType().name(),
                         "scope", plan.target().scope().name(),
                         "value", plan.target().value()
-                )
+                ),
+                now
         ));
     }
 

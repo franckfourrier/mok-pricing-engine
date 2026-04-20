@@ -19,8 +19,6 @@ public final class CreateCommissionPlanCommandMapper {
                                         k.beneficiary(), k.percentage()
                                 ))
                                 .toList(),
-                req.agentPercentage(),
-                req.coverageRate(),
                 req.validityStart(),
                 req.validityEnd()
         );

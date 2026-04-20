@@ -1,8 +1,8 @@
 package com.kratos.mok.pricing.shared.domain.vo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-public record SuspensionWindow(LocalDateTime from, LocalDateTime to) {
+public record SuspensionWindow(OffsetDateTime from, OffsetDateTime to) {
 
     public SuspensionWindow {
         if (from == null || to == null) {
@@ -13,7 +13,7 @@ public record SuspensionWindow(LocalDateTime from, LocalDateTime to) {
         }
     }
 
-    public boolean isActiveAt(LocalDateTime at) {
+    public boolean isActiveAt(OffsetDateTime at) {
         return !at.isBefore(from) && at.isBefore(to);
     }
 }

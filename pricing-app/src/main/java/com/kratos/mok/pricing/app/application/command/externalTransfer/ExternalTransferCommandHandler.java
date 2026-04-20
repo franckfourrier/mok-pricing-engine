@@ -1,7 +1,8 @@
-package com.kratos.mok.pricing.app.application.command.bankDeposit;
+package com.kratos.mok.pricing.app.application.command.externalTransfer;
 
-import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.CantonmentCreditEntity;
-import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.JpaCantonmentCreditRepository;
+import com.kratos.mok.pricing.app.application.command.bankDeposit.CantonmentCreditId;
+import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.CantonmentEntity;
+import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.JpaCantonmentRepository;
 import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionCommand;
 import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionResponse;
 import com.kratos.mok.pricing.ledger.application.port.LedgerWriter;
@@ -20,30 +21,28 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RecordBankDepositCommandHandler {
+public class ExternalTransferCommandHandler {
 
     private final LedgerWriter ledgerWriter;
-    private final JpaCantonmentCreditRepository cantonmentRepo;
+    private final JpaCantonmentRepository cantonmentRepo;
     private final ApplicationEventPublisher eventPublisher;
     private final TimeProvider timeProvider;
 
     @Value("${ledger.accounts.cantonment:ACC-CANT}")
     private String accCant;
 
-    @Value("${ledger.accounts.bankClearing:ACC-BANK-CLEAR}")
-    private String accBankClearing;
+    @Value("${ledger.accounts.external:ACC-EXT")
+    private String accExternal;
 
     @Transactional
-    public RecordBankDepositResponse handle(RecordBankDepositCommand cmd, String actor) {
+    public ExternalTransferResponse handle(ExternalTransferCommand cmd, String actor) {
         validate(cmd);
 
         String ref = cmd.referencePayment().trim();
@@ -53,19 +52,18 @@ public class RecordBankDepositCommandHandler {
         // 1) idempotence DB
         if (cantonmentRepo.existsByPaymentReference(ref)) {
             log.info("Duplicate cantonnement credit: ref={}", ref);
-            return new RecordBankDepositResponse(
+            return new ExternalTransferResponse(
                     ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
             );
         }
 
         // 2) enregistrer RECEIVED (protège concurrence)
-        var entity = new CantonmentCreditEntity();
-        entity.setId(CantonmentCreditId.generate().value());
+        var entity = new CantonmentEntity();
+        entity.setId(CantonmentDebitId.generate().value());
         entity.setPaymentReference(ref);
         entity.setAmount(cmd.amount().amount().toPlainString());
         entity.setCurrency(cmd.amount().currency());
-        entity.setSuperDistributorId(cmd.superDistributorId().trim());
-        entity.setOccurredAt(cmd.occurredAt());
+        entity.setPartnerId(cmd.partnerId().trim());
         entity.setStatus("RECEIVED");
         entity.setReceivedAt(now);
 
@@ -73,8 +71,8 @@ public class RecordBankDepositCommandHandler {
             cantonmentRepo.save(entity);
         } catch (DataIntegrityViolationException e) {
             // Deux requêtes concurrentes => unique constraint
-            log.info("Duplicate cantonnement credit (unique constraint): ref={}", ref);
-            return new RecordBankDepositResponse(
+            log.info("Duplicate cantonnement debit (unique constraint): ref={}", ref);
+            return new ExternalTransferResponse(
                     ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
             );
         }
@@ -83,15 +81,15 @@ public class RecordBankDepositCommandHandler {
         Money amount = cmd.amount();
 
         List<Posting> postings = List.of(
-                debit(accBankClearing, amount, LedgerEntryKind.BANK_DEPOSIT,
-                        ref, "Cantonnement credit (clearing debit) ref=" + ref),
-                credit(accCant, amount, LedgerEntryKind.BANK_DEPOSIT,
-                        ref, "Cantonnement credit (cantonnement credit) ref=" + ref)
+                credit(accExternal, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
+                        ref, "External transfer (external credit) ref=" + ref),
+                debit(accCant, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
+                        ref, "External transfer (cantonnement debit) ref=" + ref)
         );
 
         var ledgerCmd = new RecordLedgerTransactionCommand(
                 externalTxId,
-                cmd.occurredAt(),
+                now,
                 postings
         );
 
@@ -106,11 +104,11 @@ public class RecordBankDepositCommandHandler {
         eventPublisher.publishEvent(
                 new LedgerEntriesCreatedEvent(
                         cmd.referencePayment(),
-                        cmd.occurredAt()
+                        now
                 )
         );
 
-        return new RecordBankDepositResponse(
+        return new ExternalTransferResponse(
                 ref,
                 ledgerRes.recorded(),
                 "APPLIED",
@@ -128,7 +126,7 @@ public class RecordBankDepositCommandHandler {
         return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
     }
 
-    private void validate(RecordBankDepositCommand cmd) {
+    private void validate(ExternalTransferCommand cmd) {
         if (cmd == null) throw new IllegalArgumentException("command is required");
 
         if (cmd.referencePayment() == null || cmd.referencePayment().isBlank()) {
@@ -140,11 +138,8 @@ public class RecordBankDepositCommandHandler {
         if (cmd.amount().isZero() || cmd.amount().isNegative()) {
             throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0", Map.of("amount", cmd.amount().toString()));
         }
-        if (cmd.superDistributorId() == null || cmd.superDistributorId().isBlank()) {
-            throw new DomainValidationException("SUPER_DISTRIBUTOR_REQUIRED", "superDistributeur is required", Map.of());
-        }
-        if (cmd.occurredAt() == null) {
-            throw new DomainValidationException("OCCURRED_AT_REQUIRED", "occurredAt is required", Map.of());
+        if (cmd.partnerId() == null || cmd.partnerId().isBlank()) {
+            throw new DomainValidationException("PARTNER", "partner is required", Map.of());
         }
         if (cmd.amount().currency() == null || cmd.amount().currency().isBlank()) {
             throw new DomainValidationException("CURRENCY_REQUIRED", "currency is required", Map.of());

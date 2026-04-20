@@ -14,6 +14,8 @@ import com.kratos.mok.pricing.shared.domain.exception.InvalidStateException;
 import com.kratos.mok.pricing.shared.domain.vo.*;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -85,7 +87,7 @@ public class FeePolicy {
             ValidityPeriod validity,
             Priority priority,
             String authorId,
-            LocalDateTime when
+            OffsetDateTime when
     ) {
         var id = FeePolicyId.generate();
         var created = new AuditInfo(authorId, when, "DRAFT_CREATION");
@@ -156,7 +158,7 @@ public class FeePolicy {
             ValidityPeriod validity,
             Priority priority,
             String systemActor,
-            LocalDateTime when
+            OffsetDateTime when
     ) {
         var id = FeePolicyId.generate();
         var audit = new AuditInfo(systemActor, when, "SYSTEM_BOOTSTRAP");
@@ -189,7 +191,7 @@ public class FeePolicy {
             ValidityPeriod newValidity,
             Priority newPriority,
             String authorId,
-            LocalDateTime when,
+            OffsetDateTime when,
             String reason
     ) {
         ensureEditable();
@@ -214,7 +216,7 @@ public class FeePolicy {
         validateInvariants();
     }
 
-    public void block(String code, String reason, String actor, LocalDateTime when) {
+    public void block(String code, String reason, String actor, OffsetDateTime when) {
         if (code == null || code.isBlank()) {
             throw new DomainValidationException("BLOCK_CODE_REQUIRED", "block code is required", Map.of());
         }
@@ -234,7 +236,7 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actor, when, reason);
     }
 
-    public void submitForApproval(String authorId, LocalDateTime when, String reason) {
+    public void submitForApproval(String authorId, OffsetDateTime when, String reason) {
         if (status != FeePolicyStatus.DRAFT) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -246,7 +248,7 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdminId, LocalDateTime when) {
+    public void approve(String superAdminId, OffsetDateTime when) {
         if (this.status != FeePolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "FEE_POLICY_NOT_APPROVABLE",
@@ -260,7 +262,7 @@ public class FeePolicy {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void reject(String superAdminId, LocalDateTime when, String justification) {
+    public void reject(String superAdminId, OffsetDateTime when, String justification) {
         if (status != FeePolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -273,7 +275,7 @@ public class FeePolicy {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void suspend(LocalDateTime from, LocalDateTime to, String actorId, LocalDateTime when, String reason) {
+    public void suspend(OffsetDateTime from, OffsetDateTime to, String actorId, OffsetDateTime when, String reason) {
         if (status != FeePolicyStatus.ACTIVE) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -294,7 +296,7 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "SUSPEND" : reason);
     }
 
-    public void resume(String actorId, LocalDateTime when, String reason) {
+    public void resume(String actorId, OffsetDateTime when, String reason) {
         if (status != FeePolicyStatus.SUSPENDED) {
             throw new IllegalStateException("Only SUSPENDED policies can be resumed.");
         }
@@ -303,7 +305,7 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "RESUME" : reason);
     }
 
-    public void archive(String actorId, LocalDateTime when, String reason) {
+    public void archive(String actorId, OffsetDateTime when, String reason) {
         if (status == FeePolicyStatus.ARCHIVED) {
             return;
         }
@@ -311,10 +313,10 @@ public class FeePolicy {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "ARCHIVE" : reason);
     }
 
-    public FeeComputation computeFee(Money transactionAmount, TransactionContext ctx, LocalDateTime now) {
+    public FeeComputation computeFee(Money transactionAmount, TransactionContext ctx, OffsetDateTime now) {
         requireNonNull(transactionAmount, "transactionAmount");
         requireNonNull(ctx, "ctx");
-        var at = (now == null) ? LocalDateTime.now() : now;
+        var at = (now == null) ? OffsetDateTime.now(ZoneOffset.UTC) : now;
 
         ensureApplicable(at, ctx);
 
@@ -345,7 +347,7 @@ public class FeePolicy {
         );
     }
 
-    public boolean isApplicableAt(LocalDateTime at, TransactionContext ctx) {
+    public boolean isApplicableAt(OffsetDateTime at, TransactionContext ctx) {
         try {
             ensureApplicable(at, ctx);
             return true;
@@ -354,7 +356,7 @@ public class FeePolicy {
         }
     }
 
-    private void ensureApplicable(LocalDateTime at, TransactionContext ctx) {
+    private void ensureApplicable(OffsetDateTime at, TransactionContext ctx) {
         if (status != FeePolicyStatus.ACTIVE && status != FeePolicyStatus.SUSPENDED) {
             throw new IllegalStateException("FeePolicy not applicable (status=" + status + ")");
         }

@@ -1,10 +1,10 @@
 package com.kratos.mok.pricing.commissions.domain.event;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record CommissionPlanUpdatedEvent(
         String commissionPlanId,
         String actor,
         String status,
-        LocalDateTime occurredAt
+        OffsetDateTime occurredAt
 ) {}

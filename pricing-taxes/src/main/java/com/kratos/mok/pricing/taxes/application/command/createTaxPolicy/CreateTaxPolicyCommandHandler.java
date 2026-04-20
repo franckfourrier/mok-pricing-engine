@@ -4,6 +4,7 @@ import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
 import com.kratos.mok.pricing.taxes.domain.TaxTarget;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,9 +31,12 @@ import java.util.Set;
 public class CreateTaxPolicyCommandHandler {
 
     private final TaxPolicyRepository repository;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public CreateTaxPolicyResponse handle(CreateTaxPolicyCommand cmd, String actor) {
+
+        OffsetDateTime now = timeProvider.now();
 
         if (cmd.transactionCodes() == null || cmd.transactionCodes().isEmpty()) {
             throw new DomainValidationException(
@@ -62,7 +67,7 @@ public class CreateTaxPolicyCommandHandler {
                 strategy,
                 rules,
                 actor,
-                LocalDateTime.now()
+                now
         );
 
         if (repository.existsConflictingPolicy(policy)) {
@@ -71,7 +76,7 @@ public class CreateTaxPolicyCommandHandler {
             );
         }
 
-        policy.submitForApproval(actor, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
+        policy.submitForApproval(actor, now, "SUBMIT_FOR_APPROVAL");
 
         repository.save(policy);
 

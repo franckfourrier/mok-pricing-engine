@@ -12,7 +12,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(
@@ -65,10 +65,10 @@ public class FeePolicyEntity {
     private Integer minMonthlyTxCount;
 
     @Column(name = "validity_start")
-    private LocalDateTime validityStart;
+    private OffsetDateTime validityStart;
 
     @Column(name = "validity_end")
-    private LocalDateTime validityEnd;
+    private OffsetDateTime validityEnd;
 
     @Column(name = "kyc_required", nullable = false)
     private boolean kycRequired;
@@ -80,10 +80,10 @@ public class FeePolicyEntity {
     private String blockReason;
 
     @Column(name = "suspension_from")
-    private LocalDateTime suspensionFrom;
+    private OffsetDateTime suspensionFrom;
 
     @Column(name = "suspension_to")
-    private LocalDateTime suspensionTo;
+    private OffsetDateTime suspensionTo;
 
     @Embedded
     @AttributeOverrides({

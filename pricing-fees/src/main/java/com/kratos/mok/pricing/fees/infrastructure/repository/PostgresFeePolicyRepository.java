@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,7 +37,7 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
 
     @Override
     public List<FeePolicy> findCandidates(TransactionType type, String accountType, String accountId) {
-        LocalDateTime at = LocalDateTime.now();
+        OffsetDateTime at = OffsetDateTime.now();
 
         String normalizedAccountType = (accountType == null || accountType.isBlank())
                 ? null
@@ -56,11 +58,16 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
         TargetScope scope = policy.target().scope();
         String value = normalize(scope, policy.target().value());
 
-        LocalDateTime start = policy.validity().start();
-        LocalDateTime end = policy.validity().end();
+        OffsetDateTime start = policy.validity().start();
+        OffsetDateTime end = policy.validity().end();
 
-        LocalDateTime startBound = (start == null) ? LocalDateTime.of(1900, 1, 1, 0, 0) : start;
-        LocalDateTime endBound = (end == null) ? LocalDateTime.of(9999, 12, 31, 23, 59, 59) : end;
+        OffsetDateTime startBound = (start == null)
+                ? LocalDateTime.of(1900, 1, 1, 0, 0).atOffset(ZoneOffset.UTC)
+                : start;
+
+        OffsetDateTime endBound = (end == null)
+                ? LocalDateTime.of(9999, 12, 31, 23, 59, 59).atOffset(ZoneOffset.UTC)
+                : end;
 
         return jpaRepository.existsConflict(
                 policy.transactionCode(),
@@ -89,7 +96,7 @@ public class PostgresFeePolicyRepository implements FeePolicyRepository {
 
     @Override
     public List<FeePolicy> findCandidates(TransactionCode transactionCode, String accountType, String accountId) {
-        LocalDateTime at = LocalDateTime.now();
+        OffsetDateTime at = OffsetDateTime.now();
 
         String normalizedAccountType = (accountType == null || accountType.isBlank())
                 ? null

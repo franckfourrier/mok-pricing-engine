@@ -1,6 +1,7 @@
 package com.kratos.mok.pricing.taxes.application.command.rejectTaxPolicy;
 
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.taxes.domain.event.TaxPolicyApprovedEvent;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 @Service
@@ -20,9 +22,12 @@ public class RejectTaxPolicyCommandHandler {
 
     private final TaxPolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public RejectTaxPolicyResponse handle(RejectTaxPolicyCommand cmd, String actor) {
+
+        OffsetDateTime now = timeProvider.now();
 
         var policy = repository.findById(TaxPolicyId.from(cmd.policyId()))
                 .orElseThrow(() -> new NotFoundException(
@@ -34,8 +39,6 @@ public class RejectTaxPolicyCommandHandler {
         String justification = (cmd.reason() == null || cmd.reason().isBlank())
                 ? "REJECTED"
                 : cmd.reason().trim();
-
-        var now = LocalDateTime.now();
 
         policy.reject(actor, now, justification);
 

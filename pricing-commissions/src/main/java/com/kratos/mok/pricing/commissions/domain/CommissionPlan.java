@@ -15,6 +15,8 @@ import com.kratos.mok.pricing.shared.domain.vo.SuspensionWindow;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -78,7 +80,7 @@ public class CommissionPlan {
             ValidityPeriod validity,
             Priority priority,
             String authorId,
-            LocalDateTime when
+            OffsetDateTime when
     ) {
         var id = CommissionPlanId.generate();
         var created = new AuditInfo(authorId, when, "DRAFT_CREATION");
@@ -137,7 +139,7 @@ public class CommissionPlan {
             ValidityPeriod newValidity,
             Priority newPriority,
             String authorId,
-            LocalDateTime when,
+            OffsetDateTime when,
             String reason
     ) {
         ensureUpdatable();
@@ -158,7 +160,7 @@ public class CommissionPlan {
         validateInvariants();
     }
 
-    public void submitForApproval(String authorId, LocalDateTime when, String reason) {
+    public void submitForApproval(String authorId, OffsetDateTime when, String reason) {
         if (status != CommissionPlanStatus.DRAFT) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -170,7 +172,7 @@ public class CommissionPlan {
         this.lastModified = new AuditInfo(authorId, when, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdminId, LocalDateTime when) {
+    public void approve(String superAdminId, OffsetDateTime when) {
         if (status != CommissionPlanStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "COMMISSION_PLAN_NOT_APPROVABLE",
@@ -184,7 +186,7 @@ public class CommissionPlan {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void reject(String superAdminId, LocalDateTime when, String justification) {
+    public void reject(String superAdminId, OffsetDateTime when, String justification) {
         if (status != CommissionPlanStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -201,7 +203,7 @@ public class CommissionPlan {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void suspend(LocalDateTime from, LocalDateTime to, String actorId, LocalDateTime when, String reason) {
+    public void suspend(OffsetDateTime from, OffsetDateTime to, String actorId, OffsetDateTime when, String reason) {
         if (status != CommissionPlanStatus.ACTIVE) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -221,7 +223,7 @@ public class CommissionPlan {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "SUSPEND" : reason);
     }
 
-    public void resume(String actorId, LocalDateTime when, String reason) {
+    public void resume(String actorId, OffsetDateTime when, String reason) {
         if (status != CommissionPlanStatus.SUSPENDED) {
             throw new InvalidStateException(
                     "INVALID_STATUS_TRANSITION",
@@ -234,7 +236,7 @@ public class CommissionPlan {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "RESUME" : reason);
     }
 
-    public void archive(String actorId, LocalDateTime when, String reason) {
+    public void archive(String actorId, OffsetDateTime when, String reason) {
         if (status == CommissionPlanStatus.ARCHIVED) {
             return;
         }
@@ -242,7 +244,7 @@ public class CommissionPlan {
         this.lastModified = new AuditInfo(actorId, when, reason == null ? "ARCHIVE" : reason);
     }
 
-    public void block(String code, String reason, String actorId, LocalDateTime when) {
+    public void block(String code, String reason, String actorId, OffsetDateTime when) {
         if (code == null || code.isBlank()) {
             throw new DomainValidationException("BLOCK_CODE_REQUIRED", "block code is required", Map.of());
         }
@@ -270,7 +272,7 @@ public class CommissionPlan {
         );
     }
 
-    public boolean isApplicableAt(LocalDateTime at) {
+    public boolean isApplicableAt(OffsetDateTime at) {
         try {
             ensureApplicable(at);
             return true;
@@ -279,8 +281,8 @@ public class CommissionPlan {
         }
     }
 
-    private void ensureApplicable(LocalDateTime at) {
-        var when = (at == null) ? LocalDateTime.now() : at;
+    private void ensureApplicable(OffsetDateTime at) {
+        var when = (at == null) ? OffsetDateTime.now(ZoneOffset.UTC) : at;
 
         if (status != CommissionPlanStatus.ACTIVE && status != CommissionPlanStatus.SUSPENDED) {
             throw new IllegalStateException("CommissionPlan not applicable (status=" + status + ")");

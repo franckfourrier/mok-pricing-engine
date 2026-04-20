@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(
-        name = "cantonment_credits",
+        name = "cantonment",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_cantonment_reference",
                 columnNames = "payment_reference"
@@ -16,7 +16,7 @@ import java.time.OffsetDateTime;
 )
 @Getter
 @Setter
-public class CantonmentCreditEntity {
+public class CantonmentEntity {
 
     @Id
     @Column(nullable = false, updatable = false)
@@ -31,8 +31,8 @@ public class CantonmentCreditEntity {
     @Column(name = "currency", nullable = false, length = 8)
     private String currency;
 
-    @Column(name = "super_distributor_id", nullable = false, length = 120)
-    private String superDistributorId;
+    @Column(name = "partner_id", nullable = false, length = 120)
+    private String partnerId;
 
     @Column(name = "occurred_at", nullable = false)
     private OffsetDateTime occurredAt;

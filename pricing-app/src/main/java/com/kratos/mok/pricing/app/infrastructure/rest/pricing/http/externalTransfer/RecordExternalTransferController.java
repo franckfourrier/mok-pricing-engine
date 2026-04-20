@@ -1,9 +1,12 @@
-package com.kratos.mok.pricing.app.infrastructure.rest.pricing.http.bankDeposit;
+package com.kratos.mok.pricing.app.infrastructure.rest.pricing.http.externalTransfer;
 
-import com.kratos.mok.pricing.app.application.command.bankDeposit.BankDepositCommandHandler;
 import com.kratos.mok.pricing.app.application.command.bankDeposit.BankDepositResponse;
+import com.kratos.mok.pricing.app.application.command.externalTransfer.ExternalTransferCommandHandler;
+import com.kratos.mok.pricing.app.application.command.externalTransfer.ExternalTransferResponse;
 import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.bankDeposit.BankDepositNotificationMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.bankDeposit.BankDepositNotificationRequest;
+import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.externalTransfer.ExternalTransferNotificationMapper;
+import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.externalTransfer.ExternalTransferNotificationRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,20 +18,20 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1/pricing")
 @RequiredArgsConstructor
-public class RecordCantonmentCreditController {
+public class RecordExternalTransferController {
 
-    private final BankDepositCommandHandler handler;
+    private final ExternalTransferCommandHandler handler;
 
-    @PostMapping("/cantonment/credits")
+    @PostMapping("/cantonment/debits")
     @PreAuthorize("hasAnyRole('SYSTEM','ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<BankDepositResponse> record(
-            @Valid @RequestBody BankDepositNotificationRequest request,
+    public ResponseEntity<ExternalTransferResponse> record(
+            @Valid @RequestBody ExternalTransferNotificationRequest request,
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Actor-Id", required = false) String actorId
     ) {
         String actor = (actorId != null && !actorId.isBlank()) ? actorId.trim() : resolveAuthorId(jwt);
 
-        var cmd = BankDepositNotificationMapper.toCommand(request);
+        var cmd = ExternalTransferNotificationMapper.toCommand(request);
         return ResponseEntity.ok(handler.handle(cmd, actor));
     }
 

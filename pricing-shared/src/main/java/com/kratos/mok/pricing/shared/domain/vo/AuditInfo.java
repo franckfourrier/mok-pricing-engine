@@ -1,6 +1,6 @@
 package com.kratos.mok.pricing.shared.domain.vo;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
-public record AuditInfo(String author, LocalDateTime timestamp, String reason) {}
+public record AuditInfo(String author, OffsetDateTime timestamp, String reason) {}
 

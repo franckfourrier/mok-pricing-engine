@@ -4,17 +4,18 @@ import com.kratos.mok.pricing.shared.domain.vo.AuditInfo;
 import jakarta.persistence.Embeddable;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Embeddable
 public class AuditEmbeddable {
 
     private String author;
-    private LocalDateTime timestamp;
+    private OffsetDateTime timestamp;
     private String reason;
 
     protected AuditEmbeddable() {}
 
-    public AuditEmbeddable(String author, LocalDateTime timestamp, String reason) {
+    public AuditEmbeddable(String author, OffsetDateTime timestamp, String reason) {
         this.author = author;
         this.timestamp = timestamp;
         this.reason = reason;
@@ -31,10 +32,10 @@ public class AuditEmbeddable {
     }
 
     public String getAuthor() { return author; }
-    public LocalDateTime getTimestamp() { return timestamp; }
+    public OffsetDateTime getTimestamp() { return timestamp; }
     public String getReason() { return reason; }
 
     public void setAuthor(String author) { this.author = author; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public void setTimestamp(OffsetDateTime timestamp) { this.timestamp = timestamp; }
     public void setReason(String reason) { this.reason = reason; }
 }

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateFeePolicyRequest(
@@ -35,8 +36,8 @@ public record CreateFeePolicyRequest(
         String minFee,
         String maxFee,
 
-        LocalDateTime validityStart,
-        LocalDateTime validityEnd,
+        OffsetDateTime validityStart,
+        OffsetDateTime validityEnd,
 
         @NotNull KycRequirement kycRequirement,
 

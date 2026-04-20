@@ -1,8 +1,7 @@
 package com.kratos.mok.pricing.commissions.application.query.listCommissionPlans;
 
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CommissionPlanSummary(
@@ -12,7 +11,7 @@ public record CommissionPlanSummary(
 
         List<CommissionLineSummary> lines,
 
-        LocalDateTime date,
+        OffsetDateTime date,
         String statusLabel,
         String statusRaw
 ) {}

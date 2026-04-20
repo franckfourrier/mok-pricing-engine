@@ -4,13 +4,12 @@ import com.kratos.mok.pricing.fees.domain.event.FeePolicyApprovedEvent;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -20,6 +19,7 @@ public class RejectFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public RejectFeePolicyResponse handle(RejectFeePolicyCommand cmd, String actor) {
@@ -35,7 +35,7 @@ public class RejectFeePolicyCommandHandler {
                 ? "REJECTED"
                 : cmd.reason().trim();
 
-        var now = LocalDateTime.now();
+        var now = timeProvider.now();
 
         policy.reject(actor, now, justification);
 

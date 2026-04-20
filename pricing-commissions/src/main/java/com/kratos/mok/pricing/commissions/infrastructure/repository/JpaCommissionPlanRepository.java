@@ -9,8 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface JpaCommissionPlanRepository
@@ -33,7 +32,7 @@ public interface JpaCommissionPlanRepository
             @Param("type") TransactionType type,
             @Param("accountType") String accountType,
             @Param("accountId") String accountId,
-            @Param("at") LocalDateTime at
+            @Param("at") OffsetDateTime at
     );
 
     @Query("""
@@ -53,7 +52,7 @@ public interface JpaCommissionPlanRepository
             @Param("transactionCode") TransactionCode transactionCode,
             @Param("accountType") String accountType,
             @Param("accountId") String accountId,
-            @Param("at") LocalDateTime at
+            @Param("at") OffsetDateTime at
     );
 
     boolean existsByTransactionCodeAndTargetScopeAndTargetValue(
@@ -82,8 +81,8 @@ public interface JpaCommissionPlanRepository
             @Param("transactionCode") TransactionCode transactionCode,
             @Param("scope") TargetScope scope,
             @Param("value") String value,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("excludedId") String excludedId
     );
 

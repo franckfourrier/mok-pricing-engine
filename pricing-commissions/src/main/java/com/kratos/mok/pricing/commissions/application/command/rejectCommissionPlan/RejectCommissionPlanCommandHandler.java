@@ -4,6 +4,7 @@ import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanApprovedEve
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionPlanId;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,6 +21,7 @@ public class RejectCommissionPlanCommandHandler {
 
     private final CommissionPlanRepository repository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public RejectCommissionPlanResponse handle(RejectCommissionPlanCommand cmd, String actor) {
@@ -35,7 +37,7 @@ public class RejectCommissionPlanCommandHandler {
                 ? "REJECTED"
                 : cmd.reason().trim();
 
-        var now = LocalDateTime.now();
+        var now = timeProvider.now();
 
         plan.reject(actor, now, justification);
 

@@ -4,13 +4,14 @@ import com.kratos.mok.pricing.commissions.domain.CommissionPlan;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 public class CommissionPlanResolver {
 
-    public CommissionPlan resolveBestPlan(List<CommissionPlan> candidates, LocalDateTime now) {
+    public CommissionPlan resolveBestPlan(List<CommissionPlan> candidates, OffsetDateTime now) {
         if (candidates == null || candidates.isEmpty()) {
             throw new NotFoundException(
                     "COMMISSION_PLAN_NOT_FOUND",
@@ -19,7 +20,7 @@ public class CommissionPlanResolver {
             );
         }
 
-        var at = (now == null) ? LocalDateTime.now() : now;
+        var at = (now == null) ? OffsetDateTime.now() : now;
 
         return candidates.stream()
                 .filter(p -> p.isApplicableAt(at))

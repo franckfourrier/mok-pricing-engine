@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface JpaCantonmentCreditRepository extends JpaRepository<CantonmentCreditEntity, String> {
+public interface JpaCantonmentRepository extends JpaRepository<CantonmentEntity, String> {
     boolean existsByPaymentReference(String paymentReference);
-    Optional<CantonmentCreditEntity> findByPaymentReference(String paymentReference);
+    Optional<CantonmentEntity> findByPaymentReference(String paymentReference);
 }

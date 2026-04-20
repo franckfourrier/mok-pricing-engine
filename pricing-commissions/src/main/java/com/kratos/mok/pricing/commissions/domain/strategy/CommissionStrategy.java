@@ -6,12 +6,12 @@ import com.kratos.mok.pricing.commissions.domain.enums.CommissionStrategyType;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = DepositDistributionStrategy.class, name = "DEPOSIT_DISTRIBUTION"),
-        @JsonSubTypes.Type(value = WithdrawalAgentKratosStrategy.class, name = "WITHDRAWAL_AGENT_KRATOS"),
+        @JsonSubTypes.Type(value = SubscriberDepositStrategy.class, name = "SUBSCRIBER_DEPOSIT"),
+        @JsonSubTypes.Type(value = SubscriberWithdrawalStrategy.class, name = "SUBSCRIBER_WITHDRAWAL"),
         @JsonSubTypes.Type(value = DirectStrategy.class, name = "DIRECT")
 })
 public sealed interface CommissionStrategy
-        permits DepositDistributionStrategy, WithdrawalAgentKratosStrategy, DirectStrategy {
+        permits SubscriberDepositStrategy, SubscriberWithdrawalStrategy, DirectStrategy {
 
     CommissionStrategyType type();
 }

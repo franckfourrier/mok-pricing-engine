@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(
@@ -85,20 +86,20 @@ public class CommissionPlanEntity {
     // ------------------------------------------------------------------
 
     @Column(name = "validity_start")
-    private LocalDateTime validityStart;
+    private OffsetDateTime validityStart;
 
     @Column(name = "validity_end")
-    private LocalDateTime validityEnd;
+    private OffsetDateTime validityEnd;
 
     // ------------------------------------------------------------------
     // Suspension
     // ------------------------------------------------------------------
 
     @Column(name = "suspension_from")
-    private LocalDateTime suspensionFrom;
+    private OffsetDateTime suspensionFrom;
 
     @Column(name = "suspension_to")
-    private LocalDateTime suspensionTo;
+    private OffsetDateTime suspensionTo;
 
     // ------------------------------------------------------------------
     // Audit — Created

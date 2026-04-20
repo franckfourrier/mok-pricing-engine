@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateCommissionPlanRequest(
@@ -14,10 +15,8 @@ public record CreateCommissionPlanRequest(
         //@NotNull TargetScope targetScope,
         //@NotBlank String targetValue,
         @Valid List<KeyRequest> keys,
-        String agentPercentage,
-        String coverageRate,
-        LocalDateTime validityStart,
-        LocalDateTime validityEnd
+        OffsetDateTime validityStart,
+        OffsetDateTime validityEnd
 ) {
     public record KeyRequest(
             @NotBlank String beneficiary,

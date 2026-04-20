@@ -5,13 +5,12 @@ import com.kratos.mok.pricing.commissions.domain.CommissionPlan;
 import com.kratos.mok.pricing.commissions.domain.enums.BeneficiaryType;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.DepositDistributionStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberDepositStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberWithdrawalStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
@@ -71,7 +70,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
     ) {
         if (strategy == null) throw new IllegalArgumentException("strategy is required");
 
-        if (strategy instanceof DepositDistributionStrategy s) {
+        if (strategy instanceof SubscriberDepositStrategy s) {
             ensure(txCode == SUBSCRIBER_DEPOSIT, "DEPOSIT strategy used for non-DEPOSIT");
             return distributeShares(s.keys(), ctx, base, true);
         }
@@ -80,22 +79,22 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             return distributeShares(s.keys(), ctx, base, false);
         }
 
-        if (strategy instanceof WithdrawalAgentKratosStrategy s) {
+        if (strategy instanceof SubscriberWithdrawalStrategy s) {
             ensure(txCode == SUBSCRIBER_WITHDRAWAL, "WITHDRAWAL strategy used for non-WITHDRAWAL");
 
-            Percentage agent = s.agentShare();
-            Percentage coverage = s.coverageRate();
+            //Percentage agent = s.agentShare();
+            //Percentage coverage = s.coverageRate();
             //Percentage kratos = s.kratosShare();
 
-            if (agent.value().add(coverage.value()).compareTo(BigDecimal.ONE) > 0) {
+            /*if (agent.value().add(coverage.value()).compareTo(BigDecimal.ONE) > 0) {
                 throw new IllegalArgumentException("Invalid withdrawal plan: agentShare + coverageRate > 1");
-            }
+            }*/
 
             List<CommissionDistributionResult.Line> lines = new ArrayList<>();
             // On récupère l'ID du compte AGENT depuis le contexte
             String agentAccountId = ctx.getAccountFor("AGENT");
 
-            lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
+            //lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
             //lines.add(line(BeneficiaryType.KRATOS, kratos, base));
             return lines;
         }

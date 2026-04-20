@@ -1,6 +1,9 @@
 package com.kratos.mok.pricing.shared.domain.event;
 
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
+
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,7 +18,7 @@ public record ConfigurationBlockedEvent(
         String blockCode,
         String reason,
         Map<String, Object> technicalDetails,
-        LocalDateTime occurredAt
+        OffsetDateTime occurredAt
 ) implements PricingEvent {
 
     public ConfigurationBlockedEvent(
@@ -24,7 +27,8 @@ public record ConfigurationBlockedEvent(
             String actor,
             String blockCode,
             String reason,
-            Map<String, Object> technicalDetails
+            Map<String, Object> technicalDetails,
+            TimeProvider timeProvider
     ) {
         this(
                 aggregateId,
@@ -33,7 +37,7 @@ public record ConfigurationBlockedEvent(
                 blockCode,
                 reason,
                 technicalDetails,
-                LocalDateTime.now()
+                timeProvider.now()
         );
     }
 

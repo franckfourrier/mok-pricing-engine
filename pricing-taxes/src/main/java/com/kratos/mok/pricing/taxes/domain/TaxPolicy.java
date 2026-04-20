@@ -14,6 +14,7 @@ import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -72,7 +73,7 @@ public class TaxPolicy {
             TaxStrategy strategy,
             TaxRules rules,
             String author,
-            LocalDateTime when
+            OffsetDateTime when
     ) {
         var created = new AuditInfo(author, when, "DRAFT_CREATION");
         return new TaxPolicy(
@@ -118,7 +119,7 @@ public class TaxPolicy {
         );
     }
 
-    public void submitForApproval(String actor, LocalDateTime at, String reason) {
+    public void submitForApproval(String actor, OffsetDateTime at, String reason) {
         if (status != TaxPolicyStatus.DRAFT) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_SUBMITTABLE",
@@ -130,7 +131,7 @@ public class TaxPolicy {
         this.lastModified = new AuditInfo(actor, at, reason == null ? "SUBMIT_FOR_APPROVAL" : reason);
     }
 
-    public void approve(String superAdmin, LocalDateTime at) {
+    public void approve(String superAdmin, OffsetDateTime at) {
         if (status != TaxPolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_APPROVABLE",
@@ -143,7 +144,7 @@ public class TaxPolicy {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void suspend(String actor, LocalDateTime at, String reason) {
+    public void suspend(String actor, OffsetDateTime at, String reason) {
         if (status != TaxPolicyStatus.ACTIVE) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_SUSPENDABLE",
@@ -155,7 +156,7 @@ public class TaxPolicy {
         this.lastModified = new AuditInfo(actor, at, reason == null ? "SUSPENDED" : reason);
     }
 
-    public void resume(String actor, LocalDateTime at, String reason) {
+    public void resume(String actor, OffsetDateTime at, String reason) {
         if (status != TaxPolicyStatus.SUSPENDED) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_RESUMABLE",
@@ -167,7 +168,7 @@ public class TaxPolicy {
         this.lastModified = new AuditInfo(actor, at, reason == null ? "RESUMED" : reason);
     }
 
-    public void reject(String superAdmin, LocalDateTime at, String justification) {
+    public void reject(String superAdmin, OffsetDateTime at, String justification) {
         if (status != TaxPolicyStatus.PENDING_APPROVAL) {
             throw new InvalidStateException(
                     "TAX_POLICY_NOT_REJECTABLE",
@@ -180,7 +181,7 @@ public class TaxPolicy {
         this.lastModified = this.approvedOrRejected;
     }
 
-    public void block(String code, String reason, String actor, LocalDateTime at) {
+    public void block(String code, String reason, String actor, OffsetDateTime at) {
         if (code == null || code.isBlank()) {
             throw new DomainValidationException("BLOCK_CODE_REQUIRED", "Block code is required", Map.of());
         }
@@ -192,7 +193,7 @@ public class TaxPolicy {
         this.lastModified = new AuditInfo(actor, at, reason);
     }
 
-    public void archive(String actor, LocalDateTime at, String reason) {
+    public void archive(String actor, OffsetDateTime at, String reason) {
         if (status == TaxPolicyStatus.ARCHIVED) return;
         this.status = TaxPolicyStatus.ARCHIVED;
         this.lastModified = new AuditInfo(actor, at, reason == null ? "ARCHIVE" : reason);
@@ -204,7 +205,7 @@ public class TaxPolicy {
             TaxStrategy strategy,
             TaxRules rules,
             String actor,
-            LocalDateTime at,
+            OffsetDateTime at,
             String reason
     ) {
         ensureUpdatable();

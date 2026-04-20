@@ -7,6 +7,7 @@ import com.kratos.mok.pricing.fees.domain.strategy.*;
 import com.kratos.mok.pricing.fees.domain.vo.FeePercentage;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
@@ -27,9 +28,12 @@ public class FeePolicyBootstrapService {
     public static final String SYSTEM_ACTOR = "SYSTEM_BOOTSTRAP";
 
     private final FeePolicyRepository repository;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public void bootstrap(FeeBootstrapProperties props) {
+
+        var now = timeProvider.now();
 
         if (props.version() == null) {
             throw new IllegalArgumentException("bootstrap version is required");
@@ -38,8 +42,6 @@ public class FeePolicyBootstrapService {
         final String ccy = (props.currency() == null || props.currency().isBlank())
                 ? Money.DEFAULT_CURRENCY
                 : props.currency().trim().toUpperCase();
-
-        var now = LocalDateTime.now();
 
         for (var y : props.fees()) {
 

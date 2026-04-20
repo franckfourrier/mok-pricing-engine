@@ -4,7 +4,7 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.time.OffsetDateTime;
 
-public record RecordBankDepositCommand(
+public record BankDepositCommand(
         String referencePayment,
         Money amount,
         String superDistributorId,

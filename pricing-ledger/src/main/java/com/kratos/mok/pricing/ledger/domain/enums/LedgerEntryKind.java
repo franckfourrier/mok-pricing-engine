@@ -5,5 +5,7 @@ public enum LedgerEntryKind {
     TAX_FIXED,
     TAX_RATE,
     COMMISSION,
-    BANK_DEPOSIT
+    BANK_DEPOSIT,
+    EXTERNAL_TRANSFER
+
 }

@@ -14,6 +14,7 @@ import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -36,9 +38,11 @@ public class UpdateFeePolicyCommandHandler {
     private final FeePolicyRepository repository;
     private final RegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public UpdateFeePolicyResponse handle(UpdateFeePolicyCommand cmd, String actor) {
+        OffsetDateTime now = timeProvider.now();
         log.info("UpdateFeePolicy: id={}, code={}, type={}, scope={}, value={}",
                 cmd.policyId(),
                 cmd.transactionCode(),
@@ -73,7 +77,6 @@ public class UpdateFeePolicyCommandHandler {
                 : cmd.kycRequirement();
 
         var priority = Priority.defaultFor(target.scope());
-        var now = LocalDateTime.now();
 
         policy.updatePolicy(
                 cmd.transactionCode(),
@@ -122,7 +125,8 @@ public class UpdateFeePolicyCommandHandler {
     }
 
     private void block(FeePolicy policy, String actor, String code, String reason) {
-        policy.block(code, reason, actor, LocalDateTime.now());
+        OffsetDateTime now = timeProvider.now();
+        policy.block(code, reason, actor, now);
         repository.save(policy);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
@@ -137,7 +141,8 @@ public class UpdateFeePolicyCommandHandler {
                         "transactionType", policy.transactionType().name(),
                         "scope", policy.target().scope().name(),
                         "value", policy.target().value()
-                )
+                ),
+                now
         ));
     }
 

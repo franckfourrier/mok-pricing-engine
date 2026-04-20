@@ -3,8 +3,7 @@ package com.kratos.mok.pricing.commissions.application.command.createCommissionP
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateCommissionPlanCommand(
@@ -17,9 +16,9 @@ public record CreateCommissionPlanCommand(
         List<KeyCommand> keys,
 
         // WITHDRAWAL_AGENT_KRATOS
-        String agentPercentage,   // ex: "40" ou "0.40"
-        String coverageRate,      // ex: "10" ou "0.10"
+        //String agentPercentage,   // ex: "40" ou "0.40"
+        //String coverageRate,      // ex: "10" ou "0.10"
 
-        LocalDateTime validityStart,
-        LocalDateTime validityEnd
+        OffsetDateTime validityStart,
+        OffsetDateTime validityEnd
 ) {}

@@ -4,8 +4,7 @@ import com.kratos.mok.pricing.fees.domain.enums.FeeStrategyType;
 import com.kratos.mok.pricing.fees.domain.enums.KycRequirement;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateFeePolicyCommand(
@@ -20,8 +19,8 @@ public record CreateFeePolicyCommand(
         String activationThreshold,
         String minFee,
         String maxFee,
-        LocalDateTime validityStart,
-        LocalDateTime validityEnd,
+        OffsetDateTime validityStart,
+        OffsetDateTime validityEnd,
         KycRequirement kycRequirement,
         Integer minMonthlyTxCount
 ) {

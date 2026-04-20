@@ -1,15 +1,14 @@
 package com.kratos.mok.pricing.commissions.domain.event;
 
 import com.kratos.mok.pricing.shared.domain.event.PricingEvent;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
 public record CommissionPlanCreatedEvent(
         String aggregateId,
         String actor,
-        LocalDateTime occurredAt
+        OffsetDateTime occurredAt
 ) implements PricingEvent {
 
     @Override

@@ -8,10 +8,13 @@ import com.kratos.mok.pricing.commissions.infrastructure.model.CommissionPlanEnt
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +24,7 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
 
     private final JpaCommissionPlanRepository jpaRepository;
     private final CommissionPlanEntityMapper mapper;
+    private final TimeProvider timeProvider;
 
     @Override
     public void save(CommissionPlan plan) {
@@ -35,7 +39,7 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
 
     @Override
     public List<CommissionPlan> findCandidates(TransactionType type, String accountType, String accountId) {
-        LocalDateTime at = LocalDateTime.now();
+        var at = timeProvider.now();
 
         String normalizedAccountType = (accountType == null || accountType.isBlank())
                 ? null
@@ -53,7 +57,7 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
 
     @Override
     public List<CommissionPlan> findCandidates(TransactionCode transactionCode, String accountType, String accountId) {
-        LocalDateTime at = LocalDateTime.now();
+         var at = timeProvider.now();
 
         String normalizedAccountType = (accountType == null || accountType.isBlank())
                 ? null
@@ -79,15 +83,15 @@ public class PostgresCommissionPlanRepository implements CommissionPlanRepositor
         TargetScope scope = plan.target().scope();
         String value = normalize(scope, plan.target().value());
 
-        LocalDateTime start = plan.validity().start();
-        LocalDateTime end = plan.validity().end();
+        OffsetDateTime start = plan.validity().start();
+        OffsetDateTime end = plan.validity().end();
 
-        LocalDateTime startBound = (start == null)
-                ? LocalDateTime.of(1900, 1, 1, 0, 0)
+        OffsetDateTime startBound = (start == null)
+                ? LocalDateTime.of(1900, 1, 1, 0, 0).atOffset(ZoneOffset.UTC)
                 : start;
 
-        LocalDateTime endBound = (end == null)
-                ? LocalDateTime.of(9999, 12, 31, 23, 59, 59)
+        OffsetDateTime endBound = (end == null)
+                ? LocalDateTime.of(9999, 12, 31, 23, 59, 59).atOffset(ZoneOffset.UTC)
                 : end;
 
         return jpaRepository.existsConflict(

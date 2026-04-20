@@ -16,27 +16,27 @@ public final class CommissionPlanValidator {
     public static void validate(CommissionStrategy strategy) {
         if (strategy == null) throw new IllegalArgumentException("strategy is required");
 
-        if (strategy instanceof DepositDistributionStrategy s) {
-            requireNonEmpty(s.keys(), "DEPOSIT_DISTRIBUTION keys");
+        if (strategy instanceof SubscriberDepositStrategy s) {
+            requireNonEmpty(s.keys(), "SUBSCRIBER_DEPOSIT keys");
             requireAllowedBeneficiaries(
                     s.keys(),
                     EnumSet.of(BeneficiaryType.AGENT, BeneficiaryType.DISTRIBUTOR, BeneficiaryType.SUPER_DISTRIBUTOR),
-                    "DEPOSIT_DISTRIBUTION keys"
+                    "SUBSCRIBER_DEPOSIT keys"
             );
-            requireSumLessOrEqualOne(s.keys(), "DEPOSIT_DISTRIBUTION keys");
+            requireSumLessOrEqualOne(s.keys(), "SUBSCRIBER_DEPOSIT keys");
 
-        } else if (strategy instanceof WithdrawalAgentKratosStrategy s) {
+        } else if (strategy instanceof SubscriberWithdrawalStrategy s) {
             // agent + coverage <= 1
-            BigDecimal agent = s.agentShare().value();
+            /*BigDecimal agent = s.agentShare().value();
             BigDecimal cov = s.coverageRate().value();
             BigDecimal sum = agent.add(cov);
             if (sum.subtract(BigDecimal.ONE).compareTo(EPS) > 0) {
-                throw new IllegalArgumentException("WITHDRAWAL_AGENT_KRATOS requires (agent + coverage) <= 1. Got: " + sum);
+                throw new IllegalArgumentException("SUBSCRIBER_WITHDRAWAL requires (agent + coverage) <= 1. Got: " + sum);
             }
             // kratos >= 0 implicit
             if (s.kratosShare().value().compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("WITHDRAWAL_AGENT_KRATOS kratosShare must be >= 0");
-            }
+                throw new IllegalArgumentException("SUBSCRIBER_WITHDRAWAL kratosShare must be >= 0");
+            }*/
 
         } else if (strategy instanceof DirectStrategy s) {
             requireNonEmpty(s.keys(), "DIRECT keys");

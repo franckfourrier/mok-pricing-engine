@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, String>, JpaSpecificationExecutor<FeePolicyEntity> {
@@ -33,7 +33,7 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
             @Param("type") TransactionType type,
             @Param("accountType") String accountType,
             @Param("accountId") String accountId,
-            @Param("at") LocalDateTime at
+            @Param("at") OffsetDateTime at
     );
 
     boolean existsByTransactionCodeAndTargetScopeAndTargetValue(
@@ -58,8 +58,8 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
             @Param("transactionCode") TransactionCode transactionCode,
             @Param("scope") TargetScope scope,
             @Param("value") String value,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("excludedId") String excludedId
     );
 
@@ -108,6 +108,6 @@ public interface JpaFeePolicyRepository extends JpaRepository<FeePolicyEntity, S
             @Param("transactionCode") TransactionCode transactionCode,
             @Param("accountType") String accountType,
             @Param("accountId") String accountId,
-            @Param("at") LocalDateTime at
+            @Param("at") OffsetDateTime at
     );
 }

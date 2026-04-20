@@ -7,17 +7,18 @@ import com.kratos.mok.pricing.commissions.domain.event.CommissionPlanCreatedEven
 import com.kratos.mok.pricing.commissions.domain.gateway.CommissionRegulatoryGatekeeper;
 import com.kratos.mok.pricing.commissions.domain.repository.CommissionPlanRepository;
 import com.kratos.mok.pricing.commissions.domain.strategy.CommissionStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.DepositDistributionStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberDepositStrategy;
 import com.kratos.mok.pricing.commissions.domain.strategy.DirectStrategy;
-import com.kratos.mok.pricing.commissions.domain.strategy.WithdrawalAgentKratosStrategy;
+import com.kratos.mok.pricing.commissions.domain.strategy.SubscriberWithdrawalStrategy;
 import com.kratos.mok.pricing.commissions.domain.vo.CommissionShare;
 import com.kratos.mok.pricing.commissions.domain.vo.Percentage;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
+import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.event.ConfigurationBlockedEvent;
 import com.kratos.mok.pricing.shared.domain.exception.ConflictException;
 import com.kratos.mok.pricing.shared.domain.exception.DomainValidationException;
 import com.kratos.mok.pricing.shared.domain.exception.RegulatoryViolationException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import com.kratos.mok.pricing.shared.domain.vo.Priority;
 import com.kratos.mok.pricing.shared.domain.vo.ValidityPeriod;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -39,12 +40,14 @@ public class CreateCommissionPlanCommandHandler {
     private final CommissionPlanRepository repository;
     private final CommissionRegulatoryGatekeeper regulatoryGatekeeper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public CreateCommissionPlanResponse handle(CreateCommissionPlanCommand cmd, String authorId) {
-
         log.info("CreateCommissionPlan: transactionCode={}, type={}, scope={}, value={}",
                 cmd.transactionCode(), cmd.type(), cmd.targetScope(), cmd.targetValue());
+
+        var now = timeProvider.now();
 
         CommissionTarget target = toTarget(cmd.targetScope(), cmd.targetValue());
         CommissionStrategy strategy = toStrategy(cmd);
@@ -63,18 +66,18 @@ public class CreateCommissionPlanCommandHandler {
                 validity,
                 priority,
                 authorId,
-                LocalDateTime.now()
+                now
         );
 
         if (repository.existsConflictingPlan(plan)) {
-            block(plan, authorId, "CONFLICTING_PLAN", "Plan conflict", cmd);
+            block(plan, authorId, "CONFLICTING_PLAN", "Plan conflict", cmd, now);
             throw new ConflictException("Un plan de commission actif existe déjà pour ce périmètre");
         }
 
         try {
             regulatoryGatekeeper.validate(plan.toComplianceData());
         } catch (RegulatoryViolationException e) {
-            block(plan, authorId, e.regulationCode(), e.getMessage(), cmd);
+            block(plan, authorId, e.regulationCode(), e.getMessage(), cmd , now);
             throw new DomainValidationException(
                     "BEAC_NON_COMPLIANT",
                     e.getMessage(),
@@ -82,13 +85,13 @@ public class CreateCommissionPlanCommandHandler {
             );
         }
 
-        plan.submitForApproval(authorId, LocalDateTime.now(), "SUBMIT_FOR_APPROVAL");
+        plan.submitForApproval(authorId, now, "SUBMIT_FOR_APPROVAL");
         repository.save(plan);
 
         eventPublisher.publishEvent(new CommissionPlanCreatedEvent(
                 plan.id().value(),
                 authorId,
-                LocalDateTime.now()
+                now
         ));
 
         return new CreateCommissionPlanResponse(plan.id().value(), true, plan.status());
@@ -96,20 +99,16 @@ public class CreateCommissionPlanCommandHandler {
 
     private CommissionStrategy toStrategy(CreateCommissionPlanCommand cmd) {
 
-        TransactionType tt = cmd.type();
+        TransactionCode tc = cmd.transactionCode();
 
-        if (tt == TransactionType.DEPOSIT) {
-            var keys = requiredList(cmd.keys(), "keys are required for DEPOSIT");
-            return new DepositDistributionStrategy(toShares(keys));
+        if (tc == TransactionCode.SUBSCRIBER_DEPOSIT) {
+            var keys = requiredList(cmd.keys(), "keys are required for SUBSCRIBER DEPOSIT");
+            return new SubscriberDepositStrategy(toShares(keys));
         }
 
-        if (tt == TransactionType.WITHDRAWAL) {
-            String agent = required(cmd.agentPercentage(), "agentPercentage is required for WITHDRAWAL");
-            String cov = required(cmd.coverageRate(), "coverageRate is required for WITHDRAWAL");
-            return new WithdrawalAgentKratosStrategy(
-                    toPercentage(agent),
-                    toPercentage(cov)
-            );
+        if (tc == TransactionCode.SUBSCRIBER_WITHDRAWAL) {
+            var keys = requiredList(cmd.keys(), "keys are required for SUBSCRIBER WITHDRAWAL");
+            return new SubscriberWithdrawalStrategy(toShares(keys));
         }
 
         var keys = requiredList(cmd.keys(), "keys are required for DIRECT strategy");
@@ -146,9 +145,11 @@ public class CreateCommissionPlanCommandHandler {
             String actor,
             String code,
             String reason,
-            CreateCommissionPlanCommand cmd
+            CreateCommissionPlanCommand cmd,
+            OffsetDateTime at
     ) {
-        p.block(code, reason, actor, LocalDateTime.now());
+
+        p.block(code, reason, actor, at);
         repository.save(p);
 
         eventPublisher.publishEvent(new ConfigurationBlockedEvent(
@@ -162,7 +163,8 @@ public class CreateCommissionPlanCommandHandler {
                         "transactionType", cmd.type().name(),
                         "scope", cmd.targetScope().name(),
                         "value", cmd.targetValue()
-                )
+                ),
+                at
         ));
     }
 

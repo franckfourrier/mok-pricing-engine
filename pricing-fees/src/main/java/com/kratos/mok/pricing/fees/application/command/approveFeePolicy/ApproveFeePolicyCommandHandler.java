@@ -4,6 +4,7 @@ import com.kratos.mok.pricing.fees.domain.event.FeePolicyApprovedEvent;
 import com.kratos.mok.pricing.fees.domain.repository.FeePolicyRepository;
 import com.kratos.mok.pricing.fees.domain.vo.FeePolicyId;
 import com.kratos.mok.pricing.shared.domain.exception.NotFoundException;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,6 +21,7 @@ public class ApproveFeePolicyCommandHandler {
 
     private final FeePolicyRepository repository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TimeProvider timeProvider;
 
     @Transactional
     public ApproveFeePolicyResponse handle(ApproveFeePolicyCommand cmd, String actor) {
@@ -31,7 +33,7 @@ public class ApproveFeePolicyCommandHandler {
                         Map.of("id", cmd.policyId())
                 ));
 
-        var now = LocalDateTime.now();
+        var now = timeProvider.now();
 
         policy.approve(actor, now);
 
