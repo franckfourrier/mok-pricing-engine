@@ -82,6 +82,64 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
         if (strategy instanceof SubscriberWithdrawalStrategy s) {
             ensure(txCode == SUBSCRIBER_WITHDRAWAL, "WITHDRAWAL strategy used for non-WITHDRAWAL");
 
+            List<CommissionDistributionResult.Line> lines = new ArrayList<>();
+
+            Percentage agent = findShare(s.keys(), BeneficiaryType.AGENT);
+
+            // 2. Charger stratégie DEPOSIT
+            CommissionPlan depositPlan = repository.findCandidates(
+                            SUBSCRIBER_DEPOSIT,
+                            ctx.accountType() == null ? null : ctx.accountType().name(),
+                            ctx.accountId()
+                    ).stream().findFirst()
+                    .orElseThrow(() -> new NotFoundException(
+                            "DEPOSIT_PLAN_NOT_FOUND",
+                            "Deposit plan required for withdrawal strategy",
+                            Map.of("accountId", ctx.accountId())
+                    ));
+
+            if (!(depositPlan.strategy() instanceof SubscriberDepositStrategy depositStrategy)) {
+                throw new IllegalStateException("Deposit plan must use SubscriberDepositStrategy");
+            }
+
+            // 3. Récupérer DISTRIBUTOR + SUPER_DISTRIBUTOR
+            Percentage distributor = findShare(depositStrategy.keys(), BeneficiaryType.DISTRIBUTOR);
+            Percentage superDistributor = findShare(depositStrategy.keys(), BeneficiaryType.SUPER_DISTRIBUTOR);
+
+            // 4. Calcul KRATOS
+            BigDecimal sum = agent.value()
+                    .add(distributor.value())
+                    .add(superDistributor.value());
+
+            if (sum.compareTo(BigDecimal.ONE) > 0) {
+                throw new IllegalArgumentException("Invalid withdrawal plan: sum > 1");
+            }
+
+            Percentage kratos = Percentage.of(BigDecimal.ONE.subtract(sum));
+
+            // 5. Accounts
+            String agentAccountId = ctx.getAccountFor("AGENT");
+            String distributorAccountId = ctx.getAccountFor("DISTRIBUTOR");
+            String superDistributorAccountId = ctx.getAccountFor("SUPER_DISTRIBUTOR");
+
+            // 6. Lines
+            if (!agent.value().equals(BigDecimal.ZERO)) {
+                lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
+            }
+
+            if (!distributor.value().equals(BigDecimal.ZERO)) {
+                lines.add(line(BeneficiaryType.DISTRIBUTOR, distributorAccountId, distributor, base));
+            }
+
+            if (!superDistributor.value().equals(BigDecimal.ZERO)) {
+                lines.add(line(BeneficiaryType.SUPER_DISTRIBUTOR, superDistributorAccountId, superDistributor, base));
+            }
+
+            /*if (!kratos.value().equals(BigDecimal.ZERO)) {
+                lines.add(line(BeneficiaryType.KRATOS, null, kratos, base));
+            }*/
+
+            return lines;
             //Percentage agent = s.agentShare();
             //Percentage coverage = s.coverageRate();
             //Percentage kratos = s.kratosShare();
@@ -90,13 +148,15 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                 throw new IllegalArgumentException("Invalid withdrawal plan: agentShare + coverageRate > 1");
             }*/
 
-            List<CommissionDistributionResult.Line> lines = new ArrayList<>();
+
+
+            //List<CommissionDistributionResult.Line> lines = new ArrayList<>();
             // On récupère l'ID du compte AGENT depuis le contexte
-            String agentAccountId = ctx.getAccountFor("AGENT");
+            //String agentAccountId = ctx.getAccountFor("AGENT");
 
             //lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
             //lines.add(line(BeneficiaryType.KRATOS, kratos, base));
-            return lines;
+            //return lines;
         }
 
         throw new IllegalArgumentException("Unsupported commission strategy: " + strategy.getClass().getSimpleName());
@@ -146,5 +206,13 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
     private void ensure(boolean ok, String msg) {
         if (!ok) throw new IllegalArgumentException(msg);
+    }
+
+    private Percentage findShare(List<CommissionShare> shares, BeneficiaryType type) {
+        return shares.stream()
+                .filter(s -> s.beneficiaryType() == type)
+                .map(CommissionShare::share)
+                .findFirst()
+                .orElse(Percentage.ZERO);
     }
 }

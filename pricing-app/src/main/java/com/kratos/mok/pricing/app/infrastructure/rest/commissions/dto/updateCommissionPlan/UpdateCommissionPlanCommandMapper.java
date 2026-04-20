@@ -12,9 +12,7 @@ public class UpdateCommissionPlanCommandMapper {
                 req.keys() == null ? null :
                         req.keys().stream()
                                 .map(k -> new KeyCommand(k.beneficiary(), k.percentage()))
-                                .toList(),
-                req.agentPercentage(),
-                req.coverageRate()
+                                .toList()
         );
     }
 }

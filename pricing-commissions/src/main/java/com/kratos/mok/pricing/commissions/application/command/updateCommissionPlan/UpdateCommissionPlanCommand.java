@@ -4,7 +4,5 @@ import java.util.List;
 
 public record UpdateCommissionPlanCommand(
         String commissionPlanId,
-        List<KeyCommand> keys,
-        String agentPercentage,
-        String coverageRate
+        List<KeyCommand> keys
 ) {}

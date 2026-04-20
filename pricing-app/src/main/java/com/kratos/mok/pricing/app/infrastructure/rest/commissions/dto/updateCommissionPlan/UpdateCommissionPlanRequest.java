@@ -6,9 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 public record UpdateCommissionPlanRequest(
-        @Valid List<KeyRequest> keys,
-        String agentPercentage,
-        String coverageRate
+        @Valid List<KeyRequest> keys
 ) {
     public record KeyRequest(
             @NotBlank String beneficiary,
