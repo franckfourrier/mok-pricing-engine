@@ -25,8 +25,8 @@ public class CommissionPlan {
 
     private final CommissionPlanId id;
 
-    private final TransactionCode transactionCode;
-    private final TransactionType transactionType;
+    private TransactionCode transactionCode;
+    private TransactionType transactionType;
     private final CommissionTarget target;
 
     private CommissionStrategy strategy;
@@ -135,6 +135,7 @@ public class CommissionPlan {
     }
 
     public void updateConfiguration(
+            TransactionCode newTransactionCode,
             CommissionStrategy newStrategy,
             ValidityPeriod newValidity,
             Priority newPriority,
@@ -143,6 +144,14 @@ public class CommissionPlan {
             String reason
     ) {
         ensureUpdatable();
+
+        if (newTransactionCode != null && newTransactionCode != this.transactionCode) {
+
+            //validateTransactionCodeChange(this.transactionCode, newTransactionCode);
+
+            this.transactionCode = newTransactionCode;
+            this.transactionType = newTransactionCode.transactionType();
+        }
 
         this.strategy = requireNonNull(newStrategy, "newStrategy");
         this.validity = (newValidity == null) ? ValidityPeriod.permanent() : newValidity;
@@ -158,6 +167,24 @@ public class CommissionPlan {
         );
 
         validateInvariants();
+    }
+
+    private void validateTransactionCodeChange(TransactionCode oldCode, TransactionCode newCode) {
+
+        // Interdire changement de type métier (ex: DEPOSIT → WITHDRAWAL)
+        if (oldCode.transactionType() != newCode.transactionType()) {
+            throw new DomainValidationException(
+                    "INVALID_TRANSACTION_TYPE_CHANGE",
+                    "Cannot change transaction type (DEPOSIT ↔ WITHDRAWAL)",
+                    Map.of(
+                            "old", oldCode.name(),
+                            "new", newCode.name()
+                    )
+            );
+        }
+
+        // Exemple règle autorisée :
+        // SUBSCRIBER_DEPOSIT → AGENT_DEPOSIT (même type)
     }
 
     public void submitForApproval(String authorId, OffsetDateTime when, String reason) {

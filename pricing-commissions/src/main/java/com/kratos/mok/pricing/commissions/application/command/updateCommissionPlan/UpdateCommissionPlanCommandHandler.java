@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -53,11 +54,13 @@ public class UpdateCommissionPlanCommandHandler {
                         Map.of("id", cmd.commissionPlanId())
                 ));
 
-        CommissionStrategy newStrategy = toStrategy(plan.transactionCode(), cmd);
-
+        TransactionCode newTransactionCode = cmd.transactionCode();
         OffsetDateTime now = timeProvider.now();
 
+        CommissionStrategy newStrategy = toStrategy(newTransactionCode, cmd);
+
         plan.updateConfiguration(
+                newTransactionCode,
                 newStrategy,
                 plan.validity(),
                 plan.priority(),
@@ -126,14 +129,25 @@ public class UpdateCommissionPlanCommandHandler {
     private Percentage toPercentage(String raw) {
         try {
             BigDecimal v = new BigDecimal(raw.trim());
-            if (v.compareTo(BigDecimal.ONE) > 0) {
-                v = v.divide(new BigDecimal("100"));
+
+            // ]0,100]
+            if (v.compareTo(BigDecimal.ZERO) <= 0 || v.compareTo(new BigDecimal("100")) > 0) {
+                throw new DomainValidationException(
+                        "INVALID_PERCENTAGE",
+                        "Le pourcentage doit être dans ]0,100] (ex: 1.5 pour 1.5%)",
+                        Map.of("value", raw)
+                );
             }
-            return new Percentage(v);
-        } catch (Exception e) {
+
+            // Conversion vers fraction interne (0 → 1)
+            BigDecimal fraction = v.divide(new BigDecimal("100"), 6, RoundingMode.HALF_UP);
+
+            return new Percentage(fraction);
+
+        } catch (NumberFormatException e) {
             throw new DomainValidationException(
                     "INVALID_PERCENTAGE",
-                    "Invalid percentage: " + raw,
+                    "Format de pourcentage invalide : " + raw,
                     Map.of("value", raw)
             );
         }
