@@ -8,7 +8,7 @@ public record FeePolicySummary(
         String id,
         String shortId,
         TransactionType transactionType,
-        String TransactionLabel,
+        String transactionLabel,
         String sender,
         String receiver,
         List<FeeTierSummary> tiers,

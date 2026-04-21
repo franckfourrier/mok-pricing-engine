@@ -111,8 +111,10 @@ public class ApplyPricingToTransactionCommandHandler {
         Money tax = safe(taxRes.tax());
 
         Money commissionBase = switch (cmd.transactionCode()) {
-            case SUBSCRIBER_WITHDRAWAL -> estimateWithdrawalFee(ctx);
-            case SUBSCRIBER_DEPOSIT    -> estimateWithdrawalFee(ctx);
+            case SUBSCRIBER_WITHDRAWAL -> estimateSubscriberWithdrawalFee(ctx);
+            case SUBSCRIBER_DEPOSIT    -> estimateSubscriberWithdrawalFee(ctx);
+            case SUBSCRIBER_P2P_TRANSFER    -> estimateSubscriberP2PTranferFee(ctx);
+            case SUBSCRIBER_EXTERNAL_P2P_TRANSFER    -> estimateSubscriberExternalP2PTranferFee(ctx);
             default                    -> safe(fee);
         };
 
@@ -217,7 +219,7 @@ public class ApplyPricingToTransactionCommandHandler {
         );
     }
 
-    private Money estimateWithdrawalFee(PricingRequestContext ctx) {
+    private Money estimateSubscriberWithdrawalFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
                 TransactionCode.SUBSCRIBER_WITHDRAWAL,
                 ctx.amount(),
@@ -232,9 +234,9 @@ public class ApplyPricingToTransactionCommandHandler {
         return safe(res.fee());
     }
 
-    /*private Money estimateDepositFee(PricingRequestContext ctx) {
+    private Money estimateSubscriberP2PTranferFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                resolveDepositTransactionCode(ctx),
+                TransactionCode.SUBSCRIBER_P2P_TRANSFER,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
@@ -244,19 +246,21 @@ public class ApplyPricingToTransactionCommandHandler {
         );
         FeeComputationResult res = computeFeeQuery.computeFee(ctx);
         return safe(res.fee());
-    }*/
+    }
 
-    /*private TransactionCode resolveWithdrawalTransactionCode(PricingRequestContext ctx) {
-        return switch (ctx.accountType()) {
-            case AGENT, DISTRIBUTOR -> TransactionCode.AGENT_DISTRIBUTOR_WITHDRAWAL;
-            case STANDARD, PREMIUM, SUBSCRIBER -> TransactionCode.SUBSCRIBER_WITHDRAWAL;
-            default -> throw new DomainValidationException(
-                    "WITHDRAWAL_TRANSACTION_CODE_NOT_RESOLVED",
-                    "Cannot resolve withdrawal transaction code for account type",
-                    Map.of("accountType", ctx.accountType().name())
-            );
-        };
-    }*/
+    private Money estimateSubscriberExternalP2PTranferFee(PricingRequestContext ctx) {
+        PricingRequestContext wCtx = new PricingRequestContext(
+                TransactionCode.SUBSCRIBER_EXTERNAL_P2P_TRANSFER,
+                ctx.amount(),
+                ctx.accountId(),
+                ctx.accountType(),
+                ctx.kycValidated(),
+                ctx.monthlyTxCount(),
+                ctx.occurredAt()
+        );
+        FeeComputationResult res = computeFeeQuery.computeFee(ctx);
+        return safe(res.fee());
+    }
 
     private Money safe(Money m) {
         return (m == null) ? Money.ZERO : m;
