@@ -29,7 +29,7 @@ public final class ElectronicRateTax implements TaxStrategy {
     @Override
     public Money apply(Money baseAmount, FluxIntensity intensity) {
         BigDecimal raw = baseAmount.amount()
-                .multiply(rate.value())
+                .multiply(rate.asFraction())
                 .multiply(intensity.value());
         return Money.of(raw, baseAmount.currency());
     }

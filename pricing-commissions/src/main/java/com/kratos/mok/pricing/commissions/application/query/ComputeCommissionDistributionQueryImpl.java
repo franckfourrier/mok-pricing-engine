@@ -84,7 +84,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
             List<CommissionDistributionResult.Line> lines = new ArrayList<>();
 
-            Percentage agent = findShare(s.keys(), BeneficiaryType.AGENT);
+            Percentage agentWithdrawal = findShare(s.keys(), BeneficiaryType.AGENT);
 
             // 2. Charger stratégie DEPOSIT
             CommissionPlan depositPlan = repository.findCandidates(
@@ -102,12 +102,14 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                 throw new IllegalStateException("Deposit plan must use SubscriberDepositStrategy");
             }
 
-            // 3. Récupérer DISTRIBUTOR + SUPER_DISTRIBUTOR
+            // 3. Récupérer AGENT + DISTRIBUTOR + SUPER_DISTRIBUTOR
+            Percentage agentDeposit = findShare(depositStrategy.keys(), BeneficiaryType.DISTRIBUTOR);
             Percentage distributor = findShare(depositStrategy.keys(), BeneficiaryType.DISTRIBUTOR);
             Percentage superDistributor = findShare(depositStrategy.keys(), BeneficiaryType.SUPER_DISTRIBUTOR);
 
             // 4. Calcul KRATOS
-            BigDecimal sum = agent.value()
+            BigDecimal sum = agentWithdrawal.value()
+                    .add(agentDeposit.value())
                     .add(distributor.value())
                     .add(superDistributor.value());
 
@@ -115,48 +117,17 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                 throw new IllegalArgumentException("Invalid withdrawal plan: sum > 1");
             }
 
-            Percentage kratos = Percentage.of(BigDecimal.ONE.subtract(sum));
+            //Percentage kratos = Percentage.of(BigDecimal.ONE.subtract(sum));
 
             // 5. Accounts
             String agentAccountId = ctx.getAccountFor("AGENT");
-            String distributorAccountId = ctx.getAccountFor("DISTRIBUTOR");
-            String superDistributorAccountId = ctx.getAccountFor("SUPER_DISTRIBUTOR");
 
             // 6. Lines
-            if (!agent.value().equals(BigDecimal.ZERO)) {
-                lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
+            if (!agentWithdrawal.value().equals(BigDecimal.ZERO)) {
+                lines.add(line(BeneficiaryType.AGENT, agentAccountId, agentWithdrawal, base));
             }
-
-            if (!distributor.value().equals(BigDecimal.ZERO)) {
-                lines.add(line(BeneficiaryType.DISTRIBUTOR, distributorAccountId, distributor, base));
-            }
-
-            if (!superDistributor.value().equals(BigDecimal.ZERO)) {
-                lines.add(line(BeneficiaryType.SUPER_DISTRIBUTOR, superDistributorAccountId, superDistributor, base));
-            }
-
-            /*if (!kratos.value().equals(BigDecimal.ZERO)) {
-                lines.add(line(BeneficiaryType.KRATOS, null, kratos, base));
-            }*/
 
             return lines;
-            //Percentage agent = s.agentShare();
-            //Percentage coverage = s.coverageRate();
-            //Percentage kratos = s.kratosShare();
-
-            /*if (agent.value().add(coverage.value()).compareTo(BigDecimal.ONE) > 0) {
-                throw new IllegalArgumentException("Invalid withdrawal plan: agentShare + coverageRate > 1");
-            }*/
-
-
-
-            //List<CommissionDistributionResult.Line> lines = new ArrayList<>();
-            // On récupère l'ID du compte AGENT depuis le contexte
-            //String agentAccountId = ctx.getAccountFor("AGENT");
-
-            //lines.add(line(BeneficiaryType.AGENT, agentAccountId, agent, base));
-            //lines.add(line(BeneficiaryType.KRATOS, kratos, base));
-            //return lines;
         }
 
         throw new IllegalArgumentException("Unsupported commission strategy: " + strategy.getClass().getSimpleName());
@@ -188,6 +159,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             if (rejectKratos && s.beneficiaryType() == BeneficiaryType.KRATOS) {
                 throw new IllegalArgumentException("DEPOSIT plan must not include KRATOS as beneficiary");
             }
+
             lines.add(line(s.beneficiaryType(), targetAccountId, s.share(), base));
         }
 
