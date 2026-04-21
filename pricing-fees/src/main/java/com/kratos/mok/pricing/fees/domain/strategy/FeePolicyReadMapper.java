@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.fees.domain.strategy;
 
 import com.kratos.mok.pricing.fees.application.query.listFeePolicies.FeeTierSummary;
 import com.kratos.mok.pricing.shared.api.MoneyDto;
+import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,7 +36,7 @@ public final class FeePolicyReadMapper {
             return new FeeTierSummary(
                     min, max,
                     "FIXED",
-                    toMoneyDto(ff.feeAmount()),
+                    formatMoney(ff.feeAmount()),
                     null
             );
         }
@@ -45,7 +46,7 @@ public final class FeePolicyReadMapper {
                     min, max,
                     "PROPORTIONAL",
                     null,
-                    pf.percentage().value()
+                    formatPercentage(pf.percentage().value())
             );
         }
 
@@ -60,7 +61,7 @@ public final class FeePolicyReadMapper {
             return new FeeTierSummary(
                     min, max,
                     "FIXED",
-                    toMoneyDto(ff.feeAmount()),
+                    formatMoney(ff.feeAmount()),
                     null
             );
         }
@@ -70,7 +71,7 @@ public final class FeePolicyReadMapper {
                     min, max,
                     "PROPORTIONAL",
                     null,
-                    pf.percentage().value()
+                    formatPercentage(pf.percentage().value())
             );
         }
 
@@ -79,5 +80,16 @@ public final class FeePolicyReadMapper {
 
     private static MoneyDto toMoneyDto(com.kratos.mok.pricing.shared.domain.vo.Money m) {
         return new MoneyDto(m.amount(), m.currency());
+    }
+
+    private static String formatMoney(Money m) {
+        if (m == null) return "0 XAF";
+        // Retourne "50 XAF" au lieu de {"amount": 50, "currency": "XAF"}
+        return m.amount().stripTrailingZeros().toPlainString() + " " + m.currency();
+    }
+
+    private static String formatPercentage(BigDecimal value) {
+        if (value == null) return "0%";
+        return value.stripTrailingZeros().toPlainString() + "%";
     }
 }

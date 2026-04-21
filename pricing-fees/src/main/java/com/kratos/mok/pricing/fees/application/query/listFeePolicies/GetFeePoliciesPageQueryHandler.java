@@ -37,7 +37,7 @@ public class GetFeePoliciesPageQueryHandler {
                 e.getId(),
                 shortId,
                 e.getTransactionType(),
-                e.getTransactionCode().label(),
+                e.getTransactionCode().label().toUpperCase(),
                 e.getTransactionCode().sender(),
                 e.getTransactionCode().receiver(),
                 FeePolicyReadMapper.toTierSummaries(e.getStrategy()),

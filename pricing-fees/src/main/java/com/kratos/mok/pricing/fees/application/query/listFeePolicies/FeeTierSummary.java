@@ -8,6 +8,6 @@ public record FeeTierSummary(
         MoneyDto min,
         MoneyDto max,
         String strategyType,
-        MoneyDto fixedAmount,
-        BigDecimal percentage
+        String fixedAmount,
+        String percentage
 ) {}
