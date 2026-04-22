@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_DEPOSIT;
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -130,10 +130,6 @@ public class ApplyPricingToTransactionCommandHandler {
             Money amt = line.amount();
 
             if (amt == null || amt.isZero()) continue;
-
-            if ("KRATOS".equals(b)) {
-                continue;
-            }
 
             String accountId = resolveBeneficiaryAccountId(b, cmd);
             if (accountId == null || accountId.isBlank()) {
@@ -250,7 +246,7 @@ public class ApplyPricingToTransactionCommandHandler {
 
     private Money estimateSubscriberP2PTranferFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                TransactionCode.SUBSCRIBER_P2P_TRANSFER,
+                SUBSCRIBER_P2P_TRANSFER,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
@@ -258,13 +254,13 @@ public class ApplyPricingToTransactionCommandHandler {
                 ctx.monthlyTxCount(),
                 ctx.occurredAt()
         );
-        FeeComputationResult res = computeFeeQuery.computeFee(ctx);
+        FeeComputationResult res = computeFeeQuery.computeFee(wCtx);
         return safe(res.fee());
     }
 
     private Money estimateSubscriberExternalP2PTranferFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                TransactionCode.SUBSCRIBER_EXTERNAL_P2P_TRANSFER,
+                SUBSCRIBER_EXTERNAL_P2P_TRANSFER,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
@@ -272,7 +268,7 @@ public class ApplyPricingToTransactionCommandHandler {
                 ctx.monthlyTxCount(),
                 ctx.occurredAt()
         );
-        FeeComputationResult res = computeFeeQuery.computeFee(ctx);
+        FeeComputationResult res = computeFeeQuery.computeFee(wCtx);
         return safe(res.fee());
     }
 
