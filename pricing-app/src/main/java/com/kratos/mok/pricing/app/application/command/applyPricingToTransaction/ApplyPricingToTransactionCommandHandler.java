@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_DEPOSIT;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -160,6 +162,7 @@ public class ApplyPricingToTransactionCommandHandler {
 
         List<Posting> postings = new ArrayList<>();
 
+        /* Ecritures comptables pour les frais */
         if (fee != null && !fee.isZero()) {
             postings.add(debit(accCant, fee, LedgerEntryKind.FEE, feeRes.feePolicyId(),
                     "FEE applied tx=" + cmd.externalTxId()));
@@ -167,35 +170,43 @@ public class ApplyPricingToTransactionCommandHandler {
                     "FEE collected tx=" + cmd.externalTxId()));
         }
 
+        /* Ecritures comptables pour les taxes */
         if (tax != null && !tax.isZero()) {
-            String debitAccount = (taxRes.taxMode() == TaxMode.EXPLOITATION) ? accExp : accCant;
-            String creditAccount = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
+            String cantonmentOrExploitationAccount = (taxRes.taxMode() == TaxMode.EXPLOITATION) ? accExp : accCant;
+            String taxAccount = accTax;
+            String subTaxAccount = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
             LedgerEntryKind kind = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT)
                     ? LedgerEntryKind.TAX_FIXED
                     : LedgerEntryKind.TAX_RATE;
 
-            postings.add(debit(debitAccount, tax, kind, taxRes.taxPolicyId(),
+            postings.add(debit(cantonmentOrExploitationAccount, tax, kind, taxRes.taxPolicyId(),
                     "TAX debit (" + taxRes.taxMode() + ") tx=" + cmd.externalTxId()));
-            postings.add(credit(creditAccount, tax, kind, taxRes.taxPolicyId(),
+            postings.add(credit(taxAccount, tax, kind, taxRes.taxPolicyId(),
+                    "TAX credited tx=" + cmd.externalTxId()));
+            postings.add(credit(subTaxAccount, tax, kind, taxRes.taxPolicyId(),
                     "TAX credited tx=" + cmd.externalTxId()));
         }
 
-        Money expDebit = (cmd.transactionCode().transactionType() == TransactionType.DEPOSIT)
-                ? externalTotal
-                : agentExternal;
+        Money expDebit = switch (cmd.transactionCode()) {
+            case SUBSCRIBER_DEPOSIT    -> externalTotal;
+            case SUBSCRIBER_WITHDRAWAL -> agentExternal;
+            default                    -> safe(fee);
+        };
 
         if (expDebit != null && !expDebit.isZero()) {
             postings.add(debit(accExp, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION payout tx=" + cmd.externalTxId()));
+            postings.add(credit(accDist, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
+                    "COMMISSION payout tx=" + cmd.externalTxId()));
         }
 
-        Money kratos = sumForBeneficiary(comRes, "KRATOS");
+        /*Money kratos = sumForBeneficiary(comRes, "KRATOS");
         if (kratos != null && !kratos.isZero()) {
             postings.add(debit(accCant, kratos, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION KRATOS tx=" + cmd.externalTxId()));
             postings.add(credit(accExp, kratos, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION KRATOS revenue tx=" + cmd.externalTxId()));
-        }
+        }*/
 
         RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(
                 new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings),
