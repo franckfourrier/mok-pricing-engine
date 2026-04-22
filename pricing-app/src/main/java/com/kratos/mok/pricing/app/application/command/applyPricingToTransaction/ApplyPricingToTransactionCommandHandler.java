@@ -190,9 +190,12 @@ public class ApplyPricingToTransactionCommandHandler {
         Money expDebit = switch (cmd.transactionCode()) {
             case SUBSCRIBER_DEPOSIT    -> externalTotal;
             case SUBSCRIBER_WITHDRAWAL -> agentExternal;
-            default                    -> safe(fee);
+            case SUBSCRIBER_P2P_TRANSFER -> Money.ZERO;
+            case SUBSCRIBER_EXTERNAL_P2P_TRANSFER -> Money.ZERO;
+            default                    -> Money.ZERO;
         };
 
+        /* Prise en compte du paiement de commissions*/
         if (expDebit != null && !expDebit.isZero()) {
             postings.add(debit(accExp, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION payout tx=" + cmd.externalTxId()));
