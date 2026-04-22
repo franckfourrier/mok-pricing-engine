@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.ledger.http.cantonment;
 
+import com.kratos.mok.pricing.ledger.application.command.cantonment.CantonmentDashboardResponse;
 import com.kratos.mok.pricing.ledger.application.command.cantonment.CantonmentEntrySummary;
 import com.kratos.mok.pricing.ledger.application.command.cantonment.GetCantonmentEntriesPageQuery;
 import com.kratos.mok.pricing.ledger.application.command.cantonment.GetCantonmentEntriesPageQueryHandler;
@@ -20,9 +21,9 @@ public class CantonmentQueryController {
         this.handler = handler;
     }
 
-    @Operation(summary = "Get cantonment entries (paginated)")
+    @Operation(summary = "Get cantonment dashboard (Balance + Paginated entries)")
     @GetMapping
-    public PageResponseDto<CantonmentEntrySummary> list(
+    public CantonmentDashboardResponse getDashboard(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String startDate,

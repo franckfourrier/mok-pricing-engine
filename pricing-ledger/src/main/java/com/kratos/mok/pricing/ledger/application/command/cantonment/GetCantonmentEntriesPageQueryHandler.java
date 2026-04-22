@@ -1,5 +1,6 @@
 package com.kratos.mok.pricing.ledger.application.command.cantonment;
 
+import com.kratos.mok.pricing.ledger.application.query.dashboard.GetDashboardCachedQueryHandler;
 import com.kratos.mok.pricing.ledger.infrastructure.model.LedgerEntryEntity;
 import com.kratos.mok.pricing.ledger.infrastructure.repository.JpaLedgerEntryRepository;
 import com.kratos.mok.pricing.shared.api.PageResponseDto;
@@ -18,23 +19,32 @@ import java.time.format.DateTimeFormatter;
 public class GetCantonmentEntriesPageQueryHandler {
 
     private final JpaLedgerEntryRepository jpaRepository;
+    private final GetDashboardCachedQueryHandler cachedDashboardHandler;
 
     @Value("${ledger.accounts.cantonment}")
     private String accCant;
 
-    public PageResponseDto<CantonmentEntrySummary> handle(GetCantonmentEntriesPageQuery q) {
+    public CantonmentDashboardResponse handle(GetCantonmentEntriesPageQuery q) {
+        // 1. Récupération du solde via le cache (Snapshot)
+        var dashboard = cachedDashboardHandler.handle();
+        var cantBalance = dashboard.cant(); // On récupère l'objet BalanceView du cantonnement
+
+        // 2. Récupération de la pagination classique
         int page = Math.max(q.page(), 0);
         int size = Math.min(Math.max(q.size(), 1), 100);
-
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "occurredAt"));
 
-        // 3. Filtrage spécifique au compte de Cantonnement
         Page<LedgerEntryEntity> p = jpaRepository.findByAccountCode(accCant, pageable);
+        var history = PageResponseDto.from(p.map(this::toSummary));
 
-        // 4. Mapping propre vers le format "Entrée/Sortie" du tableau
-        Page<CantonmentEntrySummary> mapped = p.map(this::toSummary);
-
-        return PageResponseDto.from(mapped);
+        // 3. On retourne l'objet combiné
+        return new CantonmentDashboardResponse(
+                cantBalance.amount(),
+                String.format("%,d %s", cantBalance.amount().longValue(), cantBalance.currency()),
+                cantBalance.currency(),
+                cantBalance.trend(),
+                history
+        );
     }
 
     private CantonmentEntrySummary toSummary(LedgerEntryEntity e) {
