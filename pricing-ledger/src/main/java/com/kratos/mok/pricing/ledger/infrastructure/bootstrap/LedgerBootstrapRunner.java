@@ -27,9 +27,12 @@ public class LedgerBootstrapRunner implements ApplicationRunner {
         ensure(props.getCantonment(), "Compte Cantonnement");
         ensure(props.getExploitation(), "Compte Exploitation");
         ensure(props.getTax(), "Compte Taxe");
-        ensure(props.getTaxRate(), "Sous-compte taxe (Rate)");
-        ensure(props.getTaxFixed(), "Sous-compte taxe (Fixed)");
+        ensure(props.getTaxRate(), "Sous-compte Taxe (Rate)");
+        ensure(props.getTaxFixed(), "Sous-compte Taxe (Fixed)");
         ensure(props.getDistributed(), "Compte Solde Distribué");
+        ensure(props.getDistributedSuperDistributor(), "Sous-compte Solde Distribué - Super Distributeur");
+        ensure(props.getDistributedDistributor(), "Sous-compte Solde Distribué - Distributeur");
+        ensure(props.getDistributedAgent(), "Sous-compte Solde Distribué - Agent");
         ensure(props.getExternal(), "Compte Reversement Ext.");
         ensure(props.getBankClearing(), "Compte de Compensation bancaire");
     }

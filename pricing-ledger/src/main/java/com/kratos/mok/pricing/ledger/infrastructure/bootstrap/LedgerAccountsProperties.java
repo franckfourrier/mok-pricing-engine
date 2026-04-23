@@ -15,6 +15,9 @@ public class LedgerAccountsProperties {
     private String tax = "ACC-TAX";
     private String bankClearing = "ACC-BANK-CLEAR";
     private String distributed = "ACC-DIST";
+    private String distributedSuperDistributor = "ACC-DIST-SUPER-DISTRIBUTOR";
+    private String distributedDistributor = "ACC-DIST-DISTRIBUTOR";
+    private String distributedAgent = "ACC-DIST-AGENT";
     private String external = "ACC-EXT";
     private String currency = "XAF";
 }

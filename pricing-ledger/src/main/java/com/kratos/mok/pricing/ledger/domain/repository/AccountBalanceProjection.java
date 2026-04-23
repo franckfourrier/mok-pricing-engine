@@ -5,4 +5,5 @@ import java.math.BigDecimal;
 public interface AccountBalanceProjection {
     String getAccountCode();
     BigDecimal getBalance();
+    Long getMemberCount();
 }

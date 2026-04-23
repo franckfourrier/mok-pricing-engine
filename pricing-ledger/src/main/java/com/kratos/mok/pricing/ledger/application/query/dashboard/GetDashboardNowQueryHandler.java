@@ -37,6 +37,15 @@ public class GetDashboardNowQueryHandler {
     @Value("${ledger.accounts.distributed:ACC-DIST}")
     private String accDist;
 
+    @Value("${ledger.accounts.distributedSuperDistributor}")
+    private String accDistSuperDistributor;
+
+    @Value("${ledger.accounts.distributedDistributor}")
+    private String accDistDistributor;
+
+    @Value("${ledger.accounts.distributedAgent}")
+    private String accDistAgent;
+
     @Value("${ledger.accounts.external:ACC-EXT}")
     private String accExt;
 
@@ -50,9 +59,12 @@ public class GetDashboardNowQueryHandler {
         var accTaxRateView  = compute(accTaxRate, now);
         var accTaxFixedView  = compute(accTaxFixed, now);
         var distView = compute(accDist, now);
+        var distSuperDistributorView = compute(accDistSuperDistributor, now);
+        var distDistributorView = compute(accDistDistributor, now);
+        var distAgentView = compute(accDistAgent, now);
         var extView  = compute(accExt, now);
 
-        validateMonoCurrency(cantView, expView, taxView, distView, extView);
+        validateMonoCurrency(cantView, expView, taxView, distView, distSuperDistributorView, distDistributorView, distAgentView, extView);
 
         String globalCurrency = cantView.currency();
 
@@ -65,6 +77,9 @@ public class GetDashboardNowQueryHandler {
                 accTaxFixedView,
                 accTaxRateView,
                 distView,
+                distSuperDistributorView,
+                distDistributorView,
+                distAgentView,
                 extView
         );
     }
@@ -97,7 +112,9 @@ public class GetDashboardNowQueryHandler {
                 current.balance().amount(),
                 current.currency(),
                 variation,
-                trend
+                trend,
+                current.memberCount()
+
         );
     }
 

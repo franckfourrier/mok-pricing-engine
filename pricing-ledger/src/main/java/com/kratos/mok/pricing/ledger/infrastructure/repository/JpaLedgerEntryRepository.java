@@ -41,7 +41,8 @@ public interface JpaLedgerEntryRepository extends JpaRepository<LedgerEntryEntit
                 WHEN e.direction = 'CREDIT' THEN e.amount
                 ELSE -e.amount
             END
-        ) as balance
+        ) as balance,
+        COUNT(e) as memberCount
     FROM LedgerEntryEntity e
     WHERE e.accountCode IN :accounts
     GROUP BY e.accountCode

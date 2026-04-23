@@ -36,6 +36,15 @@ public class GetDashboardCachedQueryHandler {
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
+    @Value("${ledger.accounts.distributedSuperDistributor}")
+    private String accDistSuperDistributor;
+
+    @Value("${ledger.accounts.distributedDistributor}")
+    private String accDistDistributor;
+
+    @Value("${ledger.accounts.distributedAgent}")
+    private String accDistAgent;
+
     @Value("${ledger.accounts.external}")
     private String accExt;
 
@@ -43,7 +52,7 @@ public class GetDashboardCachedQueryHandler {
     public DashboardView handle() {
 
         List<String> accounts = List.of(
-                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accExt
+                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accDistSuperDistributor, accDistDistributor, accDistAgent, accExt
         );
 
         var list = repo.findAllById(accounts);
@@ -58,12 +67,15 @@ public class GetDashboardCachedQueryHandler {
         var taxRate  = find(list, accTaxRate);
         var taxFixed  = find(list, accTaxFixed);
         var dist = find(list, accDist);
+        var distSuper = find(list, accDistSuperDistributor);
+        var distDist  = find(list, accDistDistributor);
+        var distAgent = find(list, accDistAgent);
         var ext  = find(list, accExt);
 
         // Currency cohérente
         String currency = cant.currency();
 
-        validateMonoCurrency(cant, exp, tax, taxFixed, taxRate, dist, ext);
+        validateMonoCurrency(cant, exp, tax, taxFixed, taxRate, dist, distSuper, distDist, distAgent,  ext);
 
         // Timestamp depuis DB (pas system clock)
         OffsetDateTime updatedAt = list.stream()
@@ -80,6 +92,9 @@ public class GetDashboardCachedQueryHandler {
                 taxFixed,
                 taxRate,
                 dist,
+                distSuper,
+                distDist,
+                distAgent,
                 ext
         );
     }
@@ -93,9 +108,10 @@ public class GetDashboardCachedQueryHandler {
                         e.getBalance(),
                         e.getCurrency(),
                         e.getLastVariation(),
-                        e.getLastTrend()
+                        e.getLastTrend(),
+                        e.getMemberCount()
                 ))
-                .orElse(new BalanceView(code, BigDecimal.ZERO, "XAF", BigDecimal.ZERO, "STABLE"));
+                .orElse(new BalanceView(code, BigDecimal.ZERO, "XAF", BigDecimal.ZERO, "STABLE", 0));
     }
 
     // Sécurité currency

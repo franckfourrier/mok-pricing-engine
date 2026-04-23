@@ -22,6 +22,9 @@ public class DashboardSnapshotService {
                 toEntity(view.taxFixed(), view),
                 toEntity(view.taxRate(), view),
                 toEntity(view.dist(), view),
+                toEntity(view.distSuper(), view),
+                toEntity(view.distDist(), view),
+                toEntity(view.distAgent(), view),
                 toEntity(view.ext(), view)
         );
 
@@ -37,6 +40,7 @@ public class DashboardSnapshotService {
         e.setCurrency(b.currency());
         e.setLastVariation(b.variation());
         e.setLastTrend(b.trend());
+        e.setMemberCount(b.memberCount());
         e.setUpdatedAt(v.updatedAt());
 
         return e;

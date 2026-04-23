@@ -12,6 +12,9 @@ public record DashboardView(
         BalanceView taxFixed,
         BalanceView taxRate,
         BalanceView dist,
+        BalanceView distSuper,
+        BalanceView distDist,
+        BalanceView distAgent,
         BalanceView ext
 ) {
 }

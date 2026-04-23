@@ -40,6 +40,15 @@ public class DashboardSnapshotUpdater {
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
+    @Value("${ledger.accounts.distributedSuperDistributor}")
+    private String accDistSuperDistributor;
+
+    @Value("${ledger.accounts.distributedDistributor}")
+    private String accDistDistributor;
+
+    @Value("${ledger.accounts.distributedAgent}")
+    private String accDistAgent;
+
     @Value("${ledger.accounts.external}")
     private String accExt;
 
@@ -48,7 +57,7 @@ public class DashboardSnapshotUpdater {
     public void refreshSnapshot() {
 
         List<String> accounts = List.of(
-                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accExt
+                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accDistSuperDistributor, accDistDistributor, accDistAgent, accExt
         );
 
         var balances = entryRepo.computeBalances(accounts);
@@ -77,6 +86,8 @@ public class DashboardSnapshotUpdater {
             entity.setLastVariation(variation);
             entity.setLastTrend(resolveTrend(variation));
             entity.setUpdatedAt(now);
+
+            entity.setMemberCount(b.getMemberCount());
 
             return entity;
 

@@ -38,6 +38,9 @@ ledger:
     taxRate: ${LEDGER_TAX_RATE:ACC-TAX-RATE}
     taxFixed: ${LEDGER_TAX_FIXED:ACC-TAX-FIXED}
     external: ${LEDGER_EXT:ACC-EXT}
-    distributed: ${LEDGER_DIST:ACC-DIST}
+    distributed: ${LEDGER_DIST:ACC-DIST} # Remis à plat
+    distributedSuperDistributor: ${LEDGER_DIST_SUPER_DISTRIBUTOR:ACC-DIST-SUPER-DISTRIBUTOR}
+    distributedDistributor: ${LEDGER_DIST_DISTRIBUTOR:ACC-DIST-DISTRIBUTOR}
+    distributedAgent: ${LEDGER_DIST_AGENT:ACC-DIST-AGENT}
     currency: "XAF"
     bankClearing: ${LEDGER_BANK_CLEAR:ACC-BANK-CLEAR}

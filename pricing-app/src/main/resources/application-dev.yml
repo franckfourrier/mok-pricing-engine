@@ -55,6 +55,9 @@ ledger:
     taxFixed: "ACC-TAX-FIXED"
     external: "ACC-EXT"
     distributed: "ACC-DIST"
+    distributedSuperDistributor: "ACC-DIST-SUPER-DISTRIBUTOR"
+    distributedDistributor: "ACC-DIST-DISTRIBUTOR"
+    distributedAgent: "ACC-DIST-AGENT"
     currency: "XAF"
     bankClearing: "ACC-BANK-CLEAR"
 

@@ -7,6 +7,7 @@ public record BalanceView(
         BigDecimal amount,
         String currency,
         BigDecimal variation,
-        String trend
+        String trend,
+        long memberCount
 ) {
 }

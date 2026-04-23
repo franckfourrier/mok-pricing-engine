@@ -33,6 +33,9 @@ public class DashboardSnapshotEntity {
     @Column(name = "last_trend", length = 10)
     private String lastTrend;
 
+    @Column(name = "member_count", nullable = false)
+    private long memberCount = 0;
+
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 }

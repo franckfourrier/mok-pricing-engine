@@ -64,6 +64,15 @@ public class ApplyPricingToTransactionCommandHandler {
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
+    @Value("${ledger.accounts.distributedSuperDistributor}")
+    private String accDistSuperDistributor;
+
+    @Value("${ledger.accounts.distributedDistributor}")
+    private String accDistDistributor;
+
+    @Value("${ledger.accounts.distributedAgent}")
+    private String accDistAgent;
+
     @Value("${ledger.accounts.external}")
     private String accExt;
 
@@ -191,12 +200,31 @@ public class ApplyPricingToTransactionCommandHandler {
             default                    -> Money.ZERO;
         };
 
-        /* Prise en compte du paiement de commissions*/
+        /* Prise en compte du paiement de commissions */
         if (expDebit != null && !expDebit.isZero()) {
+            // 1. On débite l'exploitation et on crédite le compte global distribué (Somme totale)
             postings.add(debit(accExp, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
-                    "COMMISSION payout tx=" + cmd.externalTxId()));
+                    "COMMISSION payout total tx=" + cmd.externalTxId()));
             postings.add(credit(accDist, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
-                    "COMMISSION payout tx=" + cmd.externalTxId()));
+                    "COMMISSION payout total tx=" + cmd.externalTxId()));
+
+            // 2. On ventile sur les sous-comptes spécifiques selon le bénéficiaire
+            for (var line : comRes.lines()) {
+                if (line.amount() == null || line.amount().isZero()) continue;
+
+                String beneficiary = line.beneficiary().toUpperCase();
+                String targetSubAccount = switch (beneficiary) {
+                    case "SUPER_DISTRIBUTOR" -> accDistSuperDistributor;
+                    case "DISTRIBUTOR"       -> accDistDistributor;
+                    case "AGENT"             -> accDistAgent;
+                    default -> null; // KRATOS ou autre n'irait pas dans ces sous-comptes
+                };
+
+                if (targetSubAccount != null) {
+                    postings.add(credit(targetSubAccount, line.amount(), LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
+                            "COMMISSION payout " + beneficiary + " tx=" + cmd.externalTxId()));
+                }
+            }
         }
 
         /*Money kratos = sumForBeneficiary(comRes, "KRATOS");

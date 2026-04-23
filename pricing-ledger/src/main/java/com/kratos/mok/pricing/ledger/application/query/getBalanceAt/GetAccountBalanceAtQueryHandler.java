@@ -24,6 +24,6 @@ public class GetAccountBalanceAtQueryHandler {
         var acc = accounts.findByCode(code).orElseThrow(() -> new IllegalArgumentException("Unknown ledger account: " + code.value()));
 
         Money bal = entries.balanceAt(code, q.at(), acc.currency());
-        return new AccountBalanceView(code.value(), bal, acc.currency());
+        return new AccountBalanceView(code.value(), bal, 0,acc.currency());
     }
 }
