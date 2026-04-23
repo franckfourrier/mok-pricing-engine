@@ -28,6 +28,12 @@ public class GetDashboardNowQueryHandler {
     @Value("${ledger.accounts.tax:ACC-TAX}")
     private String accTax;
 
+    @Value("${ledger.accounts.taxRate}")
+    private String accTaxRate;
+
+    @Value("${ledger.accounts.taxFixed}")
+    private String accTaxFixed;
+
     @Value("${ledger.accounts.distributed:ACC-DIST}")
     private String accDist;
 
@@ -41,6 +47,8 @@ public class GetDashboardNowQueryHandler {
         var cantView = compute(accCant, now);
         var expView  = compute(accExp, now);
         var taxView  = compute(accTax, now);
+        var accTaxRateView  = compute(accTaxRate, now);
+        var accTaxFixedView  = compute(accTaxFixed, now);
         var distView = compute(accDist, now);
         var extView  = compute(accExt, now);
 
@@ -54,6 +62,8 @@ public class GetDashboardNowQueryHandler {
                 cantView,
                 expView,
                 taxView,
+                accTaxFixedView,
+                accTaxRateView,
                 distView,
                 extView
         );

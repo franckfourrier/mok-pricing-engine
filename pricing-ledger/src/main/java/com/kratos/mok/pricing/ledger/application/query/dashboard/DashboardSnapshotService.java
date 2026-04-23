@@ -19,6 +19,8 @@ public class DashboardSnapshotService {
                 toEntity(view.cant(), view),
                 toEntity(view.exp(), view),
                 toEntity(view.tax(), view),
+                toEntity(view.taxFixed(), view),
+                toEntity(view.taxRate(), view),
                 toEntity(view.dist(), view),
                 toEntity(view.ext(), view)
         );

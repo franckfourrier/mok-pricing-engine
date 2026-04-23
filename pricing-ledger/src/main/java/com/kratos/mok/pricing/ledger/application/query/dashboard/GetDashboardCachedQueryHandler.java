@@ -27,6 +27,12 @@ public class GetDashboardCachedQueryHandler {
     @Value("${ledger.accounts.tax}")
     private String accTax;
 
+    @Value("${ledger.accounts.taxRate}")
+    private String accTaxRate;
+
+    @Value("${ledger.accounts.taxFixed}")
+    private String accTaxFixed;
+
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
@@ -37,7 +43,7 @@ public class GetDashboardCachedQueryHandler {
     public DashboardView handle() {
 
         List<String> accounts = List.of(
-                accCant, accExp, accTax, accDist, accExt
+                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accExt
         );
 
         var list = repo.findAllById(accounts);
@@ -49,13 +55,15 @@ public class GetDashboardCachedQueryHandler {
         var cant = find(list, accCant);
         var exp  = find(list, accExp);
         var tax  = find(list, accTax);
+        var taxRate  = find(list, accTaxRate);
+        var taxFixed  = find(list, accTaxFixed);
         var dist = find(list, accDist);
         var ext  = find(list, accExt);
 
         // Currency cohérente
         String currency = cant.currency();
 
-        validateMonoCurrency(cant, exp, tax, dist, ext);
+        validateMonoCurrency(cant, exp, tax, taxFixed, taxRate, dist, ext);
 
         // Timestamp depuis DB (pas system clock)
         OffsetDateTime updatedAt = list.stream()
@@ -69,6 +77,8 @@ public class GetDashboardCachedQueryHandler {
                 cant,
                 exp,
                 tax,
+                taxFixed,
+                taxRate,
                 dist,
                 ext
         );

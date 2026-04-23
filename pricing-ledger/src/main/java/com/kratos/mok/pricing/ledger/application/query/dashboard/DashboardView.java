@@ -9,6 +9,8 @@ public record DashboardView(
         BalanceView cant,
         BalanceView exp,
         BalanceView tax,
+        BalanceView taxFixed,
+        BalanceView taxRate,
         BalanceView dist,
         BalanceView ext
 ) {

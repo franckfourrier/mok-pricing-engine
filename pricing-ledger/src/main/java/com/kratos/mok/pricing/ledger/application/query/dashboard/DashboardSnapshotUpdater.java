@@ -31,6 +31,12 @@ public class DashboardSnapshotUpdater {
     @Value("${ledger.accounts.tax}")
     private String accTax;
 
+    @Value("${ledger.accounts.taxRate}")
+    private String accTaxRate;
+
+    @Value("${ledger.accounts.taxFixed}")
+    private String accTaxFixed;
+
     @Value("${ledger.accounts.distributed}")
     private String accDist;
 
@@ -42,7 +48,7 @@ public class DashboardSnapshotUpdater {
     public void refreshSnapshot() {
 
         List<String> accounts = List.of(
-                accCant, accExp, accTax, accDist, accExt
+                accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accExt
         );
 
         var balances = entryRepo.computeBalances(accounts);
