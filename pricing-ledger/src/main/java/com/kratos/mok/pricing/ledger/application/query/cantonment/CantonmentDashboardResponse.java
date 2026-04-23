@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.ledger.application.command.cantonment;
+package com.kratos.mok.pricing.ledger.application.query.cantonment;
 
 import com.kratos.mok.pricing.shared.api.PageResponseDto;
 
