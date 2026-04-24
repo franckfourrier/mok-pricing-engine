@@ -6,5 +6,5 @@ public record FeeComputeResponse(
         String transactionCode,
         MoneyDto transactionAmount,
         MoneyDto fee,
-        MoneyDto tax
+        String feePolicyId
 ) {}
