@@ -2,7 +2,6 @@ package com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingT
 
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
-import com.kratos.mok.pricing.shared.domain.enums.TransactionType;
 import jakarta.validation.constraints.*;
 
 import java.time.OffsetDateTime;
