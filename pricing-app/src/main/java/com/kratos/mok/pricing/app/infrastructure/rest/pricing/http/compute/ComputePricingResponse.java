@@ -1,8 +1,6 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.pricing.http.compute;
 
-import com.kratos.mok.pricing.fees.application.port.FeeComputationResult;
-import com.kratos.mok.pricing.taxes.application.port.TaxComputationResult;
-
+import com.kratos.mok.pricing.app.application.query.computePricing.PricingResult;
 import java.math.BigDecimal;
 
 public record ComputePricingResponse(
@@ -10,23 +8,25 @@ public record ComputePricingResponse(
         String currency,
         BigDecimal amount,
         BigDecimal fee,
-        BigDecimal tax
+        BigDecimal tax,
+        BigDecimal total
 ) {
     public static ComputePricingResponse from(
             ComputePricingRequest req,
-            FeeComputationResult feeRes,
-            TaxComputationResult taxRes) {
+            PricingResult result) {
+
+        var fee = result.fee().fee().amount();
+        var tax = result.tax().tax().amount();
 
         BigDecimal base = new BigDecimal(req.amount());
-        BigDecimal f = feeRes.fee().amount();
-        BigDecimal t = taxRes.tax().amount();
 
         return new ComputePricingResponse(
                 req.transactionCode(),
                 req.currency(),
                 base,
-                f,
-                t
+                fee,
+                tax,
+                base.add(fee).add(tax)
         );
     }
 }

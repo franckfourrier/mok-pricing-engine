@@ -10,10 +10,16 @@ import jakarta.validation.constraints.Pattern;
 
 import java.time.OffsetDateTime;
 
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_DEPOSIT;
+import static com.kratos.mok.pricing.shared.domain.enums.TransactionCode.SUBSCRIBER_WITHDRAWAL;
+
 public record ComputePricingRequest(
         @Schema(description = "Code de transaction", example = "SUBSCRIBER_DEPOSIT", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "Le code de transaction est obligatoire")
         String transactionCode,
+
+        @Schema(description = "Inclure frais de retrait (dépôt pour retrait)", defaultValue = "false")
+        Boolean includeWithdrawalFees,
 
         @Schema(description = "Montant de la transaction", example = "1000", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "Le montant est obligatoire")
@@ -41,21 +47,21 @@ public record ComputePricingRequest(
         OffsetDateTime occurredAt
 ) {
     public PricingRequestContext toDomainContext(OffsetDateTime defaultNow) {
-        // 1. Nettoyage et Parsing sécurisé du code transaction
-        TransactionCode txCode = parseTransactionCode(transactionCode);
 
-        // 2. Logique métier : Dépôt traité comme un retrait
-        TransactionCode effectiveCode = (txCode == TransactionCode.SUBSCRIBER_DEPOSIT)
-                ? TransactionCode.SUBSCRIBER_WITHDRAWAL
+        TransactionCode txCode = parseTransactionCode(transactionCode);
+        AccountType accType = parseAccountType(accountType);
+
+        // 1. On calcule d'abord la valeur booléenne sécurisée (Null-safe)
+        boolean effectiveInclude = (includeWithdrawalFees == null) ? false : includeWithdrawalFees;
+
+        // 2. On utilise cette valeur propre pour le code effectif
+        TransactionCode effectiveCode = (txCode == SUBSCRIBER_DEPOSIT && effectiveInclude)
+                ? SUBSCRIBER_WITHDRAWAL
                 : txCode;
 
-        // 3. Gestion de la devise par défaut
-        String effectiveCurrency = (currency == null || currency.isBlank())
-                ? "XAF"
-                : currency.trim().toUpperCase();
-
-        // 4. Parsing sécurisé du type de compte
-        AccountType accType = parseAccountType(accountType);
+        // 3. Le reste reste inchangé
+        String effectiveCurrency = (currency == null || currency.isBlank()) ? "XAF" : currency.trim().toUpperCase();
+        OffsetDateTime effectiveDate = (occurredAt == null) ? defaultNow : occurredAt;
 
         return new PricingRequestContext(
                 effectiveCode,
@@ -64,17 +70,14 @@ public record ComputePricingRequest(
                 accType,
                 kycValidated,
                 monthlyTxCount == null ? 0 : monthlyTxCount,
-                occurredAt == null ? defaultNow : occurredAt
+                effectiveDate
         );
     }
-
-    // --- Méthodes privées pour éviter les plantages (Internal Server Error) ---
 
     private TransactionCode parseTransactionCode(String code) {
         try {
             return TransactionCode.valueOf(code.trim().toUpperCase());
         } catch (Exception e) {
-            // Ici, tu peux lever une exception personnalisée capturée par un @ExceptionHandler
             throw new IllegalArgumentException("Code de transaction invalide : " + code);
         }
     }
