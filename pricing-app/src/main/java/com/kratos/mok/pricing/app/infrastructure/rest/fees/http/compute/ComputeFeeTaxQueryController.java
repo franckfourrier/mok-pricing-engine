@@ -1,12 +1,12 @@
 package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.compute;
 
 import com.kratos.mok.pricing.fees.application.query.computeFee.ComputeFeeQueryHandler;
-import com.kratos.mok.pricing.fees.application.query.computeFee.FeeComputeResponse;
 import com.kratos.mok.pricing.shared.api.MoneyDto;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
+import com.kratos.mok.pricing.taxes.application.query.computeTax.ComputeTaxQueryHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,20 +14,22 @@ import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/v1/fees")
-public class ComputeFeeQueryController {
+public class ComputeFeeTaxQueryController {
 
     private final ComputeFeeQueryHandler feeService;
+    private final ComputeTaxQueryHandler taxService;
 
-    public ComputeFeeQueryController(ComputeFeeQueryHandler feeService) {
+    public ComputeFeeTaxQueryController(ComputeFeeQueryHandler feeService, ComputeTaxQueryHandler taxService) {
         this.feeService = feeService;
+        this.taxService = taxService;
     }
 
     @Operation(
-            summary = "Compute applicable fee",
-            description = "Returns the applicable fee only (no taxes, no commissions)"
+            summary = "Compute applicable fee and tax",
+            description = "Returns the applicable fee and tax only (no commissions)"
     )
     @GetMapping("/compute")
-    public FeeComputeResponse computeFee(
+    public FeeTaxComputeResponse computeFee(
             @RequestParam String transactionCode,
             @RequestParam String amount,
             @RequestParam String currency,
@@ -50,13 +52,17 @@ public class ComputeFeeQueryController {
                 occurredAt
         );
 
-        var result = feeService.computeFee(ctx);
+        var resultFee = feeService.computeFee(ctx);
 
-        return new FeeComputeResponse(
+        var resultTax = taxService.computeTax(ctx);
+
+        return new FeeTaxComputeResponse(
                 txCode.name(),
                 new MoneyDto(txAmount.amount(), txAmount.currency()),
-                new MoneyDto(result.fee().amount(), result.fee().currency()),
-                result.feePolicyId()
+                new MoneyDto(resultFee.fee().amount(), resultFee.fee().currency()),
+                resultFee.feePolicyId(),
+                new MoneyDto(resultTax.tax().amount(), resultTax.tax().currency()),
+                resultTax.taxPolicyId()
         );
     }
 }
