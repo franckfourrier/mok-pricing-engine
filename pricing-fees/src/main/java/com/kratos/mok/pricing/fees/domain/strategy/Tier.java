@@ -21,8 +21,8 @@ public record Tier(Money min, Money max, FeeStrategy strategy) {
     }
 
     public boolean covers(Money amount) {
-        // INCLUSIF sur le Min (>=) EXCLUSIF sur le Max (<)
-        return amount.compareTo(min) >= 0 && amount.compareTo(max) < 0;
+        // INCLUSIF sur le Min (>=) INCLUSIF sur le Max (<=)
+        return amount.compareTo(min) >= 0 && amount.compareTo(max) <= 0;
     }
 
     public Money calculate(Money amount) {
