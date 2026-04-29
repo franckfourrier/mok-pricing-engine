@@ -25,25 +25,25 @@ public class GetDistributedDashboardQueryHandler {
                         "001",
                         "Super Distributeurs",
                         dashboard.distSuper().memberCount(),
-                        MoneyFormatter.format(dashboard.distSuper().amount(), dashboard.distSuper().currency())
+                        MoneyFormatter.formatUi(dashboard.distSuper().amount(), dashboard.distSuper().currency())
                 ),
                 new DistributedAccountSummary(
                         "002",
                         "Distributeurs",
                         dashboard.distDist().memberCount(),
-                        MoneyFormatter.format(dashboard.distDist().amount(), dashboard.distDist().currency())
+                        MoneyFormatter.formatUi(dashboard.distDist().amount(), dashboard.distDist().currency())
                 ),
                 new DistributedAccountSummary(
                         "003",
                         "Agents",
                         dashboard.distAgent().memberCount(),
-                        MoneyFormatter.format(dashboard.distAgent().amount(), dashboard.distAgent().currency())
+                        MoneyFormatter.formatUi(dashboard.distAgent().amount(), dashboard.distAgent().currency())
                 )
         );
 
         return new DistributedDashboardResponse(
                 totalDist.amount(),
-                MoneyFormatter.format(totalDist.amount(), totalDist.currency()),
+                MoneyFormatter.formatUi(totalDist.amount(), totalDist.currency()),
                 totalDist.currency(),
                 totalDist.trend(),
                 items

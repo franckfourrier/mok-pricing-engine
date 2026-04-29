@@ -18,6 +18,7 @@ public record DashboardResponse(
     public record BalanceDTO(
             String accountCode,
             BigDecimal amount,
+            String formattedAmount,
             @JsonIgnore String currency,
             BigDecimal variation,
             String trend

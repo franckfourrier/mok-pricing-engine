@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.app.infrastructure.rest.ledger.dto;
 
 import com.kratos.mok.pricing.ledger.application.query.dashboard.DashboardView;
 import com.kratos.mok.pricing.ledger.application.query.dashboard.BalanceView;
+import com.kratos.mok.pricing.shared.domain.money.MoneyFormatter;
 
 import java.time.format.DateTimeFormatter;
 
@@ -26,6 +27,7 @@ public final class DashboardMapper {
         return new DashboardResponse.BalanceDTO(
                 v.accountCode(),
                 v.amount(),
+                MoneyFormatter.formatUi(v.amount(),  v.currency()),
                 v.currency(),
                 v.variation(),
                 v.trend()

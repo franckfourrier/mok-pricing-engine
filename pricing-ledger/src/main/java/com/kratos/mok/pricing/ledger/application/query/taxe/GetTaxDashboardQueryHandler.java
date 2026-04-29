@@ -27,12 +27,12 @@ public class GetTaxDashboardQueryHandler {
                 new TaxEntrySummary(
                         "001",
                         "Taxe Forfaitaire",
-                        MoneyFormatter.format(fixedTax.amount(), fixedTax.currency())
+                        MoneyFormatter.formatUi(fixedTax.amount(), fixedTax.currency())
                 ),
                 new TaxEntrySummary(
                         "002",
                         "Taxe Electronique",
-                        MoneyFormatter.format(rateTax.amount(), rateTax.currency())
+                        MoneyFormatter.formatUi(rateTax.amount(), rateTax.currency())
                 )
         );
 
@@ -41,7 +41,7 @@ public class GetTaxDashboardQueryHandler {
 
         return new TaxDashboardResponse(
                 globalTax.amount(),
-                MoneyFormatter.format(globalTax.amount(), globalTax.currency()),
+                MoneyFormatter.formatUi(globalTax.amount(), globalTax.currency()),
                 globalTax.currency(),
                 globalTax.trend(),
                 items
