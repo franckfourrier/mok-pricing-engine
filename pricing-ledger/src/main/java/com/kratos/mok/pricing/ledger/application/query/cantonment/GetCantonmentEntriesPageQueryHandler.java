@@ -52,15 +52,15 @@ public class GetCantonmentEntriesPageQueryHandler { //TODO
 
     private CantonmentEntrySummary toSummary(LedgerEntryEntity e) {
         boolean isCredit = "CREDIT".equals(e.getDirection().name());
+        String sign = isCredit ? "+ " : "- ";
 
-        // On utilise l'utilitaire partagé ici aussi pour garder les décimales (%,.2f)
-        String amountStr = MoneyFormatter.format(e.getAmount(), e.getCurrency());
+        String amountStr = MoneyFormatter.formatUi(e.getAmount(), e.getCurrency());
 
         return new CantonmentEntrySummary(
                 e.getId(),
-                e.getId().substring(0, 4).toUpperCase(),
-                isCredit ? "+ " + amountStr : "/",
-                !isCredit ? "- " + amountStr : "/",
+                e.getId().substring(0, 3),
+                isCredit ? "Entrée" : "Sortie",
+                sign + amountStr,
                 e.getDescription(),
                 e.getOccurredAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 e.getOccurredAt().format(DateTimeFormatter.ofPattern("HH:mm:ss"))

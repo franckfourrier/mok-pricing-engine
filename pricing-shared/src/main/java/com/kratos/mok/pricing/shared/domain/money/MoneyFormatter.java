@@ -9,28 +9,28 @@ public final class MoneyFormatter {
 
     private MoneyFormatter() {}
 
-    /**
-     * Transforme XAF en FCFA, sinon garde le code ISO.
-     */
     public static String getCurrencyLabel(String isoCode) {
         if (isoCode == null || isoCode.isBlank()) return "";
-        return "XAF".equalsIgnoreCase(isoCode.trim()) ? "FCFA" : isoCode.toUpperCase();
+        return "XAF".equalsIgnoreCase(isoCode.trim()) ? "Fcfa" : isoCode.toUpperCase();
     }
 
-    /**
-     * Formate le montant avec séparateurs de milliers et 2 décimales.
-     * Exemple: 182.5 -> "182,50 FCFA"
-     */
     public static String format(BigDecimal amount, String isoCode) {
+        return format(amount, isoCode, "#,##0.00");
+    }
+
+    public static String formatUi(BigDecimal amount, String isoCode) {
+        return format(amount, isoCode, "#,##0.##");
+    }
+
+    private static String format(BigDecimal amount, String isoCode, String pattern) {
         if (amount == null) return "";
 
-        // Utilisation d'un DecimalFormat pour garantir le formatage français (espaces/virgules)
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.FRENCH);
-        symbols.setGroupingSeparator(' '); // Espace pour les milliers
-        symbols.setDecimalSeparator(',');  // Virgule pour les centimes
+        symbols.setGroupingSeparator(' ');
+        symbols.setDecimalSeparator(',');
 
-        DecimalFormat df = new DecimalFormat("#,##0.00", symbols);
+        DecimalFormat df = new DecimalFormat(pattern, symbols);
 
-        return String.format("%s %s", df.format(amount), getCurrencyLabel(isoCode));
+        return df.format(amount) + " " + getCurrencyLabel(isoCode);
     }
 }
