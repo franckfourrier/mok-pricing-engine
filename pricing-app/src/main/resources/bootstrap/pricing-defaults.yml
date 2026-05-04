@@ -14,7 +14,7 @@ bootstrap:
           max: "10000"
           tierStrategyType: FIXED
           tierValue: "50"
-        - min: "10000"
+        - min: "10001"
           max: "100000"
           tierStrategyType: PROPORTIONAL
           tierValue: "0.005"
