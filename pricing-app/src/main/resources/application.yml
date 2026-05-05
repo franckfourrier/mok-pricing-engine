@@ -6,8 +6,6 @@ spring:
     serialization:
       INDENT_OUTPUT: false
     time-zone: UTC
-  config:
-    import: "classpath:bootstrap/pricing-defaults.yml"
   jpa:
     open-in-view: false
   cache:
