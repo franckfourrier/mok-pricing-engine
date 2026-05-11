@@ -46,20 +46,20 @@ logging:
     org.springframework.web: INFO
     org.springframework.security: INFO
 
-ledger:
-  accounts:
-    cantonment: "ACC-CANT"
-    exploitation: "ACC-EXP"
-    tax: "ACC-TAX"
-    taxRate: "ACC-TAX-RATE"
-    taxFixed: "ACC-TAX-FIXED"
-    external: "ACC-EXT"
-    distributed: "ACC-DIST"
-    distributedSuperDistributor: "ACC-DIST-SUPER-DISTRIBUTOR"
-    distributedDistributor: "ACC-DIST-DISTRIBUTOR"
-    distributedAgent: "ACC-DIST-AGENT"
-    currency: "XAF"
-    bankClearing: "ACC-BANK-CLEAR"
+#ledger:
+#  accounts:
+#    cantonment: "ACC-CANT"
+#    exploitation: "ACC-EXP"
+#    tax: "ACC-TAX"
+#    taxRate: "ACC-TAX-RATE"
+#    taxFixed: "ACC-TAX-FIXED"
+#    external: "ACC-EXT"
+#    distributed: "ACC-DIST"
+#    distributedSuperDistributor: "ACC-DIST-SUPER-DISTRIBUTOR"
+#    distributedDistributor: "ACC-DIST-DISTRIBUTOR"
+#    distributedAgent: "ACC-DIST-AGENT"
+#    currency: "XAF"
+#    bankClearing: "ACC-BANK-CLEAR"
 
 mok:
   currency:
