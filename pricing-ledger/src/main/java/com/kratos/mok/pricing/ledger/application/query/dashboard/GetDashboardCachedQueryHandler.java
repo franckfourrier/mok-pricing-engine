@@ -2,6 +2,7 @@ package com.kratos.mok.pricing.ledger.application.query.dashboard;
 
 import com.kratos.mok.pricing.ledger.infrastructure.model.DashboardSnapshotEntity;
 import com.kratos.mok.pricing.ledger.infrastructure.repository.DashboardSnapshotRepository;
+import com.kratos.mok.pricing.shared.domain.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,6 +18,8 @@ import java.util.List;
 public class GetDashboardCachedQueryHandler {
 
     private final DashboardSnapshotRepository repo;
+
+    private final TimeProvider timeProvider;
 
     @Value("${ledger.accounts.cantonment}")
     private String accCant;
@@ -51,15 +54,17 @@ public class GetDashboardCachedQueryHandler {
     @Cacheable(value = "dashboard", key = "'GLOBAL'")
     public DashboardView handle() {
 
+        var now = timeProvider.now();
+
         List<String> accounts = List.of(
                 accCant, accExp, accTax, accTaxRate, accTaxFixed, accDist, accDistSuperDistributor, accDistDistributor, accDistAgent, accExt
         );
 
         var list = repo.findAllById(accounts);
 
-        if (list.isEmpty()) {
+        /*if (list.isEmpty()) {
             throw new IllegalStateException("No dashboard snapshot found");
-        }
+        }*/
 
         var cant = find(list, accCant);
         var exp  = find(list, accExp);
@@ -78,10 +83,15 @@ public class GetDashboardCachedQueryHandler {
         validateMonoCurrency(cant, exp, tax, taxFixed, taxRate, dist, distSuper, distDist, distAgent,  ext);
 
         // Timestamp depuis DB (pas system clock)
+       /* OffsetDateTime updatedAt = list.stream()
+                .map(DashboardSnapshotEntity::getUpdatedAt)
+                .max(OffsetDateTime::compareTo)
+                .orElseThrow(() -> new IllegalStateException("No snapshot timestamp found"));*/
+
         OffsetDateTime updatedAt = list.stream()
                 .map(DashboardSnapshotEntity::getUpdatedAt)
                 .max(OffsetDateTime::compareTo)
-                .orElseThrow(() -> new IllegalStateException("No snapshot timestamp found"));
+                .orElse(now);
 
         return new DashboardView(
                 currency,
