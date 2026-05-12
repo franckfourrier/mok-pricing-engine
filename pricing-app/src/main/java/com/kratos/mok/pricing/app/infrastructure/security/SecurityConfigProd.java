@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
-@Profile({"prod", "docker"})
+@Profile({"docker"})
 public class SecurityConfigProd {
 
     @Bean

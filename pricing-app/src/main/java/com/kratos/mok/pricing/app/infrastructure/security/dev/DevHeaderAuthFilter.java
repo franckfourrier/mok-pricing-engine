@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,8 +18,11 @@ import java.util.List;
 
 public class DevHeaderAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DevHeaderAuthFilter.class);
+
     public static final String ACTOR_HEADER = "X-Actor-Id";
     public static final String ROLES_HEADER = "X-Roles";
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -34,7 +39,7 @@ public class DevHeaderAuthFilter extends OncePerRequestFilter {
                 String rolesRaw = request.getHeader(ROLES_HEADER);
 
                 List<SimpleGrantedAuthority> authorities = (rolesRaw == null || rolesRaw.isBlank())
-                        ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN")) // défaut dev
+                        ? List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
                         : Arrays.stream(rolesRaw.split(","))
                         .map(String::trim)
                         .filter(s -> !s.isBlank())
@@ -42,11 +47,31 @@ public class DevHeaderAuthFilter extends OncePerRequestFilter {
                         .map(SimpleGrantedAuthority::new)
                         .toList();
 
-                var auth = new UsernamePasswordAuthenticationToken(actorId.trim(), "N/A", authorities);
+                var auth = new UsernamePasswordAuthenticationToken(
+                        actorId.trim(),
+                        "N/A",
+                        authorities);
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
+                LOGGER.debug(
+                        "Dev authentication injected for actor={} authorities={}",
+                        actorId,
+                        authorities
+                );
+            }
+            else {
+
+                LOGGER.debug(
+                        "No {} header found for request {} {}",
+                        ACTOR_HEADER,
+                        request.getMethod(),
+                        request.getRequestURI()
+                );
             }
         }
 
         filterChain.doFilter(request, response);
     }
+
 }
