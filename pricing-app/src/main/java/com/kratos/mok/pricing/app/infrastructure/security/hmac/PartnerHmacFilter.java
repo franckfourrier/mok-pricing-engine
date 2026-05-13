@@ -175,7 +175,7 @@ public class PartnerHmacFilter extends OncePerRequestFilter {
     private void writeError(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.getWriter().write(objectMapper.writeValueAsString(ApiResult.nok(message)));
+        //response.getWriter().write(objectMapper.writeValueAsString(ApiResult.nok(message)));
     }
 
     private boolean isBlank(String value) {
