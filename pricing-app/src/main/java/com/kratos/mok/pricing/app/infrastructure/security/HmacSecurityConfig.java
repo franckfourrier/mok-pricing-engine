@@ -17,7 +17,7 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 public class HmacSecurityConfig {
 
     @Bean
-    @Order(1)
+    @Order(2)
     SecurityFilterChain hmacSecurityFilterChain(
             HttpSecurity http,
             PartnerHmacFilter partnerHmacFilter

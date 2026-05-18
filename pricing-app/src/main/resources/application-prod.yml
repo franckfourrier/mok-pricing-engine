@@ -2,18 +2,23 @@ spring:
   config:
     activate:
       on-profile: prod
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/mok}
 
   datasource:
     pricing:
       url: jdbc:postgresql://localhost:5432/pricing_db
-      username: gateway_prod
-      password: ${DB_PASSWORD}
+      username: ${PRICING_DB_USERNAME:postgres}
+      password: ${PRICING_DB_PASSWORD:7429867}
       driver-class-name: org.postgresql.Driver
 
     audit:
       url: jdbc:postgresql://localhost:5432/audit_db
-      username: audit_user
-      password: ${AUDIT_DB_PASSWORD}
+      username: ${AUDIT_DB_USERNAME:postgres}
+      password: ${AUDIT_DB_PASSWORD:7429867}
       driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -25,14 +30,24 @@ spring:
 pricing:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
 
 audit:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
 
 server:
   port: 8080
   servlet:
     context-path: /api
+
+logging:
+  level:
+    root: INFO
+    com.kratos: INFO
+    org.springframework.security: DEBUG
+
+mok:
+  currency:
+    default: "XAF"

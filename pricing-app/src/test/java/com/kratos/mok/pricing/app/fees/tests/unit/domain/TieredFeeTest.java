@@ -1,7 +1,7 @@
 package com.kratos.mok.pricing.app.fees.tests.unit.domain;
 
 import com.kratos.mok.pricing.fees.domain.strategy.FeeStrategy;
-import com.kratos.mok.pricing.fees.domain.strategy.FixedFee; // <--- Import
+import com.kratos.mok.pricing.fees.domain.strategy.FixedFee;
 import com.kratos.mok.pricing.fees.domain.strategy.Tier;
 import com.kratos.mok.pricing.fees.domain.strategy.TieredFee;
 import com.kratos.mok.pricing.shared.domain.vo.Money;
@@ -35,7 +35,7 @@ class TieredFeeTest {
         // Palier B : 1000 (Inclusif) -> 2000
         List<Tier> cleanTiers = List.of(
                 new Tier(Money.of(0), Money.of(1000), fixed100),
-                new Tier(Money.of(1000), Money.of(2000), fixed500)
+                new Tier(Money.of(1001), Money.of(2000), fixed500)
         );
 
         assertThatCode(() -> new TieredFee(cleanTiers))
@@ -46,7 +46,7 @@ class TieredFeeTest {
     void shouldApplyCorrectTierOnBoundary() {
         List<Tier> tiers = List.of(
                 new Tier(Money.of(0), Money.of(1000), fixed100), // [0, 1000[
-                new Tier(Money.of(1000), Money.of(2000), fixed500) // [1000, 2000[
+                new Tier(Money.of(1001), Money.of(2000), fixed500) // [1000, 2000[
         );
         TieredFee strategy = new TieredFee(tiers);
 
