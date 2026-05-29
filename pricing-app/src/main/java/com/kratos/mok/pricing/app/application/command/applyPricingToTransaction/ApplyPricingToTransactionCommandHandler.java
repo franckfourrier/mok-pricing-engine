@@ -122,11 +122,12 @@ public class ApplyPricingToTransactionCommandHandler {
         Money tax = safe(taxRes.tax());
 
         Money commissionBase = switch (cmd.transactionCode()) {
-            case SUBSCRIBER_WITHDRAWAL -> estimateSubscriberWithdrawalFee(ctx);
-            case SUBSCRIBER_DEPOSIT    -> estimateSubscriberWithdrawalFee(ctx);
-            case SUBSCRIBER_P2P_TRANSFER    -> estimateSubscriberP2PTranferFee(ctx);
+            case SUBSCRIBER_WITHDRAWAL    -> estimateSubscriberWithdrawalFee(ctx);
+            case SUBSCRIBER_DEPOSIT       -> estimateSubscriberWithdrawalFee(ctx);
+            case SUBSCRIBER_P2P_TRANSFER  -> estimateSubscriberP2PTranferFee(ctx);
+            case MERCHANT_SETTLEMENT      -> estimateMerchantSettlementFee(ctx);
             case SUBSCRIBER_EXTERNAL_P2P_TRANSFER    -> estimateSubscriberExternalP2PTranferFee(ctx);
-            default                    -> safe(fee);
+            default                       -> safe(fee);
         };
 
         CommissionDistributionResult comRes = computeCommissionDistributionQuery.compute(ctx, commissionBase);
@@ -193,11 +194,12 @@ public class ApplyPricingToTransactionCommandHandler {
         }
 
         Money expDebit = switch (cmd.transactionCode()) {
-            case SUBSCRIBER_DEPOSIT    -> externalTotal;
-            case SUBSCRIBER_WITHDRAWAL -> agentExternal;
+            case SUBSCRIBER_DEPOSIT      -> externalTotal;
+            case SUBSCRIBER_WITHDRAWAL   -> agentExternal;
             case SUBSCRIBER_P2P_TRANSFER -> Money.ZERO;
+            case MERCHANT_SETTLEMENT     -> Money.ZERO;
             case SUBSCRIBER_EXTERNAL_P2P_TRANSFER -> Money.ZERO;
-            default                    -> Money.ZERO;
+            default                      -> Money.ZERO;
         };
 
         /* Prise en compte du paiement de commissions */
@@ -275,6 +277,20 @@ public class ApplyPricingToTransactionCommandHandler {
     private Money estimateSubscriberP2PTranferFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
                 SUBSCRIBER_P2P_TRANSFER,
+                ctx.amount(),
+                ctx.accountId(),
+                ctx.accountType(),
+                ctx.kycValidated(),
+                ctx.monthlyTxCount(),
+                ctx.occurredAt()
+        );
+        FeeComputationResult res = computeFeeQuery.computeFee(wCtx);
+        return safe(res.fee());
+    }
+
+    private Money estimateMerchantSettlementFee(PricingRequestContext ctx) {
+        PricingRequestContext wCtx = new PricingRequestContext(
+                MERCHANT_SETTLEMENT,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),

@@ -55,7 +55,7 @@ public enum TransactionCode {
             "Reversement marchand",
             TransactionType.BANK_TRANSFER,
             "Marchand", "Abonné / Système Ext.",
-            false, false, false
+            true, false, true
     ),
 
     SUPER_DISTRIBUTOR_RECHARGE(
