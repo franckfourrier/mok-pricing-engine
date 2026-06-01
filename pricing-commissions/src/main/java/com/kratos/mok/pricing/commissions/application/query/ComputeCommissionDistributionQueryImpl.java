@@ -78,7 +78,8 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             boolean rejectKratos =
                     ctx.transactionCode() == SUBSCRIBER_P2P_TRANSFER ||
                             ctx.transactionCode() == SUBSCRIBER_EXTERNAL_P2P_TRANSFER ||
-                            ctx.transactionCode() == MERCHANT_SETTLEMENT;
+                            ctx.transactionCode() == MERCHANT_SETTLEMENT_SUBSCRIBER ||
+                            ctx.transactionCode() == MERCHANT_SETTLEMENT_EXTERNAL;
             return distributeShares(s.keys(), ctx, base, rejectKratos);
         }
 

@@ -51,10 +51,16 @@ public enum TransactionCode {
             true, false, true
     ),
 
-    MERCHANT_SETTLEMENT(
-            "Reversement marchand",
+    MERCHANT_SETTLEMENT_SUBSCRIBER(
+            "Reversement marchand - Abonné",
             TransactionType.BANK_TRANSFER,
-            "Marchand", "Abonné / Système Ext.",
+            "Marchand", "Abonné",
+            true, false, true
+    ),
+    MERCHANT_SETTLEMENT_EXTERNAL(
+            "Reversement marchand - Système Ext.",
+            TransactionType.BANK_TRANSFER,
+            "Marchand", "Système Ext.",
             true, false, true
     ),
 

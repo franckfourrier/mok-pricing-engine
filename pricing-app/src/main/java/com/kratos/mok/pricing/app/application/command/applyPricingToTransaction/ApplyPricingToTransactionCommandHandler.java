@@ -125,7 +125,8 @@ public class ApplyPricingToTransactionCommandHandler {
             case SUBSCRIBER_WITHDRAWAL    -> estimateSubscriberWithdrawalFee(ctx);
             case SUBSCRIBER_DEPOSIT       -> estimateSubscriberWithdrawalFee(ctx);
             case SUBSCRIBER_P2P_TRANSFER  -> estimateSubscriberP2PTranferFee(ctx);
-            case MERCHANT_SETTLEMENT      -> estimateMerchantSettlementFee(ctx);
+            case MERCHANT_SETTLEMENT_SUBSCRIBER      -> estimateMerchantSettlementSubscriberFee(ctx);
+            case MERCHANT_SETTLEMENT_EXTERNAL      -> estimateMerchantSettlementExternalFee(ctx);
             case SUBSCRIBER_EXTERNAL_P2P_TRANSFER    -> estimateSubscriberExternalP2PTranferFee(ctx);
             default                       -> safe(fee);
         };
@@ -197,7 +198,8 @@ public class ApplyPricingToTransactionCommandHandler {
             case SUBSCRIBER_DEPOSIT      -> externalTotal;
             case SUBSCRIBER_WITHDRAWAL   -> agentExternal;
             case SUBSCRIBER_P2P_TRANSFER -> Money.ZERO;
-            case MERCHANT_SETTLEMENT     -> Money.ZERO;
+            case MERCHANT_SETTLEMENT_SUBSCRIBER     -> Money.ZERO;
+            case MERCHANT_SETTLEMENT_EXTERNAL    -> Money.ZERO;
             case SUBSCRIBER_EXTERNAL_P2P_TRANSFER -> Money.ZERO;
             default                      -> Money.ZERO;
         };
@@ -288,9 +290,23 @@ public class ApplyPricingToTransactionCommandHandler {
         return safe(res.fee());
     }
 
-    private Money estimateMerchantSettlementFee(PricingRequestContext ctx) {
+    private Money estimateMerchantSettlementSubscriberFee(PricingRequestContext ctx) {
         PricingRequestContext wCtx = new PricingRequestContext(
-                MERCHANT_SETTLEMENT,
+                MERCHANT_SETTLEMENT_SUBSCRIBER,
+                ctx.amount(),
+                ctx.accountId(),
+                ctx.accountType(),
+                ctx.kycValidated(),
+                ctx.monthlyTxCount(),
+                ctx.occurredAt()
+        );
+        FeeComputationResult res = computeFeeQuery.computeFee(wCtx);
+        return safe(res.fee());
+    }
+
+    private Money estimateMerchantSettlementExternalFee(PricingRequestContext ctx) {
+        PricingRequestContext wCtx = new PricingRequestContext(
+                MERCHANT_SETTLEMENT_EXTERNAL,
                 ctx.amount(),
                 ctx.accountId(),
                 ctx.accountType(),
