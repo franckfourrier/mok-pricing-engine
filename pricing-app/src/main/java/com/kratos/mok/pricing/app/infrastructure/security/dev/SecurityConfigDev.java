@@ -7,11 +7,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableMethodSecurity
@@ -19,15 +16,18 @@ import java.util.List;
 public class SecurityConfigDev {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            DevHeaderAuthFilter devHeaderAuthFilter
+    ) throws Exception {
+
         http
-                // Liaison avec la configuration CORS personnalisée
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
+                .cors(withDefaults())
                 .csrf(csrf -> csrf.disable())
-
-                .addFilterBefore(new DevHeaderAuthFilter(), AnonymousAuthenticationFilter.class)
-
+                .addFilterBefore(
+                        devHeaderAuthFilter,
+                        AnonymousAuthenticationFilter.class
+                )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -41,29 +41,7 @@ public class SecurityConfigDev {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(List.of("http://10.10.10.4:8002"));
-
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-
-        configuration.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "Origin",
-                "X-Requested-With",
-                "X-Actor-Id",
-                "X-Roles"
-        ));
-
-        configuration.setExposedHeaders(List.of("X-Actor-Id", "X-Roles"));
-
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    DevHeaderAuthFilter devHeaderAuthFilter() {
+        return new DevHeaderAuthFilter();
     }
 }
