@@ -39,8 +39,6 @@ audit:
 
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 logging:
   level:
@@ -51,3 +49,10 @@ logging:
 mok:
   currency:
     default: "XAF"
+
+springdoc:
+  swagger-ui:
+    groups-order: desc
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true

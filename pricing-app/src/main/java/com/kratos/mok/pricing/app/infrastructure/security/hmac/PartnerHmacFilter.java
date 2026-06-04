@@ -49,11 +49,15 @@ public class PartnerHmacFilter extends OncePerRequestFilter {
         this.rateLimitService = rateLimitService;
     }
 
-    @Override
+    /*@Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return false;
-    }
+    }*/
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !request.getRequestURI().startsWith("/v1/pricing/");
+    }
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 
 @Configuration
+@Profile({"docker","prod"})
 @EnableConfigurationProperties(PartnerSecurityProperties.class)
 public class HmacSecurityConfig {
 
@@ -28,7 +29,7 @@ public class HmacSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        .anyRequest().hasRole("SYSTEM")
                 )
                 /*.authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated()

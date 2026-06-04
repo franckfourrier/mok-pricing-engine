@@ -13,19 +13,6 @@ spring:
     redis:
       time-to-live: 30s
 
-server:
-  servlet:
-    context-path: /api
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    disable-swagger-default-url: true
-    config-url: /api/v3/api-docs/swagger-config
-    url: /api/v3/api-docs
-
 external:
   accounts:
     base-url: "https://accounts.mok.internal"
@@ -47,8 +34,8 @@ ledger:
 
 security:
   partner:
-    id: partner-01
-    secret: change-me-super-secret
+    id: ${PARTNER_SECRET:partner-01}
+    secret: ${PARTNER_SECRET:change-me-super-secret}
     max-skew-seconds: 300
     allowed-ips:
       - 127.0.0.1
@@ -56,3 +43,17 @@ security:
     rate-limit:
       max-requests: 30
       window-seconds: 60
+
+server:
+  servlet:
+    context-path: /api
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+
+  show-login-endpoint: true

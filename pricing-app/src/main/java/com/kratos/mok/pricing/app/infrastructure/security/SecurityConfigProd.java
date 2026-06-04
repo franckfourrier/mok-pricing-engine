@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties(PartnerSecurityProperties.class)
 @Profile({"docker","prod"})
 public class SecurityConfigProd {
 
@@ -32,11 +31,13 @@ public class SecurityConfigProd {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
                         .requestMatchers(HttpMethod.POST, "/v1/fee-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/v1/tax-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/v1/commission-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/v1/ledger/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/v1/reference/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
