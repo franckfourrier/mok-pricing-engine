@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -33,6 +35,8 @@ public class PartnerHmacFilter extends OncePerRequestFilter {
     //private final IpAllowlistService ipAllowlistService;
     private final RateLimitService rateLimitService;
 
+    private static final Logger log = LoggerFactory.getLogger(PartnerHmacFilter.class);
+
     public PartnerHmacFilter(
             PartnerSecurityProperties properties,
             PartnerHmacService hmacService,
@@ -56,7 +60,11 @@ public class PartnerHmacFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/v1/pricing/");
+        String path =
+                request.getRequestURI()
+                        .substring(request.getContextPath().length());
+
+        return !path.startsWith("/v1/pricing/");
     }
     @Override
     protected void doFilterInternal(
@@ -64,6 +72,12 @@ public class PartnerHmacFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+
+        log.info(
+                "[HMAC] Filter exécuté : {} {}",
+                request.getMethod(),
+                request.getRequestURI()
+        );
 
         CachedBodyHttpServletRequest wrappedRequest = new CachedBodyHttpServletRequest(request);
 
