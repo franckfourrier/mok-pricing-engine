@@ -2,6 +2,8 @@ package com.kratos.mok.pricing.app.infrastructure.security;
 
 import com.kratos.mok.pricing.app.infrastructure.security.hmac.PartnerHmacFilter;
 import com.kratos.mok.pricing.app.infrastructure.security.hmac.PartnerSecurityProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,12 +19,16 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 @EnableConfigurationProperties(PartnerSecurityProperties.class)
 public class HmacSecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(HmacSecurityConfig.class);
+
     @Bean
     @Order(2)
     SecurityFilterChain hmacSecurityFilterChain(
             HttpSecurity http,
             PartnerHmacFilter partnerHmacFilter
     ) throws Exception {
+
+        log.info("[SECURITY-INIT] Chargement de hmacSecurityFilterChain (Order 2) pour le matcher /v1/pricing/**");
 
         return http
                 .securityMatcher("/v1/pricing/**")

@@ -1,6 +1,8 @@
 package com.kratos.mok.pricing.app.infrastructure.security;
 
 import com.kratos.mok.pricing.app.infrastructure.security.hmac.PartnerSecurityProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,9 +25,14 @@ import java.util.stream.Collectors;
 @Profile({"docker","prod"})
 public class SecurityConfigProd {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfigProd.class);
+
     @Bean
     @Order(3)
     SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http) throws Exception {
+
+        log.info("[SECURITY-INIT] Chargement de jwtSecurityFilterChain (Order 3) pour le matcher /**");
+
         http
                 .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
@@ -53,9 +60,13 @@ public class SecurityConfigProd {
 
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
 
+            String subject = jwt.getSubject();
+            log.debug("[JWT-CONVERTER] Traitement du token OAuth2 pour le sujet: {}", subject);
+
             // 1) roles: ["ADMIN", "SUPER_ADMIN"]
             var roles = jwt.getClaimAsStringList("roles");
             if (roles != null && !roles.isEmpty()) {
+                log.info("[JWT-CONVERTER] Rôles trouvés dans le claim 'roles' pour {}: {}", subject, roles);
                 return roles.stream()
                         .filter(r -> r != null && !r.isBlank())
                         .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
@@ -67,6 +78,7 @@ public class SecurityConfigProd {
             // 2) authorities: ["ROLE_ADMIN", ...]
             var authorities = jwt.getClaimAsStringList("authorities");
             if (authorities != null && !authorities.isEmpty()) {
+                log.info("[JWT-CONVERTER] Autorités trouvées dans le claim 'authorities' pour {}: {}", subject, authorities);
                 return authorities.stream()
                         .filter(a -> a != null && !a.isBlank())
                         .map(SimpleGrantedAuthority::new)
@@ -74,6 +86,7 @@ public class SecurityConfigProd {
                         .collect(Collectors.toList());
             }
 
+            log.warn("[JWT-CONVERTER] Aucun droit trouvé dans le token pour {}", subject);
             return List.<GrantedAuthority>of();
         });
 

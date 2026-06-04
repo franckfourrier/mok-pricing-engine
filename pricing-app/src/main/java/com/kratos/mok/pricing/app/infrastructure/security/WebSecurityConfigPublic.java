@@ -1,5 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -12,9 +14,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @Profile({"docker","prod"})
 public class WebSecurityConfigPublic {
 
+    private static final Logger log = LoggerFactory.getLogger(WebSecurityConfigPublic.class);
+
     @Bean
     @Order(1)
     SecurityFilterChain publicSecurityFilterChain(HttpSecurity http) throws Exception {
+
+        log.info("[SECURITY-INIT] Chargement de publicSecurityFilterChain (Order 1) pour Swagger/OpenAPI docs");
+
         http
                 .securityMatcher(
                         "/swagger-ui.html",

@@ -44,7 +44,11 @@ logging:
   level:
     root: INFO
     com.kratos: INFO
+    # Active le debug sur le package de sécurité personnalisé
+    com.kratos.mok.pricing.app.infrastructure.security: DEBUG
+    # Active le debug interne de Spring Security pour voir le cycle de vie des requêtes
     org.springframework.security: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
 
 mok:
   currency:
