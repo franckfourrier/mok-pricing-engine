@@ -1,9 +1,7 @@
 package com.kratos.mok.pricing.app.infrastructure.security;
 
-import com.kratos.mok.pricing.app.infrastructure.security.hmac.PartnerSecurityProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -17,7 +15,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -31,19 +32,26 @@ public class SecurityConfigProd {
     @Order(3)
     SecurityFilterChain jwtSecurityFilterChain(HttpSecurity http) throws Exception {
 
-        log.info("[SECURITY-INIT] Chargement de jwtSecurityFilterChain (Order 3) pour le matcher /**");
-
         http
                 .securityMatcher("/**")
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(HttpMethod.POST, "/v1/fee-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/v1/tax-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/v1/commission-policies/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/v1/ledger/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/v1/reference/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/v1/fee-policies/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/v1/tax-policies/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/v1/commission-policies/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/v1/ledger/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
+
+                        .requestMatchers(HttpMethod.POST, "/v1/reference/**")
+                        .hasAnyRole("ADMIN", "SUPER_ADMIN")
 
                         .anyRequest().authenticated()
                 )
@@ -56,38 +64,49 @@ public class SecurityConfigProd {
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
+
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
 
             String subject = jwt.getSubject();
-            log.debug("[JWT-CONVERTER] Traitement du token OAuth2 pour le sujet: {}", subject);
+            log.debug("[JWT-CONVERTER] subject={}", subject);
 
-            // 1) roles: ["ADMIN", "SUPER_ADMIN"]
-            var roles = jwt.getClaimAsStringList("roles");
-            if (roles != null && !roles.isEmpty()) {
-                log.info("[JWT-CONVERTER] Rôles trouvés dans le claim 'roles' pour {}: {}", subject, roles);
-                return roles.stream()
-                        .filter(r -> r != null && !r.isBlank())
-                        .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
-                        .map(SimpleGrantedAuthority::new)
-                        .map(a -> (GrantedAuthority) a)
-                        .collect(Collectors.toList());
+            Set<String> roles = new HashSet<>();
+
+            // =========================
+            // KEYCLOAK REALM ROLES
+            // =========================
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+
+            if (realmAccess != null && realmAccess.get("roles") instanceof List<?> realmRoles) {
+                realmRoles.forEach(r -> roles.add((String) r));
             }
 
-            // 2) authorities: ["ROLE_ADMIN", ...]
-            var authorities = jwt.getClaimAsStringList("authorities");
-            if (authorities != null && !authorities.isEmpty()) {
-                log.info("[JWT-CONVERTER] Autorités trouvées dans le claim 'authorities' pour {}: {}", subject, authorities);
-                return authorities.stream()
-                        .filter(a -> a != null && !a.isBlank())
-                        .map(SimpleGrantedAuthority::new)
-                        .map(a -> (GrantedAuthority) a)
-                        .collect(Collectors.toList());
+            // =========================
+            // KEYCLOAK CLIENT ROLES
+            // =========================
+            Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+
+            if (resourceAccess != null) {
+                resourceAccess.forEach((client, value) -> {
+                    if (value instanceof Map<?, ?> clientData) {
+                        Object clientRoles = clientData.get("roles");
+                        if (clientRoles instanceof List<?> list) {
+                            list.forEach(r -> roles.add((String) r));
+                        }
+                    }
+                });
             }
 
-            log.warn("[JWT-CONVERTER] Aucun droit trouvé dans le token pour {}", subject);
-            return List.<GrantedAuthority>of();
+            // =========================
+            // CONVERSION SPRING
+            // =========================
+            return roles.stream()
+                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                    .map(SimpleGrantedAuthority::new)
+                    .map(a -> (GrantedAuthority) a)
+                    .toList();
         });
 
         return converter;

@@ -6,7 +6,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/mok}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/mok-pricing-engine/protocol/openid-connect/certs}
 
   datasource:
     pricing:
@@ -47,7 +47,7 @@ logging:
     # Active le debug sur le package de sécurité personnalisé
     com.kratos.mok.pricing.app.infrastructure.security: DEBUG
     # Active le debug interne de Spring Security pour voir le cycle de vie des requêtes
-    org.springframework.security: DEBUG
+    org.springframework.security: INFO
     org.springframework.security.web.FilterChainProxy: DEBUG
 
 mok:

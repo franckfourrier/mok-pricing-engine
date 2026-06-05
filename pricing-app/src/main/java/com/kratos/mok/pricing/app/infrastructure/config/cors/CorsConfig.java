@@ -1,4 +1,4 @@
-package com.kratos.mok.pricing.app.infrastructure.config;
+package com.kratos.mok.pricing.app.infrastructure.config.cors;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
