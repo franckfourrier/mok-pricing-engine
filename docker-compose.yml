@@ -44,11 +44,11 @@ services:
     ports:
       - "8017:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: dev,docker,control
+      SPRING_PROFILES_ACTIVE: dev,control
       PRICING_DB_USER: postgres
-      PRICING_DB_PASSWORD: 7429867
+      PRICING_DB_PASSWORD: ${PRICING_DB_PASSWORD}
       AUDIT_DB_USER: postgres
-      AUDIT_DB_PASSWORD: 7429867
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD}
 
 volumes:
   pricing_db_data:

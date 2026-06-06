@@ -21,6 +21,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
+      include-stacktrace: always
 
 pricing:
   jpa:
@@ -34,11 +39,6 @@ audit:
 
 server:
   port: 8080
-
-  error:
-    include-message: always
-    include-binding-errors: always
-    include-stacktrace: always
 
 logging:
   level:
@@ -64,6 +64,6 @@ logging:
 mok:
   currency:
     default: "XAF"
-
-
-
+  security:
+    keycloak:
+      server-url: http://auth.mok.local:8180

@@ -57,3 +57,12 @@ springdoc:
     disable-swagger-default-url: true
 
   show-login-endpoint: true
+
+mok:
+  currency:
+    default: "XAF"
+  security:
+    keycloak:
+      realm: mok-pricing-engine
+      server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8180}
+      client-id: swagger-ui

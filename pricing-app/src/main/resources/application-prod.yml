@@ -31,12 +31,12 @@ spring:
 pricing:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
 audit:
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
 
 server:
   port: 8080
@@ -49,13 +49,15 @@ logging:
     org.springframework.security: INFO
     org.springframework.security.web.FilterChainProxy: DEBUG
 
-mok:
-  currency:
-    default: "XAF"
-
 springdoc:
   swagger-ui:
     groups-order: desc
     operations-sorter: method
     tags-sorter: alpha
     display-request-duration: true
+
+mok:
+  security:
+    keycloak:
+      realm: mok-pricing-engine
+      server-url: https://auth-dev.mok.kratosfinancialsinc.com
