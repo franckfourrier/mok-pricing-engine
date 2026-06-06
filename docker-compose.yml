@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: pricing_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 7429867
+      POSTGRES_PASSWORD: ${PRICING_DB_PASSWORD}
     ports:
       - "5435:5432"
     volumes:
@@ -22,7 +22,7 @@ services:
     environment:
       POSTGRES_DB: audit_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 7429867
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD}
     ports:
       - "5436:5432"
     volumes:
@@ -41,6 +41,8 @@ services:
         condition: service_healthy
       audit-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8017:8080"
     environment:
@@ -50,6 +52,22 @@ services:
       AUDIT_DB_USER: postgres
       AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD}
 
+  redis:
+    image: redis:7-alpine
+    container_name: pricing-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    restart: unless-stopped
+
 volumes:
   pricing_db_data:
   audit_db_data:
+  redis_data:

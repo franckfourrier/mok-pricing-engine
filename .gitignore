@@ -111,3 +111,6 @@ coverage/
 # Misc
 # =============================================
 HELP.md
+
+**/redis-data/
+**/redis_prod_data/

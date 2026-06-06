@@ -41,7 +41,7 @@ services:
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
     volumes:
       - keycloak_db_prod:/var/lib/postgresql/data
     healthcheck:
@@ -59,13 +59,13 @@ services:
       # Raccordement de l'URL JDBC sur le bon service de base de données interne
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
-      KC_HOSTNAME: ${KEYCLOAK_HOST:-localhost}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_HOST}
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
       KC_HEALTH_ENABLED: "true"
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_LOG_LEVEL: INFO
       # Configuration indispensable pour le mode 'start' de production (Reverse Proxy / Headers)
       KC_PROXY_HEADERS: xforwarded
@@ -76,7 +76,20 @@ services:
       keycloak-db:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "exec", "3<>/dev/tcp/localhost/8080", "&&", "echo", "-e", "\"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\"", ">&3", "&&", "close", "3" ]
+      test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:9000/health/ready\")' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+      start_period: 70s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: pricing-redis-prod
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -92,6 +105,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8017:8080"
     environment:
@@ -104,11 +119,15 @@ services:
       PRICING_DB_PASSWORD: ${PRICING_DB_PASSWORD}
       AUDIT_DB_USER: postgres
       AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD}
+      PARTNER_ID: ${PARTNER_ID}
       PARTNER_SECRET: ${PARTNER_SECRET}
       VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8180}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     restart: unless-stopped
 
 volumes:
   pricing_db_prod:
   audit_db_prod:
   keycloak_db_prod:
+  redis_prod_data:

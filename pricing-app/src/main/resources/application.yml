@@ -8,10 +8,18 @@ spring:
     time-zone: UTC
   jpa:
     open-in-view: false
+
+  # ==============================================================================
+  # CONFIGURATION DU CACHE REDIS (Aligné directement sous 'spring:')
+  # ==============================================================================
   cache:
     type: redis
     redis:
       time-to-live: 30s
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
 external:
   accounts:
@@ -34,7 +42,7 @@ ledger:
 
 security:
   partner:
-    id: ${PARTNER_SECRET:partner-01}
+    id: ${PARTNER_ID:partner-01}
     secret: ${PARTNER_SECRET:change-me-super-secret}
     max-skew-seconds: 300
     allowed-ips:

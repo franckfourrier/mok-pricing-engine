@@ -13,13 +13,13 @@ spring:
     pricing:
       url: jdbc:postgresql://pricing-db:5432/pricing_db
       username: ${PRICING_DB_USER:postgres}
-      password: ${PRICING_DB_PASSWORD:7429867}
+      password: ${PRICING_DB_PASSWORD}
       driver-class-name: org.postgresql.Driver
 
     audit:
       url: jdbc:postgresql://audit-db:5432/audit_db
       username: ${AUDIT_DB_USER:postgres}
-      password: ${AUDIT_DB_PASSWORD:7429867}
+      password: ${AUDIT_DB_PASSWORD}
       driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -60,4 +60,4 @@ mok:
   security:
     keycloak:
       realm: mok-pricing-engine
-      server-url: https://auth-dev.mok.kratosfinancialsinc.com
+      server-url: https://auth-dev-mok.kratosfinancialsinc.com/
