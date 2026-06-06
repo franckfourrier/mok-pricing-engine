@@ -2,7 +2,6 @@ package com.kratos.mok.pricing.app.infrastructure.rest.fees.http.createFeePolicy
 
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyCommandMapper;
 import com.kratos.mok.pricing.app.infrastructure.rest.fees.dto.CreateFeePolicyRequest;
-import com.kratos.mok.pricing.app.infrastructure.security.actor.AuthenticatedActorResolver;
 import com.kratos.mok.pricing.app.infrastructure.security.actor.CurrentActor;
 import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyCommandHandler;
 import com.kratos.mok.pricing.fees.application.command.createFeePolicy.CreateFeePolicyResponse;
@@ -20,7 +19,6 @@ import java.net.URI;
 public class CreateFeePolicyCommandController {
 
     private final CreateFeePolicyCommandHandler handler;
-    private final AuthenticatedActorResolver authenticatedActorResolver;
 
 @PostMapping
 @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
@@ -34,7 +32,7 @@ public ResponseEntity<CreateFeePolicyResponse> create(
         var res = handler.handle(cmd, actor);
 
         return ResponseEntity
-                .created(URI.create("/v1/fee-policies/" + res.policyId()))
+                .created(URI.create("/v1/fee-policies/%s".formatted(res.policyId())))
                 .body(res);
     }
 }

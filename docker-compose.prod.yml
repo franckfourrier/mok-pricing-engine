@@ -1,0 +1,109 @@
+services:
+  pricing-db:
+    image: postgres:16
+    container_name: pricing-db-prod
+    environment:
+      POSTGRES_DB: pricing_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PRICING_DB_PASSWORD:-7429867}
+    ports:
+      - "5435:5432"
+    volumes:
+      - pricing_db_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pricing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  audit-db:
+    image: postgres:16
+    container_name: audit-db-prod
+    environment:
+      POSTGRES_DB: audit_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-7429867}
+    ports:
+      - "5436:5432"
+    volumes:
+      - audit_db_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d audit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  keycloak-db:
+    image: postgres:16
+    container_name: keycloak-db-prod
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+    volumes:
+      - keycloak_db_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.2
+    container_name: keycloak-prod
+    environment:
+      KC_DB: postgres
+      # Raccordement de l'URL JDBC sur le bon service de base de données interne
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+      KC_HOSTNAME: ${KEYCLOAK_HOST:-localhost}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_LOG_LEVEL: INFO
+      # Configuration indispensable pour le mode 'start' de production (Reverse Proxy / Headers)
+      KC_PROXY_HEADERS: xforwarded
+    ports:
+      - "8180:8080"
+    command: ["start"]
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  pricing-app:
+    build: .
+    container_name: pricing-app-prod
+    depends_on:
+      pricing-db:
+        condition: service_healthy
+      audit-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8017:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,control
+      # Injection de l'URI d'émisssion Keycloak pour la validation réseau interne
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/mok-pricing-engine
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/mok-pricing-engine
+      # Aligné avec les propriétés attendues dans application-prod.yml
+      PRICING_DB_USER: postgres
+      PRICING_DB_PASSWORD: ${PRICING_DB_PASSWORD}
+      AUDIT_DB_USER: postgres
+      AUDIT_DB_PASSWORD: ${AUDIT_DB_PASSWORD}
+      PARTNER_SECRET: ${PARTNER_SECRET}
+      VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8180}
+    restart: unless-stopped
+
+volumes:
+  pricing_db_prod:
+  audit_db_prod:
+  keycloak_db_prod:

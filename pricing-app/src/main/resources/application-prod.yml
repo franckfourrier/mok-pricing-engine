@@ -6,18 +6,19 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/mok-pricing-engine/protocol/openid-connect/certs}
+          # Utilise en priorité la variable injectée par le docker-compose pour le réseau interne
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://keycloak:8080/realms/mok-pricing-engine}
 
   datasource:
     pricing:
-      url: jdbc:postgresql://localhost:5432/pricing_db
-      username: ${PRICING_DB_USERNAME:postgres}
+      url: jdbc:postgresql://pricing-db:5432/pricing_db
+      username: ${PRICING_DB_USER:postgres}
       password: ${PRICING_DB_PASSWORD:7429867}
       driver-class-name: org.postgresql.Driver
 
     audit:
-      url: jdbc:postgresql://localhost:5432/audit_db
-      username: ${AUDIT_DB_USERNAME:postgres}
+      url: jdbc:postgresql://audit-db:5432/audit_db
+      username: ${AUDIT_DB_USER:postgres}
       password: ${AUDIT_DB_PASSWORD:7429867}
       driver-class-name: org.postgresql.Driver
 
@@ -44,9 +45,7 @@ logging:
   level:
     root: INFO
     com.kratos: INFO
-    # Active le debug sur le package de sécurité personnalisé
     com.kratos.mok.pricing.app.infrastructure.security: DEBUG
-    # Active le debug interne de Spring Security pour voir le cycle de vie des requêtes
     org.springframework.security: INFO
     org.springframework.security.web.FilterChainProxy: DEBUG
 

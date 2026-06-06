@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
@@ -70,22 +69,15 @@ public class SecurityConfigProd {
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
 
             String subject = jwt.getSubject();
-            log.debug("[JWT-CONVERTER] subject={}", subject);
 
             Set<String> roles = new HashSet<>();
 
-            // =========================
-            // KEYCLOAK REALM ROLES
-            // =========================
             Map<String, Object> realmAccess = jwt.getClaim("realm_access");
 
             if (realmAccess != null && realmAccess.get("roles") instanceof List<?> realmRoles) {
-                realmRoles.forEach(r -> roles.add((String) r));
+                realmRoles.forEach(r -> roles.add(String.valueOf(r)));
             }
 
-            // =========================
-            // KEYCLOAK CLIENT ROLES
-            // =========================
             Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
 
             if (resourceAccess != null) {
@@ -93,15 +85,14 @@ public class SecurityConfigProd {
                     if (value instanceof Map<?, ?> clientData) {
                         Object clientRoles = clientData.get("roles");
                         if (clientRoles instanceof List<?> list) {
-                            list.forEach(r -> roles.add((String) r));
+                            list.forEach(r -> roles.add(String.valueOf(r)));
                         }
                     }
                 });
             }
 
-            // =========================
-            // CONVERSION SPRING
-            // =========================
+            log.debug("[JWT] subject={}, roles={}", subject, roles);
+
             return roles.stream()
                     .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                     .map(SimpleGrantedAuthority::new)
