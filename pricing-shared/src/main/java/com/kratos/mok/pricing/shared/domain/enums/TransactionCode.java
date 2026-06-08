@@ -61,7 +61,7 @@ public enum TransactionCode {
             "Reversement marchand - Système Ext.",
             TransactionType.BANK_TRANSFER,
             "Marchand", "Système Ext.",
-            true, false, true
+            true, true, true
     ),
 
     SUPER_DISTRIBUTOR_RECHARGE(
