@@ -76,11 +76,18 @@ public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, S
     /*
      * Liste des transactionCodes déjà configurés
      */
-    @Query("""
+    /*@Query("""
         select distinct tc as transactionCode
         from TaxPolicyEntity e
         join e.transactionCodes tc
         where e.status in ('DRAFT','PENDING_APPROVAL','ACTIVE','SUSPENDED')
+    """)*/
+    @Query("""
+    select tc as transactionCode,
+           e.strategyType as strategyType
+    from TaxPolicyEntity e
+    join e.transactionCodes tc
+    where e.status in ('DRAFT','PENDING_APPROVAL','ACTIVE','SUSPENDED')
     """)
     List<TaxConfiguredTransactionCodeView> findConfiguredTransactionCodes();
 }

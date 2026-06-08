@@ -8,7 +8,10 @@ import com.kratos.mok.pricing.shared.api.reference.FeePolicyOptionDto;
 import com.kratos.mok.pricing.shared.api.reference.TransactionCodeDto;
 import com.kratos.mok.pricing.shared.domain.enums.AccountType;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -34,16 +37,35 @@ public class ReferenceController {
                 .toList();
     }
 
-    @Operation(summary = "List available transaction codes for fees")
+    @Operation(summary = "List available transaction codes for FEES")
     @GetMapping("/transaction-codes/fees")
     public List<TransactionCodeDto> transactionCodesForFees() {
         return feePolicyReferenceService.availableTransactionCodesForFees();
     }
 
-    @Operation(summary = "Transaction codes supporting TAXES")
+    @Operation(summary = "Transaction codes supporting TAXES",
+               description = """
+                       Returns transaction codes that can be associated with a tax policy.
+                       If a strategyType is provided, transaction codes already configured for that tax strategy are excluded from the result.
+                       Examples:
+                         - FIXED_AMOUNT: Fixed tax amount.
+                         - ELECTRONIC_RATE: Electronic tax rate.
+               """)
     @GetMapping("/transaction-codes/taxes")
-    public List<TransactionCodeDto> transactionCodesForTaxes() {
-        return taxPolicyReferenceService.availableTransactionCodesForTaxes();
+    public List<TransactionCodeDto> transactionCodesForTaxes(
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    description = """
+                       Tax strategy type to configure.
+                       
+                           - FIXED_AMOUNT: Fixed tax amount applied to the transaction.
+                           - ELECTRONIC_RATE: Electronic tax calculated according to the configured rate.
+                       
+                       If not provided, all transaction codes supporting tax policies are returned.
+                       """,
+                    example = "FIXED_AMOUNT")
+            @RequestParam(required = false) TaxStrategyType strategyType) {
+        return taxPolicyReferenceService.availableTransactionCodesForTaxes(strategyType);
     }
 
     @Operation(summary = "Transaction codes supporting COMMISSIONS")
