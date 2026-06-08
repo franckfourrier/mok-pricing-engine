@@ -51,6 +51,7 @@ public class PostgresTaxPolicyRepository implements TaxPolicyRepository {
                 policy.transactionCodes(),
                 scope,
                 value,
+                policy.strategy().type(),
                 policy.id().value()
         );
     }

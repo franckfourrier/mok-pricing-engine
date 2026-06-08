@@ -3,6 +3,7 @@ package com.kratos.mok.pricing.taxes.infrastructure.repository;
 import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxConfiguredTransactionCodeView;
 import com.kratos.mok.pricing.taxes.infrastructure.model.TaxPolicyEntity;
 import org.springframework.data.jpa.repository.*;
@@ -41,6 +42,7 @@ public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, S
         where tc in :transactionCodes
           and t.targetScope = :scope
           and t.targetValue = :value
+          and t.strategyType = :strategyType
           and t.status in ('DRAFT','PENDING_APPROVAL','ACTIVE','BLOCKED')
           and (:excludedId is null or t.id <> :excludedId)
     """)
@@ -48,6 +50,7 @@ public interface JpaTaxPolicyRepository extends JpaRepository<TaxPolicyEntity, S
             @Param("transactionCodes") Set<TransactionCode> transactionCodes,
             @Param("scope") TargetScope scope,
             @Param("value") String value,
+            @Param("strategyType") TaxStrategyType strategyType,
             @Param("excludedId") String excludedId
     );
 
