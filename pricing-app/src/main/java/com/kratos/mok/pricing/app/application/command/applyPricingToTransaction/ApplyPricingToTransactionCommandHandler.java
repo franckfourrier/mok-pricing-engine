@@ -19,6 +19,7 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
 import com.kratos.mok.pricing.taxes.application.port.ComputeTaxQuery;
 import com.kratos.mok.pricing.taxes.application.port.TaxComputationResult;
+import com.kratos.mok.pricing.taxes.application.port.TaxLine;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxMode;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import lombok.RequiredArgsConstructor;
@@ -113,13 +114,11 @@ public class ApplyPricingToTransactionCommandHandler {
             taxRes = computeTaxQuery.computeTax(ctx);
         } else {
             taxRes = new TaxComputationResult(
-                    "NONE",
                     Money.ZERO,
-                    TaxMode.NONE,
-                    TaxStrategyType.NONE
+                    List.of()
             );
         }
-        Money tax = safe(taxRes.tax());
+        Money tax = safe(taxRes.totalTax());
 
         Money commissionBase = switch (cmd.transactionCode()) {
             case SUBSCRIBER_WITHDRAWAL    -> estimateSubscriberWithdrawalFee(ctx);
@@ -178,20 +177,58 @@ public class ApplyPricingToTransactionCommandHandler {
         }
 
         /* Ecritures comptables pour les taxes */
-        if (tax != null && !tax.isZero()) {
-            String cantonmentOrExploitationAccount = (taxRes.taxMode() == TaxMode.EXPLOITATION) ? accExp : accCant;
-            String taxAccount = accTax;
-            String subTaxAccount = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
-            LedgerEntryKind kind = (taxRes.strategyType() == TaxStrategyType.FIXED_AMOUNT)
-                    ? LedgerEntryKind.TAX_FIXED
-                    : LedgerEntryKind.TAX_RATE;
+        for (TaxLine taxLine : taxRes.lines()) {
 
-            postings.add(debit(cantonmentOrExploitationAccount, tax, kind, taxRes.taxPolicyId(),
-                    "TAX debit (" + taxRes.taxMode() + ") tx=" + cmd.externalTxId()));
-            postings.add(credit(taxAccount, tax, kind, taxRes.taxPolicyId(),
-                    "TAX credited tx=" + cmd.externalTxId()));
-            postings.add(credit(subTaxAccount, tax, kind, taxRes.taxPolicyId(),
-                    "TAX credited tx=" + cmd.externalTxId()));
+            Money amount = taxLine.amount();
+
+            if (amount == null || amount.isZero()) {
+                continue;
+            }
+
+            String sourceAccount =
+                    (taxLine.taxMode() == TaxMode.EXPLOITATION)
+                            ? accExp
+                            : accCant;
+
+            String subTaxAccount =
+                    (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT)
+                            ? accTaxFixed
+                            : accTaxRate;
+
+            LedgerEntryKind kind =
+                    (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT)
+                            ? LedgerEntryKind.TAX_FIXED
+                            : LedgerEntryKind.TAX_RATE;
+
+            postings.add(
+                    debit(
+                            sourceAccount,
+                            amount,
+                            kind,
+                            taxLine.taxPolicyId(),
+                            "TAX debit (" + taxLine.taxMode() + ") tx=" + cmd.externalTxId()
+                    )
+            );
+
+            postings.add(
+                    credit(
+                            accTax,
+                            amount,
+                            kind,
+                            taxLine.taxPolicyId(),
+                            "TAX credited tx=" + cmd.externalTxId()
+                    )
+            );
+
+            postings.add(
+                    credit(
+                            subTaxAccount,
+                            amount,
+                            kind,
+                            taxLine.taxPolicyId(),
+                            "TAX credited tx=" + cmd.externalTxId()
+                    )
+            );
         }
 
         Money expDebit = switch (cmd.transactionCode()) {

@@ -61,8 +61,11 @@ public class ComputeFeeTaxQueryController {
                 new MoneyDto(txAmount.amount(), txAmount.currency()),
                 new MoneyDto(resultFee.fee().amount(), resultFee.fee().currency()),
                 resultFee.feePolicyId(),
-                new MoneyDto(resultTax.tax().amount(), resultTax.tax().currency()),
-                resultTax.taxPolicyId()
+                new MoneyDto(
+                        resultTax.totalTax().amount(),
+                        resultTax.totalTax().currency()
+                ),
+                null
         );
     }
 }

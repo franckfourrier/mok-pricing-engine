@@ -4,6 +4,7 @@ import com.kratos.mok.pricing.shared.domain.enums.TargetScope;
 import com.kratos.mok.pricing.shared.domain.enums.TransactionCode;
 import com.kratos.mok.pricing.taxes.domain.TaxPolicy;
 import com.kratos.mok.pricing.taxes.domain.enums.TaxPolicyStatus;
+import com.kratos.mok.pricing.taxes.domain.enums.TaxStrategyType;
 import com.kratos.mok.pricing.taxes.domain.repository.TaxPolicyRepository;
 import com.kratos.mok.pricing.taxes.domain.vo.TaxPolicyId;
 import com.kratos.mok.pricing.taxes.infrastructure.mapper.TaxPolicyEntityMapper;
@@ -46,12 +47,13 @@ public class PostgresTaxPolicyRepository implements TaxPolicyRepository {
 
         TargetScope scope = policy.target().scope();
         String value = normalize(scope, policy.target().value());
+        TaxStrategyType strategyType = policy.strategy().type();
 
         return jpaRepository.existsConflict(
                 policy.transactionCodes(),
                 scope,
                 value,
-                policy.strategy().type(),
+                strategyType,
                 policy.id().value()
         );
     }

@@ -16,7 +16,7 @@ public record ComputePricingResponse(
             PricingResult result) {
 
         var fee = result.fee().fee().amount();
-        var tax = result.tax().tax().amount();
+        var tax = result.tax().totalTax().amount();
 
         BigDecimal base = new BigDecimal(req.amount());
 

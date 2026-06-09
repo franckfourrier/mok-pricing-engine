@@ -19,7 +19,9 @@ import java.util.Set;
 @Table(
         name = "tax_policies",
         indexes = {
-                @Index(name = "idx_tax_scope_value", columnList = "target_scope, target_value")
+                @Index(name = "idx_tax_scope_value", columnList = "target_scope, target_value"),
+                @Index(name = "idx_tax_status", columnList = "status"),
+                @Index(name = "idx_tax_strategy", columnList = "strategy_type")
         }
 )
 @Getter
@@ -52,9 +54,9 @@ public class TaxPolicyEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "strategy_type", nullable = false, length = 30)
-    private TaxStrategyType strategyType;
+    private TaxStrategyType strategyType = TaxStrategyType.NONE;
 
-    @Column(name = "currency", nullable = false, length = 8)
+    @Column(name = "currency", length = 8)
     private String currency;
 
     @Column(name = "rate", precision = 19, scale = 8)
