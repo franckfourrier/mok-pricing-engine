@@ -150,16 +150,6 @@ public class ApplyPricingToTransactionCommandHandler {
                 );
             }
 
-            /*String idempotencyKey = cmd.externalTxId() + ":COM:" + b;
-
-            externalAccountCreditor.credit(
-                    b,
-                    accountId,
-                    amt,
-                    idempotencyKey,
-                    "Commission " + b + " for tx=" + cmd.externalTxId()
-            );*/
-
             externalTotal = externalTotal.add(amt);
             if ("AGENT".equals(b)) {
                 agentExternal = agentExternal.add(amt);
@@ -378,6 +368,7 @@ public class ApplyPricingToTransactionCommandHandler {
             case "AGENT" -> cmd.accountId();
             case "DISTRIBUTOR" -> cmd.distributorAccountId();
             case "SUPER_DISTRIBUTOR" -> cmd.superDistributorAccountId();
+            case "TAX_RATE" -> accTaxRate;
             default -> null;
         };
     }

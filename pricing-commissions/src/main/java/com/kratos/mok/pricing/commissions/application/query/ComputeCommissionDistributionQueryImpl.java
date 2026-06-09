@@ -89,6 +89,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
             List<CommissionDistributionResult.Line> lines = new ArrayList<>();
 
             Percentage agentWithdrawal = findShare(s.keys(), BeneficiaryType.AGENT);
+            Percentage taxRateWithdrawal = findShare(s.keys(), BeneficiaryType.TAX_RATE);
 
             // 2. Charger stratégie DEPOSIT
             CommissionPlan depositPlan = repository.findCandidates(
@@ -113,6 +114,7 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
             // 4. Calcul KRATOS
             BigDecimal sum = agentWithdrawal.value()
+                    .add(taxRateWithdrawal.value())
                     .add(agentDeposit.value())
                     .add(distributor.value())
                     .add(superDistributor.value());
@@ -121,14 +123,18 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
                 throw new IllegalArgumentException("Invalid withdrawal plan: sum > 1");
             }
 
-            //Percentage kratos = Percentage.of(BigDecimal.ONE.subtract(sum));
-
             // 5. Accounts
             String agentAccountId = ctx.getAccountFor("AGENT");
+
+            String taxAccountId = "TAX_RATE_POOL";
 
             // 6. Lines
             if (!agentWithdrawal.value().equals(BigDecimal.ZERO)) {
                 lines.add(line(BeneficiaryType.AGENT, agentAccountId, agentWithdrawal, base));
+            }
+
+            if (taxRateWithdrawal.value().compareTo(BigDecimal.ZERO) > 0) {
+                lines.add(line(BeneficiaryType.TAX_RATE, taxAccountId, taxRateWithdrawal, base));
             }
 
             return lines;
@@ -136,41 +142,6 @@ public class ComputeCommissionDistributionQueryImpl implements ComputeCommission
 
         throw new IllegalArgumentException("Unsupported commission strategy: " + strategy.getClass().getSimpleName());
     }
-
-    /*private List<CommissionDistributionResult.Line> distributeShares(
-            List<CommissionShare> shares,
-            PricingRequestContext ctx,
-            Money base,
-            boolean rejectKratos
-    ) {
-        if (shares == null || shares.isEmpty()) throw new IllegalArgumentException("shares is required");
-
-        // 1. Filtrage métier
-        List<CommissionShare> effectiveShares = shares.stream()
-                .filter(s -> !(rejectKratos && s.beneficiaryType() == BeneficiaryType.KRATOS))
-                .toList();
-
-        // 2. Validation métier (CRITIQUE)
-        BigDecimal sum = effectiveShares.stream()
-                .map(s -> s.share().value())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        if (sum.compareTo(BigDecimal.ONE) > 0) {
-            throw new IllegalArgumentException("Invalid commission shares: sum > 1.0");
-        }
-
-        List<CommissionDistributionResult.Line> lines = new ArrayList<>();
-
-        for (CommissionShare s : effectiveShares) {
-            String beneficiary = s.beneficiaryType().name();
-            String targetAccountId = ctx.getAccountFor(beneficiary);
-
-
-            lines.add(line(s.beneficiaryType(), targetAccountId, s.share(), base));
-        }
-
-        return lines;
-    }*/
 
     private List<CommissionDistributionResult.Line> distributeShares(
             List<CommissionShare> shares,
