@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -125,16 +126,38 @@ public class CreateCommissionPlanCommandHandler {
     }
 
     private Percentage toPercentage(String raw) {
-        try {
-            BigDecimal v = new BigDecimal(raw.trim());
-            if (v.compareTo(BigDecimal.ONE) > 0) {
-                v = v.divide(new BigDecimal("100"));
-            }
-            return new Percentage(v);
-        } catch (Exception e) {
+        // 1. Guard Clause : Gestion des cas aux limites (Null et Empty)
+        if (raw == null || raw.trim().isEmpty()) {
             throw new DomainValidationException(
                     "INVALID_PERCENTAGE",
-                    "Invalid percentage: " + raw,
+                    "Percentage cannot be null or empty",
+                    Map.of("value", String.valueOf(raw))
+            );
+        }
+
+        try {
+            BigDecimal value = new BigDecimal(raw.trim());
+
+            // 2. Validation métier : le pourcentage doit être compris entre 0% et 100% inclusivement
+            if (value.compareTo(BigDecimal.ZERO) < 0 || value.compareTo(BigDecimal.valueOf(100)) > 0) {
+                throw new DomainValidationException(
+                        "INVALID_PERCENTAGE",
+                        "Percentage must be between 0 and 100 inclusive",
+                        Map.of("value", raw, "received", value.toPlainString())
+                );
+            }
+
+            // 3. Conversion : pourcentage humain → ratio décimal (0 à 1) avec échelle de 10
+            BigDecimal decimalValue = value
+                    .divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+
+            return new Percentage(decimalValue);
+
+        } catch (NumberFormatException e) {
+            // 4. Capture de l'erreur de formatage de chaîne
+            throw new DomainValidationException(
+                    "INVALID_PERCENTAGE",
+                    "Invalid number format for percentage: " + raw,
                     Map.of("value", raw)
             );
         }

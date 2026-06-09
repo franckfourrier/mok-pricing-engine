@@ -51,6 +51,7 @@ ledger:
     distributedSuperDistributor: "ACC-DIST-SUPER-DISTRIBUTOR"
     distributedDistributor: "ACC-DIST-DISTRIBUTOR"
     distributedAgent: "ACC-DIST-AGENT"
+    distributedTaxRate: "ACC-DIST-TAX-RATE"
     currency: "XAF"
     bankClearing: "ACC-BANK-CLEAR"
     fees: "FEES_ACCOUNT"

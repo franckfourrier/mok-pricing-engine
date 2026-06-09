@@ -107,6 +107,7 @@ public final class CommissionPlanReadMapper {
             case DISTRIBUTOR -> 2;
             case AGENT -> 3;
             case KRATOS -> 4;
+            case TAX_RATE -> 5;
             default -> 99;
         };
     }
@@ -117,6 +118,7 @@ public final class CommissionPlanReadMapper {
             case DISTRIBUTOR -> "Distributeur";
             case AGENT -> "Agent";
             case KRATOS -> "Kratos";
+            case TAX_RATE -> "Taxe Electronique";
             default -> b.name();
         };
     }

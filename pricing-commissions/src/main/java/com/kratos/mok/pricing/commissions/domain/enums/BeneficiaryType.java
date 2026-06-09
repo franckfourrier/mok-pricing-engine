@@ -6,5 +6,6 @@ public enum BeneficiaryType {
     SUPER_DISTRIBUTOR,
     MERCHANT,
     SUPPLIER,
-    KRATOS
+    KRATOS,
+    TAX_RATE
 }
