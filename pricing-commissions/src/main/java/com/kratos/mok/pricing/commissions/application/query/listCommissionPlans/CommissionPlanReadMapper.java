@@ -69,11 +69,37 @@ public final class CommissionPlanReadMapper {
         }
 
         // WithdrawalAgentKratosStrategy: agentShare + kratosShare (+ coverageRate)
-        if (strategy instanceof SubscriberWithdrawalStrategy s) {
-            //var agent = new CommissionShare(BeneficiaryType.AGENT, s.agentShare());
-            //var kratos = new CommissionShare(BeneficiaryType.KRATOS, s.kratosShare());
-            //return List.of(line(agent, baseLabel), line(kratos, baseLabel));
+        /*if (strategy instanceof SubscriberWithdrawalStrategy s) {
             return s.keys().stream()
+                    .sorted(Comparator.comparingInt(x -> beneficiaryOrder(x.beneficiaryType())))
+                    .map(x -> line(x, baseLabel))
+                    .toList();
+        }*/
+
+        // WithdrawalAgentKratosStrategy: agentShare + kratosShare (+ coverageRate)
+        if (strategy instanceof SubscriberWithdrawalStrategy s) {
+            // 1. Récupérer les clés existantes de la base de données
+            List<CommissionShare> baseShares = new java.util.ArrayList<>(s.keys());
+
+            // 2. Calculer la somme cumulative des ratios déjà enregistrés
+            java.math.BigDecimal totalProvidedRatio = baseShares.stream()
+                    .map(x -> x.share().value())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            // 3. Calculer le ratio complémentaire pour KRATOS (Base 1.0 au lieu de 100)
+            java.math.BigDecimal kratosRatio = java.math.BigDecimal.valueOf(1.0).subtract(totalProvidedRatio);
+
+            // 4. Si un reste existe et qu'aucune ligne KRATOS n'était déjà présente, on l'ajoute dynamiquement
+            boolean hasKratos = baseShares.stream().anyMatch(x -> x.beneficiaryType() == BeneficiaryType.KRATOS);
+            if (!hasKratos && kratosRatio.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                baseShares.add(new CommissionShare(
+                        BeneficiaryType.KRATOS,
+                        new com.kratos.mok.pricing.commissions.domain.vo.Percentage(kratosRatio)
+                ));
+            }
+
+            // 5. Trier et retourner la liste complète au format Summary
+            return baseShares.stream()
                     .sorted(Comparator.comparingInt(x -> beneficiaryOrder(x.beneficiaryType())))
                     .map(x -> line(x, baseLabel))
                     .toList();
