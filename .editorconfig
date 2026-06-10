@@ -1,0 +1,87 @@
+# =============================================
+# .editorconfig - Google Java Style (Strict)
+# =============================================
+root = true
+
+# =============================================
+# RÈGLES GLOBALES
+# =============================================
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+# =============================================
+# JAVA - Google Java Style
+# =============================================
+[*.java]
+indent_size = 2
+max_line_length = 100
+continuation_indent_size = 4
+
+# =============================================
+# Configuration Files
+# =============================================
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.properties]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+# =============================================
+# XML
+# =============================================
+[*.xml]
+indent_size = 2
+
+# =============================================
+# Markdown & Documentation
+# =============================================
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# =============================================
+# Shell & Scripts
+# =============================================
+[*.sh]
+indent_size = 2
+
+# =============================================
+# Build Files
+# =============================================
+[pom.xml]
+indent_size = 2
+
+[*.gradle]
+indent_size = 2
+
+[*.gradle.kts]
+indent_size = 2
+
+# =============================================
+# Git & Docker
+# =============================================
+[.gitattributes]
+indent_style = space
+indent_size = 2
+
+[.gitignore]
+indent_style = space
+indent_size = 2
+
+[Dockerfile]
+indent_size = 2
+
+# =============================================
+# Binaires (ne pas appliquer de règles texte)
+# =============================================
+[*.{jar,war,ear,zip,png,jpg,jpeg,gif,ico,pdf,docx,xlsx,db,sqlite}]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
