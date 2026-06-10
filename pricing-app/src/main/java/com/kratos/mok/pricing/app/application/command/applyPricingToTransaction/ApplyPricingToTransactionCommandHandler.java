@@ -81,7 +81,6 @@ public class ApplyPricingToTransactionCommandHandler {
     public ApplyPricingToTransactionResponse handle(ApplyPricingToTransactionCommand cmd, String actor) {
         validate(cmd);
 
-        // On crée la map de hiérarchie
         Map<String, String> hierarchy = Map.of(
                 "AGENT", cmd.accountId(),
                 "DISTRIBUTOR", cmd.distributorAccountId() != null ? cmd.distributorAccountId() : "",
@@ -99,30 +98,23 @@ public class ApplyPricingToTransactionCommandHandler {
                 hierarchy
         );
 
-        // 1. Calcul des Frais (uniquement si supportés)
-        FeeComputationResult feeRes;
-        if (ctx.transactionCode().supportsFees()) {
-            feeRes = computeFeeQuery.computeFee(ctx);
-        } else {
-            feeRes = new FeeComputationResult("NONE", Money.ZERO);
-        }
+        // 1. Calcul des Frais
+        FeeComputationResult feeRes = ctx.transactionCode().supportsFees()
+                ? computeFeeQuery.computeFee(ctx)
+                : new FeeComputationResult("NONE", Money.ZERO);
+
         Money fee = safe(feeRes.fee());
 
-        // 2. Calcul des Taxes (uniquement si supportées)
-        TaxComputationResult taxRes;
-        if (ctx.transactionCode().supportsTaxes()) {
-            taxRes = computeTaxQuery.computeTax(ctx);
-        } else {
-            taxRes = new TaxComputationResult(
-                    Money.ZERO,
-                    List.of()
-            );
-        }
+        // 2. Calcul des Taxes
+        TaxComputationResult taxRes = ctx.transactionCode().supportsTaxes()
+                ? computeTaxQuery.computeTax(ctx)
+                : new TaxComputationResult(Money.ZERO, List.of());
+
         Money tax = safe(taxRes.totalTax());
 
+        // 3. Calcul des Commissions
         Money commissionBase = switch (cmd.transactionCode()) {
-            case SUBSCRIBER_WITHDRAWAL    -> estimateSubscriberWithdrawalFee(ctx);
-            case SUBSCRIBER_DEPOSIT       -> estimateSubscriberWithdrawalFee(ctx);
+            case SUBSCRIBER_WITHDRAWAL,SUBSCRIBER_DEPOSIT    -> estimateSubscriberWithdrawalFee(ctx);
             case SUBSCRIBER_P2P_TRANSFER  -> estimateSubscriberP2PTranferFee(ctx);
             case MERCHANT_SETTLEMENT_SUBSCRIBER      -> estimateMerchantSettlementSubscriberFee(ctx);
             case MERCHANT_SETTLEMENT_EXTERNAL      -> estimateMerchantSettlementExternalFee(ctx);
@@ -132,33 +124,41 @@ public class ApplyPricingToTransactionCommandHandler {
 
         CommissionDistributionResult comRes = computeCommissionDistributionQuery.compute(ctx, commissionBase);
 
+        // === FILTRAGE IMPORTANT : On retire TAX_RATE des payouts ===
+        List<CommissionDistributionResult.Line> commissionLines = comRes.lines().stream()
+                .filter(line -> line.beneficiary() != null
+                        && !"TAX_RATE".equalsIgnoreCase(line.beneficiary())
+                        && !"KRATOS".equalsIgnoreCase(line.beneficiary()))
+                .toList();
+
+        // Calcul des totaux pour commissions
         Money externalTotal = Money.ZERO;
         Money agentExternal = Money.ZERO;
 
-        for (var line : comRes.lines()) {
-            String b = line.beneficiary() == null ? "" : line.beneficiary().trim().toUpperCase();
+        for (var line : commissionLines) {
+            String beneficiary = line.beneficiary().trim().toUpperCase();
             Money amt = line.amount();
-
             if (amt == null || amt.isZero()) continue;
 
-            String accountId = resolveBeneficiaryAccountId(b, cmd);
+            String accountId = resolveBeneficiaryAccountId(beneficiary, cmd);
             if (accountId == null || accountId.isBlank()) {
                 throw new DomainValidationException(
                         "BENEFICIARY_ACCOUNT_MISSING",
-                        "Missing accountId for beneficiary=" + b,
-                        Map.of("beneficiary", b, "externalTxId", cmd.externalTxId())
+                        "Missing accountId for beneficiary=" + beneficiary,
+                        Map.of("beneficiary", beneficiary, "externalTxId", cmd.externalTxId())
                 );
             }
 
             externalTotal = externalTotal.add(amt);
-            if ("AGENT".equals(b)) {
+            if ("AGENT".equals(beneficiary)) {
                 agentExternal = agentExternal.add(amt);
             }
         }
 
+        // ====================== ÉCRITURES COMPTABLES ======================
         List<Posting> postings = new ArrayList<>();
 
-        /* Ecritures comptables pour les frais */
+        // Frais
         if (fee != null && !fee.isZero()) {
             postings.add(debit(accCant, fee, LedgerEntryKind.FEE, feeRes.feePolicyId(),
                     "FEE applied tx=" + cmd.externalTxId()));
@@ -166,81 +166,37 @@ public class ApplyPricingToTransactionCommandHandler {
                     "FEE collected tx=" + cmd.externalTxId()));
         }
 
-        /* Ecritures comptables pour les taxes */
+        // Taxes (via taxRes.lines())
         for (TaxLine taxLine : taxRes.lines()) {
-
             Money amount = taxLine.amount();
+            if (amount == null || amount.isZero()) continue;
 
-            if (amount == null || amount.isZero()) {
-                continue;
-            }
+            String sourceAccount = (taxLine.taxMode() == TaxMode.EXPLOITATION) ? accExp : accCant;
+            String subTaxAccount = (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? accTaxFixed : accTaxRate;
+            LedgerEntryKind kind = (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT) ? LedgerEntryKind.TAX_FIXED : LedgerEntryKind.TAX_RATE;
 
-            String sourceAccount =
-                    (taxLine.taxMode() == TaxMode.EXPLOITATION)
-                            ? accExp
-                            : accCant;
-
-            String subTaxAccount =
-                    (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT)
-                            ? accTaxFixed
-                            : accTaxRate;
-
-            LedgerEntryKind kind =
-                    (taxLine.strategyType() == TaxStrategyType.FIXED_AMOUNT)
-                            ? LedgerEntryKind.TAX_FIXED
-                            : LedgerEntryKind.TAX_RATE;
-
-            postings.add(
-                    debit(
-                            sourceAccount,
-                            amount,
-                            kind,
-                            taxLine.taxPolicyId(),
-                            "TAX debit (" + taxLine.taxMode() + ") tx=" + cmd.externalTxId()
-                    )
-            );
-
-            postings.add(
-                    credit(
-                            accTax,
-                            amount,
-                            kind,
-                            taxLine.taxPolicyId(),
-                            "TAX credited tx=" + cmd.externalTxId()
-                    )
-            );
-
-            postings.add(
-                    credit(
-                            subTaxAccount,
-                            amount,
-                            kind,
-                            taxLine.taxPolicyId(),
-                            "TAX credited tx=" + cmd.externalTxId()
-                    )
-            );
+            postings.add(debit(sourceAccount, amount, kind, taxLine.taxPolicyId(),
+                            "TAX debit (" + taxLine.taxMode() + ") tx=" + cmd.externalTxId()));
+            postings.add(credit(accTax, amount, kind, taxLine.taxPolicyId(),
+                            "TAX credited tx=" + cmd.externalTxId()));
+            postings.add(credit(subTaxAccount, amount, kind, taxLine.taxPolicyId(),
+                            "TAX credited tx=" + cmd.externalTxId()));
         }
 
+        // Commissions / Payouts (uniquement les bénéficiaires business)
         Money expDebit = switch (cmd.transactionCode()) {
             case SUBSCRIBER_DEPOSIT      -> externalTotal;
             case SUBSCRIBER_WITHDRAWAL   -> agentExternal;
-            case SUBSCRIBER_P2P_TRANSFER -> Money.ZERO;
-            case MERCHANT_SETTLEMENT_SUBSCRIBER     -> Money.ZERO;
-            case MERCHANT_SETTLEMENT_EXTERNAL    -> Money.ZERO;
-            case SUBSCRIBER_EXTERNAL_P2P_TRANSFER -> Money.ZERO;
             default                      -> Money.ZERO;
         };
 
-        /* Prise en compte du paiement de commissions */
         if (expDebit != null && !expDebit.isZero()) {
-            // 1. On débite l'exploitation et on crédite le compte global distribué (Somme totale)
             postings.add(debit(accExp, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION payout total tx=" + cmd.externalTxId()));
             postings.add(credit(accDist, expDebit, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
                     "COMMISSION payout total tx=" + cmd.externalTxId()));
 
-            // 2. On ventile sur les sous-comptes spécifiques selon le bénéficiaire
-            for (var line : comRes.lines()) {
+            for (var line : commissionLines) {
                 if (line.amount() == null || line.amount().isZero()) continue;
 
                 String beneficiary = line.beneficiary().toUpperCase();
@@ -248,7 +204,7 @@ public class ApplyPricingToTransactionCommandHandler {
                     case "SUPER_DISTRIBUTOR" -> accDistSuperDistributor;
                     case "DISTRIBUTOR"       -> accDistDistributor;
                     case "AGENT"             -> accDistAgent;
-                    default -> null; // KRATOS ou autre n'irait pas dans ces sous-comptes
+                    default -> null;
                 };
 
                 if (targetSubAccount != null) {
@@ -257,32 +213,17 @@ public class ApplyPricingToTransactionCommandHandler {
                 }
             }
         }
-
-        /*Money kratos = sumForBeneficiary(comRes, "KRATOS");
-        if (kratos != null && !kratos.isZero()) {
-            postings.add(debit(accCant, kratos, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
-                    "COMMISSION KRATOS tx=" + cmd.externalTxId()));
-            postings.add(credit(accExp, kratos, LedgerEntryKind.COMMISSION, comRes.commissionPlanId(),
-                    "COMMISSION KRATOS revenue tx=" + cmd.externalTxId()));
-        }*/
-
+        // Enregistrement dans le ledger
         RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(
-                new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings),
-                actor
-        );
+                new RecordLedgerTransactionCommand(cmd.externalTxId(), cmd.occurredAt(), postings), actor);
 
-        eventPublisher.publishEvent(
-                new LedgerEntriesCreatedEvent(
-                        cmd.externalTxId(),
-                        cmd.occurredAt()
-                )
-        );
+        eventPublisher.publishEvent(new LedgerEntriesCreatedEvent(cmd.externalTxId(), cmd.occurredAt()));
 
         return ApplyPricingToTransactionResponse.fromDomain(
                 cmd.externalTxId(),
                 fee,
                 tax,
-                comRes.lines(),
+                commissionLines,
                 externalTotal,
                 ledgerRes.recorded()
         );
@@ -364,25 +305,15 @@ public class ApplyPricingToTransactionCommandHandler {
     }
 
     private String resolveBeneficiaryAccountId(String beneficiary, ApplyPricingToTransactionCommand cmd) {
-        return switch (beneficiary) {
+        return switch (beneficiary.toUpperCase()) {
             case "AGENT" -> cmd.accountId();
             case "DISTRIBUTOR" -> cmd.distributorAccountId();
             case "SUPER_DISTRIBUTOR" -> cmd.superDistributorAccountId();
-            case "TAX_RATE" -> accTaxRate;
+            case "TAX_RATE", "KRATOS" -> null;
             default -> null;
         };
     }
 
-    private Money sumForBeneficiary(CommissionDistributionResult res, String beneficiary) {
-        Money sum = Money.ZERO;
-        for (var l : res.lines()) {
-            if (l == null || l.amount() == null) continue;
-            if (beneficiary.equalsIgnoreCase(l.beneficiary())) {
-                sum = sum.add(l.amount());
-            }
-        }
-        return sum;
-    }
 
     private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String policyId, String desc) {
         return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, policyId, desc);
