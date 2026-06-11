@@ -1,6 +1,5 @@
 package com.kratos.mok.pricing.app.application.command.externalTransfer;
 
-import com.kratos.mok.pricing.app.application.command.bankDeposit.CantonmentCreditId;
 import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.CantonmentEntity;
 import com.kratos.mok.pricing.app.infrastructure.repository.cantonment.JpaCantonmentRepository;
 import com.kratos.mok.pricing.ledger.application.command.recordTransaction.RecordLedgerTransactionCommand;
@@ -30,119 +29,119 @@ import java.util.Map;
 @Slf4j
 public class ExternalTransferCommandHandler {
 
-    private final LedgerWriter ledgerWriter;
-    private final JpaCantonmentRepository cantonmentRepo;
-    private final ApplicationEventPublisher eventPublisher;
-    private final TimeProvider timeProvider;
+  private final LedgerWriter ledgerWriter;
+  private final JpaCantonmentRepository cantonmentRepo;
+  private final ApplicationEventPublisher eventPublisher;
+  private final TimeProvider timeProvider;
 
-    @Value("${ledger.accounts.cantonment:ACC-CANT}")
-    private String accCant;
+  @Value("${ledger.accounts.cantonment:ACC-CANT}")
+  private String accCant;
 
-    @Value("${ledger.accounts.external:ACC-EXT")
-    private String accExternal;
+  @Value("${ledger.accounts.external:ACC-EXT}")
+  private String accExternal;
 
-    @Transactional
-    public ExternalTransferResponse handle(ExternalTransferCommand cmd, String actor) {
-        validate(cmd);
+  @Transactional
+  public ExternalTransferResponse handle(ExternalTransferCommand cmd, String actor) {
+    validate(cmd);
 
-        String ref = cmd.referencePayment().trim();
-        String externalTxId = ref;
-        OffsetDateTime now = timeProvider.now();
+    String ref = cmd.referencePayment().trim();
+    String externalTxId = ref;
+    OffsetDateTime now = timeProvider.now();
 
-        // 1) idempotence DB
-        if (cantonmentRepo.existsByPaymentReference(ref)) {
-            log.info("Duplicate cantonnement credit: ref={}", ref);
-            return new ExternalTransferResponse(
-                    ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
-            );
-        }
-
-        // 2) enregistrer RECEIVED (protège concurrence)
-        var entity = new CantonmentEntity();
-        entity.setId(CantonmentDebitId.generate().value());
-        entity.setPaymentReference(ref);
-        entity.setAmount(cmd.amount().amount().toPlainString());
-        entity.setCurrency(cmd.amount().currency());
-        entity.setPartnerId(cmd.partnerId().trim());
-        entity.setStatus("RECEIVED");
-        entity.setReceivedAt(now);
-
-        try {
-            cantonmentRepo.save(entity);
-        } catch (DataIntegrityViolationException e) {
-            // Deux requêtes concurrentes => unique constraint
-            log.info("Duplicate cantonnement debit (unique constraint): ref={}", ref);
-            return new ExternalTransferResponse(
-                    ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
-            );
-        }
-
-        // 3) ledger double-entry
-        Money amount = cmd.amount();
-
-        List<Posting> postings = List.of(
-                credit(accExternal, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
-                        ref, "External transfer (external credit) ref=" + ref),
-                debit(accCant, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
-                        ref, "External transfer (cantonnement debit) ref=" + ref)
-        );
-
-        var ledgerCmd = new RecordLedgerTransactionCommand(
-                externalTxId,
-                now,
-                postings
-        );
-
-        RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(ledgerCmd, actor);
-
-        // 4) marquer APPLIED
-        entity.setStatus("APPLIED");
-        entity.setLedgerExternalTxId(externalTxId);
-        entity.setAppliedAt(now);
-        cantonmentRepo.save(entity);
-
-        eventPublisher.publishEvent(
-                new LedgerEntriesCreatedEvent(
-                        cmd.referencePayment(),
-                        now
-                )
-        );
-
-        return new ExternalTransferResponse(
-                ref,
-                ledgerRes.recorded(),
-                "APPLIED",
-                externalTxId,
-                accCant,
-                amount
-        );
+    // 1) idempotence DB
+    if (cantonmentRepo.existsByPaymentReference(ref)) {
+      log.info("Duplicate cantonnement credit: ref={}", ref);
+      return new ExternalTransferResponse(
+          ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
+      );
     }
 
-    private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
-        return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
+    // 2) enregistrer RECEIVED (protège concurrence)
+    var entity = new CantonmentEntity();
+    entity.setId(CantonmentDebitId.generate().value());
+    entity.setPaymentReference(ref);
+    entity.setAmount(cmd.amount().amount().toPlainString());
+    entity.setCurrency(cmd.amount().currency());
+    entity.setPartnerId(cmd.partnerId().trim());
+    entity.setStatus("RECEIVED");
+    entity.setReceivedAt(now);
+
+    try {
+      cantonmentRepo.save(entity);
+    } catch (DataIntegrityViolationException e) {
+      // Deux requêtes concurrentes => unique constraint
+      log.info("Duplicate cantonnement debit (unique constraint): ref={}", ref);
+      return new ExternalTransferResponse(
+          ref, false, "DUPLICATE", externalTxId, accCant, cmd.amount()
+      );
     }
 
-    private Posting credit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
-        return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
-    }
+    // 3) ledger double-entry
+    Money amount = cmd.amount();
 
-    private void validate(ExternalTransferCommand cmd) {
-        if (cmd == null) throw new IllegalArgumentException("command is required");
+    List<Posting> postings = List.of(
+        credit(accExternal, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
+            ref, "External transfer (external credit) ref=" + ref),
+        debit(accCant, amount, LedgerEntryKind.EXTERNAL_TRANSFER,
+            ref, "External transfer (cantonnement debit) ref=" + ref)
+    );
 
-        if (cmd.referencePayment() == null || cmd.referencePayment().isBlank()) {
-            throw new DomainValidationException("REFERENCE_REQUIRED", "referenceVersement is required", Map.of());
-        }
-        if (cmd.amount() == null) {
-            throw new DomainValidationException("AMOUNT_REQUIRED", "amount is required", Map.of());
-        }
-        if (cmd.amount().isZero() || cmd.amount().isNegative()) {
-            throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0", Map.of("amount", cmd.amount().toString()));
-        }
-        if (cmd.partnerId() == null || cmd.partnerId().isBlank()) {
-            throw new DomainValidationException("PARTNER", "partner is required", Map.of());
-        }
-        if (cmd.amount().currency() == null || cmd.amount().currency().isBlank()) {
-            throw new DomainValidationException("CURRENCY_REQUIRED", "currency is required", Map.of());
-        }
+    var ledgerCmd = new RecordLedgerTransactionCommand(
+        externalTxId,
+        now,
+        postings
+    );
+
+    RecordLedgerTransactionResponse ledgerRes = ledgerWriter.record(ledgerCmd, actor);
+
+    // 4) marquer APPLIED
+    entity.setStatus("APPLIED");
+    entity.setLedgerExternalTxId(externalTxId);
+    entity.setAppliedAt(now);
+    cantonmentRepo.save(entity);
+
+    eventPublisher.publishEvent(
+        new LedgerEntriesCreatedEvent(
+            cmd.referencePayment(),
+            now
+        )
+    );
+
+    return new ExternalTransferResponse(
+        ref,
+        ledgerRes.recorded(),
+        "APPLIED",
+        externalTxId,
+        accCant,
+        amount
+    );
+  }
+
+  private Posting debit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
+    return new Posting(accountCode, EntryDirection.DEBIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
+  }
+
+  private Posting credit(String accountCode, Money m, LedgerEntryKind kind, String ref, String desc) {
+    return new Posting(accountCode, EntryDirection.CREDIT, m.amount().toPlainString(), m.currency(), kind, ref, desc);
+  }
+
+  private void validate(ExternalTransferCommand cmd) {
+    if (cmd == null) throw new IllegalArgumentException("command is required");
+
+    if (cmd.referencePayment() == null || cmd.referencePayment().isBlank()) {
+      throw new DomainValidationException("REFERENCE_REQUIRED", "referenceVersement is required", Map.of());
     }
+    if (cmd.amount() == null) {
+      throw new DomainValidationException("AMOUNT_REQUIRED", "amount is required", Map.of());
+    }
+    if (cmd.amount().isZero() || cmd.amount().isNegative()) {
+      throw new DomainValidationException("INVALID_AMOUNT", "amount must be > 0", Map.of("amount", cmd.amount().toString()));
+    }
+    if (cmd.partnerId() == null || cmd.partnerId().isBlank()) {
+      throw new DomainValidationException("PARTNER", "partner is required", Map.of());
+    }
+    if (cmd.amount().currency() == null || cmd.amount().currency().isBlank()) {
+      throw new DomainValidationException("CURRENCY_REQUIRED", "currency is required", Map.of());
+    }
+  }
 }

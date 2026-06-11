@@ -46,12 +46,12 @@ ledger:
     tax: "ACC-TAX"
     taxRate: "ACC-TAX-RATE"
     taxFixed: "ACC-TAX-FIXED"
-    external: "EXTERNAL_ACCOUNT"
     distributed: "ACC-DIST"
     distributedSuperDistributor: "ACC-DIST-SUPER-DISTRIBUTOR"
     distributedDistributor: "ACC-DIST-DISTRIBUTOR"
     distributedAgent: "ACC-DIST-AGENT"
     currency: "XAF"
+    external: "ACC-EXT"
     bankClearing: "ACC-BANK-CLEAR"
     fees: "FEES_ACCOUNT"
 
