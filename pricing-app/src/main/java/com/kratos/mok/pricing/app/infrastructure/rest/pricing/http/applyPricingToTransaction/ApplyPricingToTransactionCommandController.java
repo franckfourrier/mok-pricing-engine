@@ -6,6 +6,7 @@ import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingTo
 import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction.ApplyPricingToTransactionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,42 +16,51 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1/pricing")
 @RequiredArgsConstructor
+@Slf4j
 public class ApplyPricingToTransactionCommandController {
 
-    private final ApplyPricingToTransactionCommandHandler handler;
+  private final ApplyPricingToTransactionCommandHandler handler;
 
-    @PostMapping("/apply")
-    @PreAuthorize("hasAnyRole('SYSTEM','ADMIN','SUPER_ADMIN')")
-    public ResponseEntity<ApplyPricingToTransactionResponse> apply(
-            @Valid @RequestBody ApplyPricingToTransactionRequest request,
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestHeader(value = "X-Actor-Id", required = false) String actorId
-    ) {
-        String actor = (actorId != null && !actorId.isBlank())
-                ? actorId.trim()
-                : resolveAuthorId(jwt);
+  @PostMapping("/apply")
+  @PreAuthorize("hasAnyRole('SYSTEM','ADMIN','SUPER_ADMIN')")
+  public ResponseEntity<ApplyPricingToTransactionResponse> apply(
+      @Valid @RequestBody ApplyPricingToTransactionRequest request,
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestHeader(value = "X-Actor-Id", required = false) String actorId
+  ) {
+    String actor = (actorId != null && !actorId.isBlank())
+        ? actorId.trim()
+        : resolveAuthorId(jwt);
 
-        var cmd = ApplyPricingToTransactionCommandMapper.toCommand(request);
-        var res = handler.handle(cmd, actor);
+    // 1. Log d'entrée avec l'ID de la transaction externe pour le suivi
+    log.info("[REST-API] Received pricing application request. externalTxId={}, code={}, amount={} {}, actor={}",
+        request.externalTxId(), request.transactionCode(), request.amount(), request.currency(), actor);
 
-        return ResponseEntity.ok(res);
-    }
+    var cmd = ApplyPricingToTransactionCommandMapper.toCommand(request);
+    var res = handler.handle(cmd, actor);
 
-    private String resolveAuthorId(Jwt jwt) {
-        if (jwt == null) return "UNKNOWN";
+    // Log de succès de la réponse REST
+    log.info("[REST-API] Pricing successfully applied. txId={}, fees={}, taxes={}, totalDeducted={}, totalCommissionOut={}, recordedInLedger={}",
+        res.externalTxId(), res.serviceFee(), res.taxAmount(), res.totalDeducted(), res.totalCommissionOut(), res.recorded());
 
-        String sub = jwt.getSubject();
-        if (sub != null && !sub.isBlank()) return sub;
+    return ResponseEntity.ok(res);
+  }
 
-        String clientId = jwt.getClaimAsString("client_id");
-        if (clientId != null && !clientId.isBlank()) return clientId;
+  private String resolveAuthorId(Jwt jwt) {
+    if (jwt == null) return "UNKNOWN";
 
-        String username = jwt.getClaimAsString("preferred_username");
-        if (username != null && !username.isBlank()) return username;
+    String sub = jwt.getSubject();
+    if (sub != null && !sub.isBlank()) return sub;
 
-        String email = jwt.getClaimAsString("email");
-        if (email != null && !email.isBlank()) return email;
+    String clientId = jwt.getClaimAsString("client_id");
+    if (clientId != null && !clientId.isBlank()) return clientId;
 
-        return "UNKNOWN";
-    }
+    String username = jwt.getClaimAsString("preferred_username");
+    if (username != null && !username.isBlank()) return username;
+
+    String email = jwt.getClaimAsString("email");
+    if (email != null && !email.isBlank()) return email;
+
+    return "UNKNOWN";
+  }
 }
