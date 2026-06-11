@@ -1,4 +1,5 @@
 services:
+
   pricing-db:
     image: postgres:16
     container_name: pricing-db
@@ -15,6 +16,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
 
   audit-db:
     image: postgres:16
@@ -32,26 +34,54 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: pricing-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   pricing-app:
     build: .
     container_name: pricing-app
+
     depends_on:
       pricing-db:
         condition: service_healthy
       audit-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
     ports:
       - "8017:8080"
+
     environment:
       SPRING_PROFILES_ACTIVE: docker,control
+
       PRICING_DB_USER: postgres
       PRICING_DB_PASSWORD: 7429867
+
       AUDIT_DB_USER: postgres
       AUDIT_DB_PASSWORD: 7429867
+
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+
     volumes:
       - ./logs:/app/logs
+
     restart: unless-stopped
+
     logging:
       driver: json-file
       options:
@@ -61,3 +91,4 @@ services:
 volumes:
   pricing_db_data:
   audit_db_data:
+  redis_data:
