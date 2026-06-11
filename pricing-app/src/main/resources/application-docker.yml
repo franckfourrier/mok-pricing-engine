@@ -64,5 +64,16 @@ logging:
   level:
     root: INFO
     com.kratos: DEBUG
+    com.kratos.mok.pricing.app.application.command.applyPricingToTransaction: DEBUG
+    com.kratos.mok.pricing.app.infrastructure.rest.pricing.http.applyPricingToTransaction: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # <-- RÉINTRODUIT : Pour garder l'homogénéité dans ton fichier de log
+  file:
+    name: /app/logs/mok-pricing-engine.log
+    max-size: 20MB
+    max-history: 10
+    total-size-cap: 200MB
+  logback:
+    rollingpolicy:
+      file-name-pattern: /app/logs/mok-pricing-engine.%d{yyyy-MM-dd}.%i.log

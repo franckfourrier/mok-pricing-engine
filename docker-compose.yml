@@ -11,7 +11,7 @@ services:
     volumes:
       - pricing_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d pricing_db"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d pricing_db" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -28,7 +28,7 @@ services:
     volumes:
       - audit_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d audit_db"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d audit_db" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -49,6 +49,14 @@ services:
       PRICING_DB_PASSWORD: 7429867
       AUDIT_DB_USER: postgres
       AUDIT_DB_PASSWORD: 7429867
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
   pricing_db_data:
