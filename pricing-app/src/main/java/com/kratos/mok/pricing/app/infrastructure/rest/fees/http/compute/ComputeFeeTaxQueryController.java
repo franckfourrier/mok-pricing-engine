@@ -8,7 +8,6 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 import com.kratos.mok.pricing.shared.domain.vo.PricingRequestContext;
 import com.kratos.mok.pricing.taxes.application.query.computeTax.ComputeTaxQueryHandler;
 import io.swagger.v3.oas.annotations.Operation;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,7 +17,6 @@ import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/v1/fees")
-@Slf4j
 public class ComputeFeeTaxQueryController {
 
   private final ComputeFeeQueryHandler feeService;
@@ -45,9 +43,6 @@ public class ComputeFeeTaxQueryController {
       @RequestParam OffsetDateTime occurredAt
   ) {
 
-    // Log de réception de la demande d'estimation/simulation
-    log.info("[QUERY-API] Received dry-run fee/tax calculation request. code={}, amount={} {}, accountId={}, accountType={}",
-        transactionCode, amount, currency, accountId, accountType);
     TransactionCode txCode = TransactionCode.valueOf(transactionCode.trim().toUpperCase());
     Money txAmount = Money.of(amount, currency);
 
@@ -62,17 +57,9 @@ public class ComputeFeeTaxQueryController {
     );
 
     var resultFee = feeService.computeFee(ctx);
-    // Log intermédiaire pour tracer la politique de frais appliquée
-    log.debug("[QUERY-API] Fee computed successfully. policyId={}, calculatedFee={}",
-        resultFee.feePolicyId(), resultFee.fee());
 
     var resultTax = taxService.computeTax(ctx);
-    // Log intermédiaire pour tracer le résultat de la taxe
-    log.debug("[QUERY-API] Tax computed successfully. totalTax={}", resultTax.totalTax());
 
-    // Log de fin avec le résultat condensé
-    log.info("[QUERY-API] Dry-run evaluation completed. code={}, fee={}, totalTax={}",
-        txCode.name(), resultFee.fee(), resultTax.totalTax());
     return new FeeTaxComputeResponse(
         txCode.name(),
         new MoneyDto(txAmount.amount(), txAmount.currency()),

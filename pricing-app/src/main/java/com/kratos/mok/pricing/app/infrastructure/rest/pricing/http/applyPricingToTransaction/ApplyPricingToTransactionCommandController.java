@@ -6,7 +6,6 @@ import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingTo
 import com.kratos.mok.pricing.app.infrastructure.rest.pricing.dto.applyPricingToTransaction.ApplyPricingToTransactionRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/v1/pricing")
 @RequiredArgsConstructor
-@Slf4j
 public class ApplyPricingToTransactionCommandController {
 
   private final ApplyPricingToTransactionCommandHandler handler;
@@ -32,16 +30,8 @@ public class ApplyPricingToTransactionCommandController {
         ? actorId.trim()
         : resolveAuthorId(jwt);
 
-    // 1. Log d'entrée avec l'ID de la transaction externe pour le suivi
-    log.info("[REST-API] Received pricing application request. externalTxId={}, code={}, amount={} {}, actor={}",
-        request.externalTxId(), request.transactionCode(), request.amount(), request.currency(), actor);
-
     var cmd = ApplyPricingToTransactionCommandMapper.toCommand(request);
     var res = handler.handle(cmd, actor);
-
-    // Log de succès de la réponse REST
-    log.info("[REST-API] Pricing successfully applied. txId={}, fees={}, taxes={}, totalDeducted={}, totalCommissionOut={}, recordedInLedger={}",
-        res.externalTxId(), res.serviceFee(), res.taxAmount(), res.totalDeducted(), res.totalCommissionOut(), res.recorded());
 
     return ResponseEntity.ok(res);
   }
