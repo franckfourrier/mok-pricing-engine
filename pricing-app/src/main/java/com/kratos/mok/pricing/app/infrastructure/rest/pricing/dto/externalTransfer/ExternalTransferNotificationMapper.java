@@ -5,13 +5,15 @@ import com.kratos.mok.pricing.shared.domain.vo.Money;
 
 public final class ExternalTransferNotificationMapper {
 
-    private ExternalTransferNotificationMapper() {}
+  private ExternalTransferNotificationMapper() {
+  }
 
-    public static ExternalTransferCommand toCommand(ExternalTransferNotificationRequest r) {
-        return new ExternalTransferCommand(
-                r.referencePayment(),
-                Money.of(r.amount(), r.currency()),
-                r.partnerId()
-        );
-    }
+  public static ExternalTransferCommand toCommand(ExternalTransferNotificationRequest r) {
+    return new ExternalTransferCommand(
+        r.referencePayment(),
+        Money.of(r.amount(), r.currency()),
+        r.partnerId(),
+        r.occurredAt()
+    );
+  }
 }

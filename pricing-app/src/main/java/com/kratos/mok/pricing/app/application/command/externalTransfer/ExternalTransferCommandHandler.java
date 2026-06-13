@@ -65,6 +65,7 @@ public class ExternalTransferCommandHandler {
     entity.setPartnerId(cmd.partnerId().trim());
     entity.setStatus("RECEIVED");
     entity.setReceivedAt(now);
+    entity.setOccurredAt(cmd.occurredAt());
 
     try {
       cantonmentRepo.save(entity);
